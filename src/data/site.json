@@ -1,12 +1,16 @@
 {
   "name": "AG Zott",
   "tagline": "Hippocampal circuits in health and Alzheimer’s disease",
-  "affiliation": "[PLACEHOLDER: Institute / University — to verify]",
-  "mission": "[DRAFT] Understanding how hippocampal circuits fail early in Alzheimer’s disease — and how to repair them.",
-  "summary": "[DRAFT — please review] Long before memory loss and amyloid plaques, neurons in the hippocampus become abnormally active. We combine in vivo two-photon imaging, histology and electrophysiology to find out why this happens and whether it can be reversed.",
+  "affiliation": "Department of Neuroradiology & Institute of Neuroscience, Technical University of Munich (TUM)",
+  "mission": "Understanding why brain circuits become hyperactive early in Alzheimer’s disease — and how to stop it.",
+  "summary": "Years before memory fails, neurons in the Alzheimer’s brain become abnormally active. We showed that soluble β-amyloid causes this by blocking the reuptake of the neurotransmitter glutamate: glutamate lingers at synapses, overexcites already active neurons and drives a self-reinforcing cycle of hyperactivity (Science, 2019). Capturing β-amyloid monomers with an engineered binding protein, an anticalin, prevents this hyperactivity in mouse models (Nature Communications, 2024). With in vivo two-photon imaging, glutamate imaging, histology and electrophysiology, we now ask how these early circuit failures develop and whether they can be reversed.",
   "email": "[placeholder]@example.org",
   "phone": "[PLACEHOLDER: phone]",
-  "address": ["[PLACEHOLDER: Institute name]", "[Street and number]", "[Postcode] [City], Germany"],
+  "address": [
+    "[PLACEHOLDER: Institute name]",
+    "[Street and number]",
+    "[Postcode] [City], Germany"
+  ],
   "room": "[PLACEHOLDER: building / room]",
   "links": {
     "institute": "",

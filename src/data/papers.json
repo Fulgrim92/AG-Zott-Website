@@ -6,21 +6,89 @@
     "year": 2024,
     "type": "article",
     "doi": "10.1038/s41467-024-50153-y",
-    "themes": ["two-photon", "immunohistochemistry"],
+    "themes": [
+      "two-photon",
+      "immunohistochemistry"
+    ],
     "grants": [],
     "placeholder": false
   },
   {
     "title": "A vicious cycle of β amyloid-dependent neuronal hyperactivation",
-    "authors": "Zott B, Simon MM, Hong W, et al.",
+    "authors": "Zott B, Simon MM, Hong W, Unger F, Chen-Engerer HJ, Frosch MP, Sakmann B, Walsh DM, Konnerth A",
     "journal": "Science 365(6453):559–565",
     "year": 2019,
     "type": "article",
     "doi": "10.1126/science.aay0198",
-    "themes": ["two-photon"],
+    "themes": [
+      "two-photon"
+    ],
     "grants": [],
     "placeholder": false
   },
-  { "title": "[PLACEHOLDER] Further publications — import the full list from BibTeX / ORCID / PubMed", "authors": "[Authors]", "journal": "[Journal]", "year": 2025, "type": "article", "doi": "", "themes": ["electrophysiology"], "grants": ["erc"], "placeholder": true },
-  { "title": "[PLACEHOLDER] Publication on the glymphatic system — only if part of the lab's work", "authors": "[Authors]", "journal": "[Journal]", "year": 2025, "type": "article", "doi": "", "themes": ["glymphatic"], "grants": ["dfg"], "placeholder": true }
+  {
+    "title": "Impairments of glutamatergic synaptic transmission in Alzheimer's disease",
+    "authors": "Zott B, Konnerth A",
+    "journal": "Seminars in Cell & Developmental Biology 139:24–34",
+    "year": 2023,
+    "type": "review",
+    "doi": "",
+    "themes": [],
+    "grants": [],
+    "placeholder": false
+  },
+  {
+    "title": "Population imaging of synaptically released glutamate in mouse hippocampal slices",
+    "authors": "Unger F, Konnerth A, Zott B",
+    "journal": "STAR Protocols 2(4):100877",
+    "year": 2021,
+    "type": "protocol",
+    "doi": "10.1016/j.xpro.2021.100877",
+    "themes": [
+      "two-photon"
+    ],
+    "grants": [],
+    "placeholder": false
+  },
+  {
+    "title": "What happens with the circuit in Alzheimer's disease in mice and humans?",
+    "authors": "Zott B, Busche MA, Sperling RA, Konnerth A",
+    "journal": "Annual Review of Neuroscience 41:277–297",
+    "year": 2018,
+    "type": "review",
+    "doi": "10.1146/annurev-neuro-080317-061725",
+    "themes": [],
+    "grants": [],
+    "placeholder": false
+  },
+  {
+    "title": "[PLACEHOLDER] Further publications — import the full list from BibTeX / ORCID / PubMed",
+    "authors": "[Authors]",
+    "journal": "[Journal]",
+    "year": 2025,
+    "type": "article",
+    "doi": "",
+    "themes": [
+      "electrophysiology"
+    ],
+    "grants": [
+      "erc"
+    ],
+    "placeholder": true
+  },
+  {
+    "title": "[PLACEHOLDER] Publication on the glymphatic system — only if part of the lab's work",
+    "authors": "[Authors]",
+    "journal": "[Journal]",
+    "year": 2025,
+    "type": "article",
+    "doi": "",
+    "themes": [
+      "glymphatic"
+    ],
+    "grants": [
+      "dfg"
+    ],
+    "placeholder": true
+  }
 ]

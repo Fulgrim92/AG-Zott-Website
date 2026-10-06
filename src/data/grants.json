@@ -3,14 +3,17 @@
     "id": "erc",
     "funder": "ERC",
     "funderName": "European Research Council",
-    "programme": "[PLACEHOLDER: e.g. ERC Starting / Consolidator Grant — to verify]",
+    "programme": "ERC Starting Grant (2025) — to verify",
     "framework": "horizon-europe",
     "acronym": "[ACRONYM — TO VERIFY]",
     "title": "[PLACEHOLDER: Full grant title — to verify]",
     "identifier": null,
     "period": null,
-    "pi": "[PLACEHOLDER: PI name]",
-    "themes": ["two-photon", "electrophysiology"],
+    "pi": "Benedikt Zott",
+    "themes": [
+      "two-photon",
+      "electrophysiology"
+    ],
     "verified": false
   },
   {
@@ -23,7 +26,10 @@
     "identifier": null,
     "period": null,
     "pi": "[PLACEHOLDER: PI name]",
-    "themes": ["immunohistochemistry", "glymphatic"],
+    "themes": [
+      "immunohistochemistry",
+      "glymphatic"
+    ],
     "verified": false
   }
 ]
