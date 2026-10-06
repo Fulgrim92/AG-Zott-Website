@@ -1,12 +1,16 @@
 {
   "name": "AG Zott",
   "tagline": "Hippocampal circuits in health and Alzheimer’s disease",
-  "affiliation": "[PLACEHOLDER: Institute / University — to verify]",
+  "affiliation": "Technical University of Munich (TUM)",
   "mission": "[DRAFT] Understanding how hippocampal circuits fail early in Alzheimer’s disease — and how to repair them.",
   "summary": "[DRAFT — please review] Long before memory loss and amyloid plaques, neurons in the hippocampus become abnormally active. We combine in vivo two-photon imaging, histology and electrophysiology to find out why this happens and whether it can be reversed.",
   "email": "[placeholder]@example.org",
   "phone": "[PLACEHOLDER: phone]",
-  "address": ["[PLACEHOLDER: Institute name]", "[Street and number]", "[Postcode] [City], Germany"],
+  "address": [
+    "[PLACEHOLDER: Institute name]",
+    "[Street and number]",
+    "[Postcode] [City], Germany"
+  ],
   "room": "[PLACEHOLDER: building / room]",
   "links": {
     "institute": "",
@@ -17,5 +21,18 @@
     "glymphatic": true,
     "glymphaticVerified": false
   },
-  "lastUpdated": "2026-10-06"
+  "lastUpdated": "2026-10-06",
+  "department": "[Department / institute — to verify]",
+  "pi": {
+    "name": "Benedikt Zott",
+    "role": "Group leader",
+    "title": "[Academic title — to verify]",
+    "bio": "Benedikt Zott is a neuroscientist and neuroradiologist at the Technical University of Munich. His research asks how β-amyloid disrupts hippocampal circuits in the earliest stages of Alzheimer’s disease — and whether these changes can be prevented or reversed — combining in vivo two-photon imaging, electrophysiology and histology in mouse models.",
+    "bioNote": "Draft biography based on public sources — please review and add career stages and awards.",
+    "photo": "",
+    "email": "",
+    "links": {
+      "X / Twitter": "https://x.com/BZottlab"
+    }
+  }
 }

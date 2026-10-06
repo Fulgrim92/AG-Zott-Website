@@ -60,7 +60,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
     <span class="brand__mark" aria-hidden="true"></span>
     <span class="brand__text">
       <span class="brand__name">AG Zott</span>
-      <span class="brand__aff">{site.affiliation}</span>
+      <span class:list={['brand__aff', { ph: site.affiliation.startsWith('[') }]}>{site.affiliation}</span>
     </span>
   </a>
 
@@ -133,7 +133,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
   }
   .brand__text { display: grid; line-height: 1.2; }
   .brand__name { font-family: var(--font-serif); font-size: 1.45rem; }
-  .brand__aff { font-size: .7rem; color: var(--amber); margin-top: 3px; }
+  .brand__aff { font-size: .7rem; color: var(--text-3); margin-top: 3px; }
 
   .nav ul { list-style: none; margin: 0; padding: 0; }
   .nav__item > a {

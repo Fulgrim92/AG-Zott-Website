@@ -23,8 +23,7 @@ export function initMotion() {
   parallax();
   accentSections();
   navPill();
-  wordmark();
-  if (finePointer) { magnetic(); tilt(); cursor(); }
+  if (finePointer) spotlight();
 }
 
 /* Scroll progress bar — informative, so it runs regardless of motion preference */
@@ -136,55 +135,12 @@ function navPill() {
   list.addEventListener('mouseleave', () => { gsap.to(pill, { opacity: 0, duration: 0.25 }); shown = false; });
 }
 
-/* Footer wordmark lights up when it scrolls into view */
-function wordmark() {
-  const wm = document.querySelector<HTMLElement>('.wordmark');
-  if (wm) ScrollTrigger.create({ trigger: wm, start: 'top 85%', onEnter: () => wm.classList.add('is-lit'), onLeaveBack: () => wm.classList.remove('is-lit') });
-}
-
-/* Magnetic buttons: follow the pointer slightly, spring back on leave */
-function magnetic() {
-  document.querySelectorAll<HTMLElement>('.btn--primary, [data-magnetic]').forEach((el) => {
-    const xTo = gsap.quickTo(el, 'x', { duration: 0.5, ease: 'power3.out' });
-    const yTo = gsap.quickTo(el, 'y', { duration: 0.5, ease: 'power3.out' });
-    el.addEventListener('pointermove', (e) => {
-      const r = el.getBoundingClientRect();
-      xTo((e.clientX - r.left - r.width / 2) * 0.3); yTo((e.clientY - r.top - r.height / 2) * 0.45);
-    });
-    el.addEventListener('pointerleave', () => gsap.to(el, { x: 0, y: 0, duration: 0.9, ease: 'elastic.out(1, 0.35)' }));
-  });
-}
-
-/* Cards tilt in 3D towards the pointer */
-function tilt() {
-  document.querySelectorAll<HTMLElement>('a.card, [data-tilt]').forEach((card) => {
-    gsap.set(card, { transformPerspective: 900 });
-    const rx = gsap.quickTo(card, 'rotationX', { duration: 0.6, ease: 'power3.out' });
-    const ry = gsap.quickTo(card, 'rotationY', { duration: 0.6, ease: 'power3.out' });
-    const y = gsap.quickTo(card, 'y', { duration: 0.6, ease: 'power3.out' });
+/* Cards: a soft highlight follows the pointer */
+function spotlight() {
+  document.querySelectorAll<HTMLElement>('a.card').forEach((card) => {
     card.addEventListener('pointermove', (e) => {
-      const r = card.getBoundingClientRect(), px = (e.clientX - r.left) / r.width - 0.5, py = (e.clientY - r.top) / r.height - 0.5;
-      rx(-py * 6); ry(px * 8); y(-4);
+      const r = card.getBoundingClientRect();
       card.style.setProperty('--mx', `${e.clientX - r.left}px`); card.style.setProperty('--my', `${e.clientY - r.top}px`);
     });
-    card.addEventListener('pointerleave', () => { rx(0); ry(0); y(0); });
   });
-}
-
-/* Cursor: a soft fluorescent glow plus a dot that expands over interactive elements */
-function cursor() {
-  const glow = document.createElement('div'), dot = document.createElement('div');
-  glow.className = 'cursor-glow'; dot.className = 'cursor-dot';
-  glow.setAttribute('aria-hidden', 'true'); dot.setAttribute('aria-hidden', 'true');
-  document.body.append(glow, dot);
-  const gx = gsap.quickTo(glow, 'x', { duration: 0.9, ease: 'power3.out' }), gy = gsap.quickTo(glow, 'y', { duration: 0.9, ease: 'power3.out' });
-  const dx = gsap.quickTo(dot, 'x', { duration: 0.15, ease: 'power3.out' }), dy = gsap.quickTo(dot, 'y', { duration: 0.15, ease: 'power3.out' });
-  addEventListener('pointermove', (e) => {
-    if (e.pointerType !== 'mouse') return;
-    root.classList.add('has-cursor');
-    gx(e.clientX); gy(e.clientY); dx(e.clientX); dy(e.clientY);
-    const t = e.target as Element;
-    dot.classList.toggle('is-hover', !!t.closest?.('a, button, [role=tab], select, input, canvas, .dz__viewer'));
-  }, { passive: true });
-  document.addEventListener('pointerleave', () => root.classList.remove('has-cursor'));
 }

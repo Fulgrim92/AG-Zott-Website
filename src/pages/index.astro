@@ -1,200 +1,138 @@
 ---
 import Base from '../layouts/Base.astro';
 import Label from '../components/Label.astro';
-import RoiFigure from '../components/RoiFigure.astro';
-import CA1Layers from '../components/CA1Layers.astro';
 import FunderLogo from '../components/FunderLogo.astro';
 import assets from '../data/assets.json';
 import site from '../data/site.json';
 import news from '../data/news.json';
 import papers from '../data/papers.json';
 import { datasets } from '../scripts/signals';
-import { url } from '../lib/url';
+import { url, themeLabel } from '../lib/url';
 
 const rec = assets.twoPhoton.recordings[0];
 const rec2 = assets.twoPhoton.recordings[1] ?? rec;
 const confocal = assets.ihc.sections[assets.ihc.sections.length - 1];
-const latestNews = [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
-const latestPapers = [...papers].filter((p) => !p.placeholder).sort((a, b) => b.year - a.year).slice(0, 3);
+const latestNews = [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
+const selected = [...papers].filter((p) => !p.placeholder).sort((a, b) => b.year - a.year).slice(0, 5);
+const pi = site.pi;
 
-// Build-time SVG path of the illustrative LFP (min/max decimation to ~600 columns)
+// Build-time SVG path of the illustrative LFP (min/max decimation)
 const lfp = datasets.lfp().series[0];
-const cols = 600, per = Math.floor(lfp.y.length / cols);
+const cols = 400, per = Math.floor(lfp.y.length / cols);
 let lfpPath = '';
 for (let c = 0; c < cols; c++) {
   let lo = Infinity, hi = -Infinity;
   for (let i = c * per; i < (c + 1) * per; i++) { const v = lfp.y[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
-  const x = (c / cols) * 1000, Y = (v: number) => (100 - v * 120).toFixed(1);
-  lfpPath += `${c ? 'L' : 'M'}${x.toFixed(1)} ${Y(hi)}L${x.toFixed(1)} ${Y(lo)}`;
+  const x = ((c / cols) * 1000).toFixed(1), Y = (v: number) => (150 - v * 150).toFixed(1);
+  lfpPath += `${c ? 'L' : 'M'}${x} ${Y(hi)}L${x} ${Y(lo)}`;
 }
 
-const panels = [
-  { href: '/research/two-photon/', n: '01', title: 'Two-photon imaging', sub: 'Hippocampal CA1 · in vivo', color: 'var(--green)', text: 'Hundreds of neurons, watched simultaneously in the living brain. Each flash is a calcium transient — a neuron firing. We use it to catch the earliest, Alzheimer’s-related hyperactivity.', media: 'video' },
-  { href: '/research/immunohistochemistry/', n: '02', title: 'Immunohistochemistry', sub: 'Plaques & cells · confocal', color: 'var(--blue)', text: 'Staining brain sections reveals when and where β-amyloid plaques appear — here, an 8-month-old APP23xPS45 brain studded with plaques (cyan).', media: 'image' },
-  { href: '/research/electrophysiology/', n: '03', title: 'Electrophysiology', sub: 'EEG · LTP · LFP', color: 'var(--red)', text: 'From seizures across the whole brain to plasticity at single synapses: electrical recordings resolve network activity millisecond by millisecond.', media: 'trace' },
-  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', n: '04', title: 'Glymphatic system', sub: 'Brain clearance', color: 'var(--magenta)', text: 'Cerebrospinal fluid flows along blood vessels and through brain tissue, washing out waste such as β-amyloid — most actively during sleep.', media: 'flow' }] : []),
+const themes = [
+  { href: '/research/two-photon/', key: 'two-photon', color: 'var(--green)', text: 'In vivo calcium imaging of hundreds of CA1 neurons to detect early, β-amyloid-driven hyperactivity.', media: 'video' },
+  { href: '/research/immunohistochemistry/', key: 'immunohistochemistry', color: 'var(--blue)', text: 'Staining and confocal imaging of brain sections to map amyloid plaques and the cells around them.', media: 'image' },
+  { href: '/research/electrophysiology/', key: 'electrophysiology', color: 'var(--red)', text: 'EEG, synaptic plasticity (LTP) and field potentials — network function from seconds to milliseconds.', media: 'trace' },
+  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', key: 'glymphatic', color: 'var(--magenta)', text: 'How cerebrospinal fluid flows through brain tissue and clears waste such as β-amyloid.', media: 'flow' }] : []),
 ];
-const words = ['Two-photon imaging', 'CA1', 'β-amyloid', 'Hyperactivity', 'Glutamate', 'Immunohistochemistry', 'EEG', 'LTP', 'Sharp-wave ripples', 'Alzheimer’s disease'];
+const steps = [
+  { label: 'Brain', caption: 'The mouse brain. Our work focuses on the hippocampus, a structure essential for forming new memories.' },
+  { label: 'Hippocampus', caption: 'The hippocampus (magenta), with region CA1 highlighted in green.' },
+  { label: 'CA1', caption: 'CA1 pyramidal neurons. Each flash mimics a calcium transient — a neuron firing.' },
+  { label: 'Recording', caption: `A real in vivo two-photon recording of CA1 neurons (${rec.label}), shown at 4× real time.` },
+];
+const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 ---
 <Base>
   <svg width="0" height="0" aria-hidden="true" style="position:absolute">
     <filter id="home-lut" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.15 0.15 0.15 0 0  0.5 0.5 0.5 0 0.02  0.25 0.25 0.25 0 0  0 0 0 1 0" /></filter>
-    <filter id="home-fire" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0" /><feComponentTransfer><feFuncR type="table" tableValues="0 0.35 0.85 1 1 1" /><feFuncG type="table" tableValues="0 0 0.1 0.5 0.85 1" /><feFuncB type="table" tableValues="0 0.45 0.2 0 0.2 1" /></feComponentTransfer></filter>
   </svg>
 
-  <!-- ======== HERO: brain → hippocampus → CA1 → real data ======== -->
-  <section class="hero" data-hero aria-labelledby="hero-title">
-    <canvas class="hero__canvas" data-hero-canvas aria-hidden="true"></canvas>
-    <div class="hero__fallback" aria-hidden="true"></div>
-    <div class="hero__veil" aria-hidden="true"></div>
+  <!-- ======== Intro ======== -->
+  <section class="intro" aria-labelledby="intro-h">
+    <div class="intro__text">
+      <p class="eyebrow" data-intro>Research group · TUM</p>
+      <h1 id="intro-h"><span class="intro__name" data-hero-name>{site.name}</span></h1>
+      <p class="intro__tag" data-intro>{site.tagline}</p>
+      <p class="lead" data-intro>Long before memory loss and amyloid plaques, neurons in the hippocampus become abnormally active. We combine in vivo two-photon imaging, histology and electrophysiology to understand why this happens — and whether it can be prevented or reversed.</p>
+      <p class="intro__pi" data-intro>
+        <span class="mono">Group leader</span>
+        <a href={url('/team/')}>{pi.name}</a>
+      </p>
+      <div class="intro__cta" data-intro>
+        <a class="btn btn--primary" href={url('/research/')}>Our research</a>
+        <a class="btn" href={url('/papers/')}>Publications</a>
+        <a class="btn" href={url('/contact/')}>Join the lab</a>
+      </div>
+      <p class="intro__fund small" data-intro>Supported by the <a href={url('/funding/')}>European Research Council (ERC)</a> and the <a href={url('/funding/')}>Deutsche Forschungsgemeinschaft (DFG)</a>.</p>
+    </div>
 
-    <div class="hero__steps">
-      <div class="hero__step is-current" data-step>
-        <p class="eyebrow" data-intro>Neuroscience research group</p>
-        <h1 id="hero-title"><span class="hero__name" data-hero-name>{site.name}</span><span class="hero__tag" data-intro>{site.tagline}.</span></h1>
-        <p class="lead" data-intro>Two-photon imaging, immunohistochemistry and electrophysiology — to understand how hippocampal circuits fail early in Alzheimer’s disease, and how to protect them.</p>
-        <div class="hero__cta" data-intro>
-          <a class="btn btn--primary" href="#ca1" data-enter-ca1>Dive into CA1 ↓</a>
-          <a class="btn" href={url('/research/')} data-magnetic>Our research</a>
+    <figure class="viz" data-hero aria-labelledby="viz-cap">
+      <div class="viz__stage">
+        <canvas class="viz__canvas" data-hero-canvas aria-hidden="true"></canvas>
+        <div class="viz__fallback" aria-hidden="true"></div>
+        <div class="viz__real" data-hero-real>
+          <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="none" aria-label={rec.alt}></video>
         </div>
+        <div class="viz__label"><Label kind="schematic" text="3D model: illustrative schematic" /></div>
       </div>
-      <div class="hero__step" data-step>
-        <p class="eyebrow" style="--accent:var(--magenta)">01 — The hippocampus</p>
-        <h2>A curved structure deep in the temporal lobe, essential for forming new memories.</h2>
+      <div class="viz__bar">
+        <div role="tablist" aria-label="Zoom level" class="viz__tabs">
+          {steps.map((s, i) => <button role="tab" data-viz-step aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>{s.label}</button>)}
+        </div>
+        <figcaption id="viz-cap" class="viz__cap" aria-live="polite">
+          {steps.map((s, i) => <span data-viz-caption hidden={i !== 0}>{s.caption}{i === 3 && <> <Label kind="data" /></>}</span>)}
+        </figcaption>
       </div>
-      <div class="hero__step" data-step>
-        <p class="eyebrow">02 — Region CA1</p>
-        <h2>Thousands of pyramidal neurons line up in a single layer — and each one flashes when it fires.</h2>
-      </div>
-      <div class="hero__step" data-step>
-        <p class="eyebrow">03 — Real data</p>
-        <h2>This is what it really looks like: CA1 neurons in a living brain, imaged with two photons.</h2>
-        <a class="btn" href={url('/research/two-photon/')} data-magnetic>Explore the recordings →</a>
-      </div>
-    </div>
-
-    <figure class="hero__real" data-hero-real aria-hidden="true">
-      <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="none"></video>
-      <figcaption><Label kind="data" /> <span>In vivo two-photon recording · {rec.label} · 4× real time</span></figcaption>
     </figure>
-
-    <ol class="hero__dots" aria-label="Journey steps">
-      {['Lab', 'Hippocampus', 'CA1', 'Real data'].map((l, i) => <li><button data-dot aria-current={i === 0 ? 'step' : 'false'}><span class="visually-hidden">{l}</span><i>{l}</i></button></li>)}
-    </ol>
-    <div class="hero__cue" data-cue aria-hidden="true"><span>Scroll to dive in</span><i></i></div>
-    <div class="hero__meta"><Label kind="schematic" text="3D model: illustrative schematic" /></div>
   </section>
 
-  <!-- ======== CA1 layers ======== -->
-  <section id="ca1" class="section" aria-labelledby="ca1-h" data-accent="var(--green)">
+  <!-- ======== Research ======== -->
+  <section class="section section--tight" aria-labelledby="research-h">
     <div class="container">
-      <p class="eyebrow" data-reveal>Inside CA1</p>
-      <h2 id="ca1-h" data-split>Explore the layers we image and record from</h2>
-      <p class="lead" data-reveal>Select a layer to see what it contains. Our two-photon imaging focuses on the cell bodies of stratum pyramidale; dendrites in the layers above and below receive the circuit’s inputs.</p>
-      <div data-reveal style="margin-top:var(--s5)"><CA1Layers /></div>
-    </div>
-  </section>
-
-  <!-- ======== From pixels to traces + mission ======== -->
-  <section class="section section--tight" aria-labelledby="mission-h">
-    <div class="container mission">
-      <div data-wipe><RoiFigure /></div>
-      <div>
-        <p class="eyebrow" data-reveal>Mission</p>
-        <h2 id="mission-h" class="ph" data-split>{site.mission}</h2>
-        <p class="muted ph" data-reveal>{site.summary}</p>
+      <div class="row-head">
+        <div><p class="eyebrow">Research</p><h2 id="research-h" data-split>What we study</h2></div>
+        <a href={url('/research/')}>All research →</a>
       </div>
-    </div>
-  </section>
-
-  <!-- ======== Methods showcase (horizontal on desktop) ======== -->
-  <section class="showcase" data-showcase aria-labelledby="methods-h">
-    <div class="showcase__head">
-      <div>
-        <p class="eyebrow">Research</p>
-        <h2 id="methods-h" data-split>Complementary windows on the same circuit</h2>
-      </div>
-      <div class="showcase__meter" aria-hidden="true"><span class="mono" data-sc-count>01 / 0{panels.length}</span><i><b data-sc-bar></b></i></div>
-    </div>
-    <div class="showcase__viewport">
-      <ol class="showcase__track" data-track role="list">
-        {panels.map((p) => (
-          <li class="panel" style={`--pc:${p.color}`} data-panel-accent={p.color}>
-            <a class="panel__link" href={url(p.href)}>
-              <div class="panel__media">
-                {p.media === 'video' && (
-                  <>
-                    <video src={url(rec2.src)} poster={url(rec2.poster)} muted loop playsinline preload="none" data-autoplay style="filter:url(#home-fire)" aria-label={rec2.alt}></video>
-                    <span class="panel__label"><Label kind="data" /></span>
-                  </>
+      <ul class="themes" role="list">
+        {themes.map((t) => (
+          <li data-reveal>
+            <a class="card theme" href={url(t.href)} style={`--card-c:${t.color}`}>
+              <span class="card__glow" aria-hidden="true"></span>
+              <div class="theme__media">
+                {t.media === 'video' && <video src={url(rec2.src)} poster={url(rec2.poster)} muted loop playsinline preload="none" data-autoplay style="filter:url(#home-lut)" aria-label={rec2.alt}></video>}
+                {t.media === 'image' && <img src={url(confocal.src)} alt={confocal.alt} loading="lazy" />}
+                {t.media === 'trace' && <svg viewBox="0 0 1000 300" preserveAspectRatio="none" role="img" aria-label="Illustrative local field potential trace."><path d={lfpPath} class="theme__trace" /></svg>}
+                {t.media === 'flow' && (
+                  <svg viewBox="0 0 400 240" role="img" aria-label="Schematic of fluid flowing along an artery, through tissue and out along a vein.">
+                    <rect x="40" y="0" width="22" height="240" fill="#c0392b" opacity=".8" /><rect x="338" y="0" width="22" height="240" fill="#2c3e8f" opacity=".9" />
+                    {[40, 80, 120, 160, 200].map((y) => <path d={`M70 ${y - 20} C 160 ${y + 30}, 240 ${y - 30}, 330 ${y + 10}`} class="flow-path" />)}
+                  </svg>
                 )}
-                {p.media === 'image' && (
-                  <>
-                    <img src={url(confocal.src)} alt={confocal.alt} loading="lazy" />
-                    <span class="panel__label"><Label kind="data" text="Published lab data" /></span>
-                  </>
-                )}
-                {p.media === 'trace' && (
-                  <>
-                    <svg viewBox="0 0 1000 300" preserveAspectRatio="none" class="panel__trace" role="img" aria-label="Illustrative local field potential: theta oscillations followed by sharp-wave ripples.">
-                      <path d={lfpPath} pathLength="1" />
-                    </svg>
-                    <span class="panel__label"><Label kind="schematic" text="Illustrative simulation" /></span>
-                  </>
-                )}
-                {p.media === 'flow' && (
-                  <>
-                    <svg viewBox="0 0 400 240" class="panel__flow" role="img" aria-label="Schematic of fluid flowing in along an artery, through tissue and out along a vein.">
-                      <rect x="40" y="0" width="22" height="240" fill="#c0392b" opacity=".8" /><rect x="338" y="0" width="22" height="240" fill="#2c3e8f" opacity=".9" />
-                      {[40, 80, 120, 160, 200].map((y) => <path d={`M70 ${y - 20} C 160 ${y + 30}, 240 ${y - 30}, 330 ${y + 10}`} class="flow-path" />)}
-                      {[[130, 60], [210, 110], [170, 170], [260, 50], [250, 190], [110, 140]].map(([x, y]) => <circle cx={x} cy={y} r="13" fill="var(--green)" opacity=".18" />)}
-                    </svg>
-                    <span class="panel__label"><Label kind="schematic" /></span>
-                  </>
-                )}
+                <span class="theme__label">
+                  {t.media === 'video' && <Label kind="data" />}
+                  {t.media === 'image' && <Label kind="data" text="Published data" />}
+                  {t.media === 'trace' && <Label kind="schematic" text="Simulation" />}
+                  {t.media === 'flow' && <Label kind="schematic" text="Schematic" />}
+                </span>
               </div>
-              <div class="panel__text">
-                <span class="mono panel__n">{p.n}</span>
-                <span class="panel__sub">{p.sub}</span>
-                <h3>{p.title}</h3>
-                <p class="muted">{p.text}</p>
-                <span class="panel__go">Explore <span aria-hidden="true">→</span></span>
-              </div>
+              <h3>{themeLabel[t.key]}</h3>
+              <p class="muted small">{t.text}</p>
             </a>
           </li>
         ))}
-      </ol>
+      </ul>
     </div>
   </section>
 
-  <!-- ======== In numbers ======== -->
-  <section class="section section--tight" aria-labelledby="numbers-h" data-accent="var(--magenta)">
-    <div class="container">
-      <p class="eyebrow" data-reveal>In numbers</p>
-      <h2 id="numbers-h" data-split>Hyperactivity, counted cell by cell</h2>
-      <dl class="stats">
-        <div data-reveal><dt>CA1 neurons imaged in old APP23xPS45 mice</dt><dd><span data-count="237">237</span></dd></div>
-        <div data-reveal><dt>mice</dt><dd><span data-count="5">5</span></dd></div>
-        <div data-reveal><dt>of these neurons were hyperactive</dt><dd><span data-count="19">19</span><small>%</small></dd></div>
-      </dl>
-      <p class="small muted" data-reveal>Source: Zott et al. (2024) <i>Nat Commun</i>, Supplementary Fig. S13B. <a href="https://doi.org/10.1038/s41467-024-50153-y">doi:10.1038/s41467-024-50153-y</a></p>
-    </div>
-  </section>
-
-  <div class="marquee" aria-hidden="true">
-    <div class="marquee__track">{[...words, ...words].map((w) => <span>{w} ·</span>)}</div>
-  </div>
-
-  <!-- ======== News + Papers ======== -->
-  <section class="section section--tight" aria-label="Latest">
-    <div class="container grid grid-2" style="gap:var(--s6)">
-      <div data-reveal>
-        <div class="row-head"><h2>News</h2><a href={url('/news/')}>All news →</a></div>
+  <!-- ======== News + Publications ======== -->
+  <section class="section section--tight" aria-label="News and publications">
+    <div class="container two-col">
+      <div>
+        <div class="row-head"><h2 data-split>News</h2><a href={url('/news/')}>All news →</a></div>
         <ul class="list" role="list">
           {latestNews.map((n) => (
-            <li>
+            <li data-reveal>
               <a class="row-link" href={url(`/news/${n.slug}/`)}>
-                <time class="mono muted" datetime={n.date}>{n.date} · {n.category}</time>
+                <time class="mono muted" datetime={n.date}>{fmt(n.date)} · {n.category}</time>
                 <span class:list={[{ ph: n.placeholder }]}>{n.title}</span>
                 <i aria-hidden="true">→</i>
               </a>
@@ -202,257 +140,190 @@ const words = ['Two-photon imaging', 'CA1', 'β-amyloid', 'Hyperactivity', 'Glut
           ))}
         </ul>
       </div>
-      <div data-reveal>
-        <div class="row-head"><h2>Papers</h2><a href={url('/papers/')}>All papers →</a></div>
-        <ul class="list" role="list">
-          {latestPapers.map((p) => (
-            <li>
-              <a class="row-link" href={p.doi ? `https://doi.org/${p.doi}` : url('/papers/')}>
-                <span class="mono muted">{p.year} · {p.journal}</span>
-                <span>{p.title}</span>
-                <i aria-hidden="true">↗</i>
-              </a>
+      <div>
+        <div class="row-head"><h2 data-split>Selected publications</h2><a href={url('/papers/')}>All →</a></div>
+        <ol class="pubs" role="list">
+          {selected.map((p) => (
+            <li data-reveal>
+              <span class="pubs__year mono">{p.year}</span>
+              <div>
+                <a href={p.doi ? `https://doi.org/${p.doi}` : url('/papers/')} class="pubs__title">{p.title}</a>
+                <span class="pubs__authors">{p.authors.replace(/Zott B/g, '§').split('§').map((part, i, arr) => <>{part}{i < arr.length - 1 && <b>Zott B</b>}</>)}</span>
+                <span class="pubs__journal">{p.journal}</span>
+              </div>
             </li>
           ))}
-        </ul>
+        </ol>
       </div>
     </div>
   </section>
 
-  <!-- ======== Funding acknowledgment ======== -->
+  <!-- ======== People ======== -->
+  <section class="section section--tight" aria-labelledby="people-h">
+    <div class="container">
+      <div class="row-head"><div><p class="eyebrow">People</p><h2 id="people-h" data-split>The group</h2></div><a href={url('/team/')}>Team →</a></div>
+      <div class="people">
+        <article class="pi card" data-reveal>
+          <div class="pi__photo" aria-hidden="true">{pi.photo ? <img src={url(pi.photo)} alt="" /> : <><span>BZ</span><small>photo placeholder</small></>}</div>
+          <div>
+            <p class="mono small" style="color:var(--accent);margin:0 0 4px">{pi.role}</p>
+            <h3>{pi.name}</h3>
+            <p class="muted small">{pi.bio}</p>
+            <a href={url('/team/')}>Profile and team →</a>
+          </div>
+        </article>
+        <article class="join card" data-reveal>
+          <p class="eyebrow">Join us</p>
+          <h3>Open positions &amp; theses</h3>
+          <p class="muted small">We welcome applications from motivated students (BSc, MSc, MD/PhD) and postdocs interested in hippocampal circuits, imaging and Alzheimer’s disease.</p>
+          <div class="intro__cta"><a class="btn btn--primary" href={url('/contact/')}>Contact</a><a class="btn" href={url('/teaching/')}>Thesis projects</a></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== Funding ======== -->
   <section class="section section--tight" aria-labelledby="fund-h">
-    <div class="container funding-strip" data-reveal data-tilt>
+    <div class="container funding-strip" data-reveal>
       <div>
-        <p class="eyebrow">Support</p>
-        <h2 id="fund-h" style="font-size:1.6rem">Our research is supported by the European Research Council and the Deutsche Forschungsgemeinschaft.</h2>
-        <a href={url('/funding/')}>Funded projects, grant identifiers &amp; acknowledgments →</a>
+        <p class="eyebrow">Funding</p>
+        <h2 id="fund-h" style="font-size:1.5rem">Our research is supported by the European Research Council and the Deutsche Forschungsgemeinschaft.</h2>
+        <a href={url('/funding/')}>Funded projects and acknowledgments →</a>
       </div>
       <div class="funding-strip__logos">
-        <FunderLogo funder="EU" height={48} />
-        <FunderLogo funder="ERC" height={48} />
-        <FunderLogo funder="DFG" height={48} />
-      </div>
-    </div>
-  </section>
-
-  <!-- ======== CTA ======== -->
-  <section class="section section--tight" aria-labelledby="join-h">
-    <div class="container join">
-      <h2 id="join-h" data-split>Curious about the hippocampus?</h2>
-      <p class="lead" data-reveal>We welcome enquiries from students, postdocs and collaborators.</p>
-      <div class="hero__cta" data-reveal>
-        <a class="btn btn--primary" href={url('/contact/')}>Contact &amp; open positions</a>
-        <a class="btn" href={url('/teaching/')} data-magnetic>Thesis projects</a>
+        <FunderLogo funder="EU" height={44} />
+        <FunderLogo funder="ERC" height={44} />
+        <FunderLogo funder="DFG" height={44} />
       </div>
     </div>
   </section>
 </Base>
 
 <style>
-  /* ---------- Hero ---------- */
-  .hero { position: relative; height: 100vh; min-height: 560px; overflow: hidden; display: grid; align-items: center; }
-  .hero__canvas, .hero__fallback, .hero__veil { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .hero__canvas { transition: filter 1s var(--ease); }
-  .hero__canvas.is-dim { filter: brightness(.35) blur(3px); }
-  .hero__fallback { display: none; background:
-    radial-gradient(40% 35% at 70% 45%, color-mix(in srgb, var(--magenta) 18%, transparent), transparent 70%),
-    radial-gradient(25% 20% at 74% 48%, color-mix(in srgb, var(--green) 28%, transparent), transparent 70%),
-    radial-gradient(60% 60% at 60% 50%, color-mix(in srgb, var(--blue) 10%, transparent), transparent 70%); }
-  .hero.no-webgl .hero__canvas { display: none; }
-  .hero.no-webgl .hero__fallback { display: block; }
-  .hero__veil { background: linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 38%, transparent 70%); pointer-events: none; }
-  .hero__steps { position: relative; z-index: 2; padding: 0 clamp(var(--s3), 6vw, var(--s7)); display: grid; }
-  .hero__step { grid-area: 1 / 1; max-width: 620px; transition: opacity .7s var(--ease), transform .9s var(--ease), filter .7s; }
-  .hero.is-pinned .hero__step:not(.is-current) { opacity: 0; transform: translateY(32px); filter: blur(6px); pointer-events: none; visibility: hidden; }
-  .hero:not(.is-pinned) .hero__step:not(:first-child) { display: none; }
-  .hero__step h2 { font-size: clamp(1.8rem, 3.4vw, 2.9rem); }
-  .hero__step .btn { margin-top: var(--s3); }
-  @media (min-width: 768px) { .hero__step:last-child { max-width: min(440px, 38vw); } }
-  .hero__name { display: inline-block; }
-  .hero__tag { display: block; font-size: .42em; color: var(--text-2); font-style: italic; margin-top: .4em; }
-  .hero__cta { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s4); }
-  .hero__meta { position: absolute; right: var(--s3); bottom: var(--s3); z-index: 2; }
+  /* ---------- Intro ---------- */
+  .intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s6); align-items: center;
+    padding: var(--s7) clamp(var(--s3), 6vw, var(--s7)) var(--s6); max-width: 1400px; margin: 0 auto;
+    background: radial-gradient(700px 400px at 80% 30%, color-mix(in srgb, var(--green) 6%, transparent), transparent 70%); }
+  .intro h1 { margin: 0; }
+  .intro__name { display: inline-block; }
+  .intro__tag { font-family: var(--font-serif); font-style: italic; font-size: clamp(1.25rem, 2vw, 1.6rem); color: var(--text-2); margin: var(--s1) 0 var(--s3); }
+  .intro__pi { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin: var(--s3) 0; }
+  .intro__pi .mono { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
+  .intro__pi a { font-family: var(--font-serif); font-size: 1.2rem; }
+  .intro__cta { display: flex; gap: var(--s1); flex-wrap: wrap; }
+  .intro__fund { color: var(--text-3); margin-top: var(--s3); }
+  @media (max-width: 1100px) { .intro { grid-template-columns: 1fr; padding-top: var(--s6); } }
+  @media (max-width: 767px) { .intro { padding: var(--s5) var(--s2) var(--s4); gap: var(--s4); } }
 
-  .hero__real { position: absolute; z-index: 2; right: clamp(24px, 7vw, 120px); top: 50%; width: min(40%, 480px); margin: 0;
-    opacity: 0; transform: translateY(-50%) scale(.9) rotate(-2deg); transition: opacity .9s var(--ease), transform 1.2s var(--ease); pointer-events: none; }
-  .hero__real.is-on { opacity: 1; transform: translateY(-50%) scale(1) rotate(0); pointer-events: auto; }
-  .hero__real video { width: 100%; aspect-ratio: 502 / 458; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--green) 40%, var(--line)); filter: url(#home-lut);
-    box-shadow: 0 30px 80px -20px color-mix(in srgb, var(--green) 35%, transparent); }
-  .hero__real figcaption { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: .8rem; color: var(--text-2); }
-  .hero:not(.is-pinned) .hero__real, .hero:not(.is-pinned) .hero__dots, .hero:not(.is-pinned) .hero__cue { display: none; }
+  .viz { margin: 0; border: 1px solid var(--line); border-radius: calc(var(--radius) + 4px); background: #05070b; overflow: hidden; }
+  .viz__stage { position: relative; aspect-ratio: 5 / 4; }
+  .viz__canvas, .viz__fallback { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .viz__canvas { transition: filter 1s var(--ease); }
+  .viz__canvas.is-dim { filter: brightness(.3) blur(3px); }
+  .viz__fallback { display: none; background:
+    radial-gradient(40% 35% at 55% 45%, color-mix(in srgb, var(--magenta) 18%, transparent), transparent 70%),
+    radial-gradient(25% 20% at 60% 48%, color-mix(in srgb, var(--green) 28%, transparent), transparent 70%); }
+  :global(.no-webgl) .viz__canvas { display: none; }
+  :global(.no-webgl) .viz__fallback { display: block; }
+  .viz__real { position: absolute; inset: 6%; display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(.94); transition: opacity .8s var(--ease), transform 1s var(--ease); pointer-events: none; }
+  .viz__real.is-on { opacity: 1; transform: none; }
+  .viz__real video { height: 100%; width: auto; max-width: 100%; object-fit: contain; aspect-ratio: 502 / 458; border-radius: 10px; filter: url(#home-lut);
+    box-shadow: 0 20px 60px -20px color-mix(in srgb, var(--green) 40%, transparent); border: 1px solid color-mix(in srgb, var(--green) 35%, var(--line)); }
+  .viz__label { position: absolute; left: 12px; top: 12px; transition: opacity .4s; }
+  .viz__real.is-on ~ .viz__label { opacity: 0; }
+  .viz__bar { display: grid; gap: 10px; padding: 14px 16px 16px; border-top: 1px solid var(--line); background: var(--bg-2); }
+  .viz__tabs { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); justify-self: start; flex-wrap: wrap; }
+  .viz__tabs button { border: 0; background: transparent; color: var(--text-2); padding: .4em 1em; border-radius: 999px; cursor: pointer; font-size: .85rem; transition: color .2s, background .2s; }
+  .viz__tabs button[aria-selected='true'] { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+  .viz__cap { font-size: .9rem; color: var(--text-2); min-height: 2.9em; }
+  .viz__cap [hidden] { display: none; }
 
-  .hero__dots { position: absolute; z-index: 3; right: var(--s3); top: 50%; transform: translateY(-50%); list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-  .hero__dots button { display: flex; align-items: center; gap: 10px; flex-direction: row-reverse; background: none; border: 0; cursor: pointer; padding: 4px; color: var(--text-3); }
-  .hero__dots button::before { content: ''; width: 8px; height: 8px; border-radius: 50%; border: 1px solid currentColor; transition: all .4s var(--ease); }
-  .hero__dots button i { font: normal .65rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; opacity: 0; transform: translateX(6px); transition: all .35s var(--ease); }
-  .hero__dots button:hover i, .hero__dots button[aria-current='step'] i { opacity: 1; transform: none; }
-  .hero__dots button[aria-current='step'] { color: var(--accent); }
-  .hero__dots button[aria-current='step']::before { background: var(--accent); box-shadow: 0 0 12px var(--accent); transform: scale(1.3); }
-  .hero__real.is-on ~ .hero__dots { right: var(--s2); }
+  /* ---------- Section heads ---------- */
+  .row-head { display: flex; justify-content: space-between; align-items: end; gap: var(--s2); border-bottom: 1px solid var(--line); margin-bottom: var(--s3); padding-bottom: var(--s2); }
+  .row-head h2 { margin: 0; font-size: clamp(1.6rem, 2.6vw, 2.2rem); }
+  .row-head .eyebrow { margin-bottom: 6px; }
+  .row-head > a { font-size: .9rem; color: var(--text-2); white-space: nowrap; }
 
-  .hero__cue { position: absolute; z-index: 2; left: clamp(var(--s3), 6vw, var(--s7)); bottom: var(--s4); display: flex; align-items: center; gap: 12px;
-    font: .7rem var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); transition: opacity .5s; }
-  .hero__cue i { width: 60px; height: 1px; background: var(--line); position: relative; overflow: hidden; }
-  .hero__cue i::after { content: ''; position: absolute; inset: 0; background: var(--accent); animation: cue 2.2s var(--ease) infinite; }
-  .hero__cue.is-hidden { opacity: 0; }
-  @keyframes cue { 0% { transform: translateX(-100%); } 60%, 100% { transform: translateX(100%); } }
-
-  @media (max-width: 1023px) { .hero__real { width: 46%; right: 56px; } }
-  @media (max-width: 767px) {
-    .hero { height: calc(100svh - 60px); align-items: end; padding-bottom: var(--s7); }
-    .hero__veil { background: linear-gradient(0deg, var(--bg) 10%, color-mix(in srgb, var(--bg) 60%, transparent) 55%, transparent); }
-    .hero__steps { padding: 0 var(--s2); }
-    .hero__real { top: var(--s3); left: var(--s2); right: var(--s2); width: auto; max-width: 340px; margin-inline: auto; transform: scale(.9); }
-    .hero__real.is-on { transform: none; }
-    .hero__dots { right: 8px; } .hero__dots i { display: none; }
-    .hero__cue { display: none; }
-  }
-
-  /* ---------- Mission ---------- */
-  .mission { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--s6); align-items: center; }
-  .mission h2 { font-size: clamp(1.6rem, 2.6vw, 2.3rem); }
-  @media (max-width: 960px) { .mission { grid-template-columns: 1fr; } }
-
-  /* ---------- Showcase ---------- */
-  .showcase { padding: var(--s7) 0; position: relative; }
-  .showcase__head { display: flex; justify-content: space-between; align-items: end; gap: var(--s3); padding: 0 clamp(var(--s3), 6vw, var(--s7)); margin-bottom: var(--s5); flex-wrap: wrap; }
-  .showcase__head h2 { max-width: 16ch; margin: 0; }
-  .showcase__meter { display: none; align-items: center; gap: 12px; color: var(--text-2); font-size: .8rem; }
-  .showcase__meter i { width: 120px; height: 2px; background: var(--line); display: block; }
-  .showcase__meter b { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); box-shadow: 0 0 8px var(--accent); }
-  .showcase__viewport { padding: 0 clamp(var(--s3), 6vw, var(--s7)); }
-  .showcase__track { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
-  .panel__link { display: grid; gap: var(--s3); text-decoration: none; height: 100%; padding: var(--s3); border: 1px solid var(--line); border-radius: calc(var(--radius) + 6px);
-    background: linear-gradient(160deg, color-mix(in srgb, var(--pc) 7%, var(--surface)), var(--bg-2) 60%); transition: border-color .4s; }
-  .panel__link:hover { border-color: color-mix(in srgb, var(--pc) 55%, var(--line)); color: inherit; }
-  .panel__media { position: relative; aspect-ratio: 16 / 10; border-radius: var(--radius); overflow: hidden; background: #000; }
-  .panel__media video, .panel__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease); }
-  .panel__media img { object-fit: contain; }
-  .panel__link:hover .panel__media video, .panel__link:hover .panel__media img { transform: scale(1.05); }
-  .panel__label { position: absolute; left: 12px; bottom: 12px; background: rgba(5,7,11,.7); border-radius: 6px; backdrop-filter: blur(6px); }
-  .panel__trace { width: 100%; height: 100%; background: radial-gradient(80% 80% at 50% 50%, color-mix(in srgb, var(--red) 10%, transparent), transparent); }
-  .panel__trace path { fill: none; stroke: var(--red); stroke-width: 1.4; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px var(--red)); stroke-dasharray: 1; stroke-dashoffset: 0; }
-  .panel__flow { width: 100%; height: 100%; }
-  .flow-path { fill: none; stroke: var(--blue); stroke-width: 2; stroke-dasharray: 3 12; opacity: .8; animation: flow 2.4s linear infinite; filter: drop-shadow(0 0 3px var(--blue)); }
+  /* ---------- Research themes ---------- */
+  .themes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 1280px) { .themes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .themes { grid-template-columns: 1fr; } }
+  .section--tight { padding-block: var(--s6); }
+  .theme { display: flex; flex-direction: column; gap: 6px; height: 100%; padding: var(--s2); }
+  .theme__media { position: relative; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: #000; margin-bottom: var(--s1); }
+  .theme__media video, .theme__media img, .theme__media svg { width: 100%; height: 100%; object-fit: cover; transition: transform 1s var(--ease); }
+  .theme__media img { object-fit: contain; }
+  .theme:hover .theme__media video, .theme:hover .theme__media img { transform: scale(1.05); }
+  .theme__label { position: absolute; left: 8px; bottom: 8px; background: rgba(5,7,11,.75); border-radius: 6px; }
+  .theme h3 { font-size: clamp(1.05rem, 1.35vw, 1.25rem); margin: 4px 0 0; overflow-wrap: anywhere; hyphens: auto; }
+  .theme p { margin: 0; }
+  .theme__trace { fill: none; stroke: var(--red); stroke-width: 1.3; vector-effect: non-scaling-stroke; }
+  .flow-path { fill: none; stroke: var(--blue); stroke-width: 2; stroke-dasharray: 3 12; opacity: .8; animation: flow 2.4s linear infinite; }
   .flow-path:nth-child(even) { stroke: var(--magenta); animation-duration: 3.1s; }
   @keyframes flow { to { stroke-dashoffset: -60; } }
-  .panel__text { display: flex; flex-direction: column; gap: 4px; }
-  .panel__n { color: var(--pc); }
-  .panel__sub { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
-  .panel__text h3 { font-size: clamp(1.6rem, 2.6vw, 2.4rem); margin: 6px 0 var(--s1); }
-  .panel__go { color: var(--pc); font-size: .95rem; margin-top: auto; }
-  .panel__go span { display: inline-block; transition: transform .35s var(--ease); }
-  .panel__link:hover .panel__go span { transform: translateX(6px); }
 
-  /* Horizontal mode (desktop + motion; enabled by JS) */
-  .showcase.is-horizontal { height: 100vh; padding: var(--s6) 0 var(--s5); display: flex; flex-direction: column; overflow: hidden; }
-  .showcase.is-horizontal .showcase__meter { display: flex; }
-  .showcase.is-horizontal .showcase__viewport { flex: 1; min-height: 0; }
-  .showcase.is-horizontal .showcase__track { display: flex; height: 100%; width: max-content; gap: var(--s5); }
-  .showcase.is-horizontal .panel { width: min(1040px, 72vw); height: 100%; }
-  .showcase.is-horizontal .panel__link { grid-template-columns: 1.35fr 1fr; align-items: stretch; padding: var(--s4); }
-  .showcase.is-horizontal .panel__media { aspect-ratio: auto; height: 100%; min-height: 0; }
-  .showcase.is-horizontal .panel__text { justify-content: center; padding: var(--s3) var(--s2); }
-  .showcase.is-horizontal .panel__go { margin-top: var(--s3); }
-
-  /* ---------- Numbers ---------- */
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s4); margin: var(--s5) 0 var(--s3); }
-  .stats div { border-top: 1px solid var(--line); padding-top: var(--s3); display: flex; flex-direction: column; gap: 6px; }
-  .stats dd { order: -1; }
-  .stats dt { color: var(--text-2); }
-  .stats dd { margin: 0; font-family: var(--font-serif); font-size: clamp(3.5rem, 8vw, 6.5rem); line-height: 1; color: var(--accent); text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 40%, transparent); font-variant-numeric: tabular-nums; }
-  .stats small { font-size: .45em; margin-left: 4px; }
-
-  /* ---------- Lists ---------- */
-  .row-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); margin-bottom: var(--s1); }
-  .row-head h2 { font-size: 1.8rem; margin: 0 0 var(--s2); }
-  .row-head a { font-size: .9rem; color: var(--text-2); }
+  /* ---------- News / publications ---------- */
+  .two-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: var(--s6); }
+  @media (max-width: 960px) { .two-col { grid-template-columns: 1fr; } }
   .list { list-style: none; padding: 0; margin: 0; }
   .list li { border-bottom: 1px solid var(--line); }
   .row-link { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--s2); padding: var(--s2) var(--s1); text-decoration: none; border-radius: 8px; transition: background .3s, padding .4s var(--ease); background: none !important; }
-  .row-link .mono { font-size: .75rem; grid-column: 1; }
-  .row-link span:not(.mono) { grid-column: 1; }
+  .row-link .mono { font-size: .75rem; }
   .row-link i { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-style: normal; color: var(--accent); opacity: 0; transform: translateX(-8px); transition: all .35s var(--ease); }
   .row-link:hover { background: color-mix(in srgb, var(--accent) 6%, transparent) !important; padding-left: var(--s2); color: inherit; }
   .row-link:hover i { opacity: 1; transform: none; }
+  .pubs { list-style: none; padding: 0; margin: 0; }
+  .pubs li { display: grid; grid-template-columns: 52px 1fr; gap: var(--s2); padding: var(--s2) 0; border-bottom: 1px solid var(--line); }
+  .pubs__year { color: var(--accent); font-size: .85rem; padding-top: 3px; }
+  .pubs li > div { display: grid; gap: 3px; min-width: 0; }
+  .pubs__title { font-family: var(--font-serif); font-size: 1.08rem; line-height: 1.35; text-decoration: none; background: none !important; }
+  .pubs__title:hover { color: var(--accent); }
+  .pubs__authors { font-size: .85rem; color: var(--text-2); }
+  .pubs__authors b { color: var(--text); font-weight: 600; }
+  .pubs__journal { font-size: .85rem; font-style: italic; color: var(--text-3); }
+
+  /* ---------- People ---------- */
+  .people { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: var(--s3); }
+  @media (max-width: 960px) { .people { grid-template-columns: 1fr; } }
+  .pi { display: grid; grid-template-columns: 150px 1fr; gap: var(--s3); align-items: start; }
+  @media (max-width: 560px) { .pi { grid-template-columns: 1fr; } }
+  .pi h3 { margin-bottom: var(--s1); }
+  .pi__photo { aspect-ratio: 4 / 5; border-radius: 10px; display: grid; place-content: center; text-align: center; border: 1px dashed color-mix(in srgb, var(--amber) 50%, transparent); overflow: hidden; }
+  .pi__photo img { width: 100%; height: 100%; object-fit: cover; }
+  .pi__photo span { font-family: var(--font-serif); font-size: 2.4rem; color: var(--text-3); }
+  .pi__photo small { font-size: .6rem; color: var(--amber); text-transform: uppercase; letter-spacing: .1em; }
+  .join h3 { margin-bottom: var(--s1); }
 
   .funding-strip { display: flex; justify-content: space-between; align-items: center; gap: var(--s4); flex-wrap: wrap;
-    padding: var(--s5); border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-2); }
+    padding: var(--s4); border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-2); }
   .funding-strip > div:first-child { max-width: 640px; }
   .funding-strip__logos { display: flex; gap: var(--s3); align-items: center; flex-wrap: wrap; }
-  .join { text-align: center; } .join h2 { margin-inline: auto; } .join p { margin-inline: auto; } .join .hero__cta { justify-content: center; }
 </style>
 
 <script>
   import { gsap } from 'gsap';
-  import { ScrollTrigger } from 'gsap/ScrollTrigger';
   import { SplitText } from 'gsap/SplitText';
-  gsap.registerPlugin(ScrollTrigger, SplitText);
+  gsap.registerPlugin(SplitText);
   const motionOK = () => document.documentElement.dataset.motion !== 'off';
 
-  // Three.js is loaded only on the homepage, after first paint
+  // Three.js figure is loaded only on the homepage, after first paint
   if (document.querySelector('[data-hero]')) import('../scripts/hero');
 
-  /* Hero intro: letters rise, then supporting text */
+  // Intro: the lab name rises letter by letter, then the supporting text
   if (motionOK()) {
     const name = document.querySelector<HTMLElement>('[data-hero-name]');
-    const tl = gsap.timeline({ delay: 0.15 });
+    const tl = gsap.timeline({ delay: 0.1 });
     if (name) {
       const split = SplitText.create(name, { type: 'chars', mask: 'chars', aria: 'auto' });
-      tl.from(split.chars, { yPercent: 120, rotate: 8, duration: 1.4, ease: 'expo.out', stagger: 0.06 });
+      tl.from(split.chars, { yPercent: 120, duration: 1.2, ease: 'expo.out', stagger: 0.05 });
     }
-    tl.from('[data-intro]', { y: 24, opacity: 0, filter: 'blur(8px)', duration: 1.1, ease: 'power3.out', stagger: 0.12 }, 0.35);
+    tl.from('[data-intro]', { y: 18, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08 }, 0.25);
   }
 
-  /* Muted autoplay of media when visible (skipped with reduced motion) */
+  // Muted autoplay of preview videos when visible (skipped with reduced motion)
   document.querySelectorAll<HTMLVideoElement>('video[data-autoplay]').forEach((v) => {
     new IntersectionObserver(([e]) => {
       if (e.isIntersecting && motionOK()) v.play().catch(() => {}); else v.pause();
     }, { threshold: 0.3 }).observe(v);
   });
-
-  /* Methods showcase: pinned horizontal scroll on desktop */
-  const sc = document.querySelector<HTMLElement>('[data-showcase]');
-  const track = sc?.querySelector<HTMLElement>('[data-track]');
-  if (sc && track) {
-    const panels = [...track.querySelectorAll<HTMLElement>('.panel')];
-    const count = sc.querySelector<HTMLElement>('[data-sc-count]')!;
-    const bar = sc.querySelector<HTMLElement>('[data-sc-bar]')!;
-    const trace = sc.querySelector<SVGPathElement>('.panel__trace path');
-    const mm = gsap.matchMedia();
-    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
-      if (!motionOK()) return;
-      sc.classList.add('is-horizontal');
-      const dist = () => track.scrollWidth - sc.clientWidth + parseFloat(getComputedStyle(track.parentElement!).paddingLeft) * 2;
-      let last = -1;
-      const tween = gsap.to(track, {
-        x: () => -dist(), ease: 'none',
-        scrollTrigger: {
-          trigger: sc, start: 'top top', end: () => `+=${dist()}`, pin: true, scrub: 0.8, invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            gsap.set(bar, { scaleX: self.progress });
-            const i = Math.min(panels.length - 1, Math.round(self.progress * (panels.length - 1)));
-            if (i !== last) {
-              last = i; count.textContent = `0${i + 1} / 0${panels.length}`;
-              document.body.style.setProperty('--accent', panels[i].dataset.panelAccent!);
-            }
-          },
-          onLeave: () => document.body.style.removeProperty('--accent'),
-          onLeaveBack: () => document.body.style.removeProperty('--accent'),
-        },
-      });
-      panels.forEach((panel) => {
-        const media = panel.querySelector('.panel__media'), text = panel.querySelector('.panel__text');
-        gsap.from(media, { scale: 0.86, opacity: 0.25, ease: 'none', scrollTrigger: { trigger: panel, containerAnimation: tween, start: 'left 95%', end: 'left 35%', scrub: true } });
-        gsap.from(text, { x: 80, opacity: 0, ease: 'none', scrollTrigger: { trigger: panel, containerAnimation: tween, start: 'left 80%', end: 'left 30%', scrub: true } });
-      });
-      if (trace) gsap.fromTo(trace, { strokeDashoffset: 1 }, { strokeDashoffset: 0, ease: 'none', scrollTrigger: { trigger: trace.closest('.panel'), containerAnimation: tween, start: 'left 90%', end: 'right 80%', scrub: true } });
-      return () => { sc.classList.remove('is-horizontal'); gsap.set(track, { clearProps: 'transform' }); };
-    });
-    // Narrow screens: draw the trace once when it enters view
-    mm.add('(max-width: 1023px)', () => {
-      if (!trace || !motionOK()) return;
-      gsap.fromTo(trace, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.4, ease: 'power2.inOut', scrollTrigger: { trigger: trace, start: 'top 85%', once: true } });
-    });
-  }
 </script>

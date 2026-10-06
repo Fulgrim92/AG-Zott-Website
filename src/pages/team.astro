@@ -2,22 +2,54 @@
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import team from '../data/team.json';
+import site from '../data/site.json';
+import papers from '../data/papers.json';
 import { url } from '../lib/url';
-const roles = [...new Set(team.map((m) => m.role))];
+const pi = site.pi;
+const members = team.filter((m) => m.role !== 'PI');
+const roles = [...new Set(members.map((m) => m.role))];
+const piPapers = papers.filter((p) => !p.placeholder && p.authors.includes('Zott B')).sort((a, b) => b.year - a.year);
 const initials = (n: string) => n.replace(/\[.*?\]/g, '').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('');
 ---
 <Base title="Team">
   <PageHeader eyebrow="Team" title="The people behind the data" lead="Scientists, students and staff working together on hippocampal circuits." />
+  <section class="section section--tight" aria-labelledby="pi-h">
+    <div class="container pi">
+      <div class="pi__photo" data-wipe>{pi.photo ? <img src={url(pi.photo)} alt={`Portrait of ${pi.name}`} /> : <div class="avatar" aria-hidden="true"><span>BZ</span><small>photo placeholder</small></div>}</div>
+      <div>
+        <p class="mono small role">{pi.role}</p>
+        <h2 id="pi-h" data-split>{pi.name}</h2>
+        <p class="ph small">{pi.title} · {site.department}</p>
+        <p class="lead">{pi.bio}</p>
+        <p class="small ph">{pi.bioNote}</p>
+        <ul class="chips" role="list">
+          {['Alzheimer’s disease', 'β-amyloid', 'Neuronal hyperactivity', 'Hippocampus · CA1', 'Two-photon imaging', 'Neuroradiology'].map((c) => <li class="tag">{c}</li>)}
+        </ul>
+        <p class="links">
+          <a href={url('/contact/')}>Contact</a>
+          {Object.entries(pi.links).map(([k, v]) => <a href={v as string} rel="noopener">{k} ↗</a>)}
+          <span class="ph small">ORCID · Google Scholar — to add</span>
+        </p>
+        {piPapers.length > 0 && (
+          <>
+            <h3 class="small-h">Selected publications</h3>
+            <ul class="pi__pubs">{piPapers.map((p) => <li><a href={p.doi ? `https://doi.org/${p.doi}` : url('/papers/')}>{p.title}</a> <span class="muted">· {p.journal.split(/\s\d/)[0]}, {p.year}</span></li>)}</ul>
+          </>
+        )}
+      </div>
+    </div>
+  </section>
   <section class="section section--tight">
     <div class="container">
+      <h2 class="small-h" style="margin-bottom:var(--s3)">Group members</h2>
       <div class="filters" role="group" aria-label="Filter by role">
         <button class="btn btn--sm" aria-pressed="true" data-role="all">All</button>
         {roles.map((r) => <button class="btn btn--sm" aria-pressed="false" data-role={r}>{r}</button>)}
       </div>
       <ul class="people" role="list">
-        {team.map((m) => (
+        {members.map((m) => (
           <li data-person data-role={m.role} data-reveal>
-            <article class="person card" data-tilt>
+            <article class="person card">
               {m.photo
                 ? <img src={url(m.photo)} alt={`Portrait of ${m.name}`} loading="lazy" width="320" height="320" />
                 : <div class="avatar" aria-hidden="true"><span>{initials(m.name) || '—'}</span><small>photo placeholder</small></div>}
@@ -37,6 +69,14 @@ const initials = (n: string) => n.replace(/\[.*?\]/g, '').trim().split(/\s+/).ma
   </section>
 </Base>
 <style>
+  .pi { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: var(--s6); align-items: start; }
+  @media (max-width: 860px) { .pi { grid-template-columns: 1fr; } .pi__photo { max-width: 280px; } }
+  .pi__photo img, .pi__photo .avatar { width: 100%; aspect-ratio: 4 / 5; border-radius: var(--radius); object-fit: cover; margin: 0; }
+  .pi .lead { max-width: 62ch; }
+  .chips { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: var(--s3) 0; }
+  .pi .links { display: flex; gap: var(--s3); flex-wrap: wrap; align-items: baseline; }
+  .small-h { font-family: var(--font-mono); font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); margin-top: var(--s4); }
+  .pi__pubs { padding-left: 1.1em; display: grid; gap: 6px; font-size: .95rem; }
   .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--s5); }
   .people { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
   .person { height: 100%; padding: var(--s3); }

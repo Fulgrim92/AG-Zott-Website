@@ -1,5 +1,6 @@
 /**
- * Hero: scroll-driven journey from whole brain → hippocampus → CA1.
+ * Homepage figure: an interactive journey from whole brain → hippocampus → CA1 → real recording,
+ * stepped with tabs.
  *
  * ILLUSTRATIVE SCHEMATIC. Geometry is procedurally generated (ellipsoid hemispheres and a
  * C-shaped hippocampal curve) and is not anatomical data. Replace with an atlas mesh
@@ -7,9 +8,6 @@
  */
 import * as THREE from 'three';
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
 
 const hero = document.querySelector<HTMLElement>('[data-hero]');
 const canvas = document.querySelector<HTMLCanvasElement>('[data-hero-canvas]');
@@ -137,8 +135,8 @@ function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
   group.add(cell);
 
   /* ---- Camera path ---- */
-  const camStart = new THREE.Vector3(0, 0.9, 6.2);
-  const camMid = new THREE.Vector3(2.0, 0.6, 2.4);
+  const camStart = new THREE.Vector3(0, 0.8, 4.3);
+  const camMid = new THREE.Vector3(1.9, 0.55, 2.0);
   const camEnd = ca1Target.clone().add(new THREE.Vector3(0.5, 0.14, 0.5));
   const lookStart = new THREE.Vector3(0, 0, 0);
   const state = { p: 0, intro: motionOK() ? 0 : 1 };
@@ -148,7 +146,7 @@ function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w < 768 ? 55 : 42;
+    camera.fov = innerWidth < 768 ? 48 : 40;
     camera.updateProjectionMatrix();
   };
   new ResizeObserver(resize).observe(canvas);
@@ -180,77 +178,53 @@ function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
 
   let raf = 0, visible = true;
   const loop = (t: number) => { render(t); raf = requestAnimationFrame(loop); };
-  const start = () => { if (!raf && visible) raf = requestAnimationFrame(loop); };
+  const start = () => { if (!raf && visible && motionOK()) raf = requestAnimationFrame(loop); };
   const stop = () => { cancelAnimationFrame(raf); raf = 0; };
-
-  // Pause rendering when the hero is off-screen. ScrollTrigger re-parents the hero into a
-  // pin-spacer, which can produce a transient zero-size entry — so re-check the real rect.
-  const onScreen = () => { const r = hero.getBoundingClientRect(); return r.height > 0 && r.bottom > 0 && r.top < innerHeight; };
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting || onScreen(); visible && motionOK() ? start() : stop(); }).observe(hero);
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible && motionOK()) { start(); maybeTour(); } else { stop(); render(); } }).observe(hero);
   addEventListener('pointermove', (e) => { pointer.tx = e.clientX / innerWidth - 0.5; pointer.ty = e.clientY / innerHeight - 0.5; }, { passive: true });
 
-  const steps = [...hero.querySelectorAll<HTMLElement>('[data-step]')];
-  const dots = [...hero.querySelectorAll<HTMLButtonElement>('[data-dot]')];
+  /* ---- Steps: Brain → Hippocampus → CA1 → Recording, chosen with tabs (no scroll hijacking) ---- */
+  const STOPS = [0, 0.42, 0.8, 1];
+  const tabs = [...hero.querySelectorAll<HTMLButtonElement>('[data-viz-step]')];
+  const captions = [...hero.querySelectorAll<HTMLElement>('[data-viz-caption]')];
   const real = hero.querySelector<HTMLElement>('[data-hero-real]');
   const realVideo = real?.querySelector('video');
-  const cue = hero.querySelector<HTMLElement>('[data-cue]');
-  const STOPS = [0, 0.3, 0.62, 0.92]; // scroll progress at which each step is fully in view
-  let current = -1;
-  const setStep = (p: number) => {
-    const idx = p < 0.2 ? 0 : p < 0.5 ? 1 : p < 0.8 ? 2 : 3;
-    cue?.classList.toggle('is-hidden', p > 0.02);
-    if (idx === current) return;
-    current = idx;
-    steps.forEach((s, i) => s.classList.toggle('is-current', i === idx));
-    dots.forEach((d, i) => d.setAttribute('aria-current', i === idx ? 'step' : 'false'));
-    real?.classList.toggle('is-on', idx === 3);
-    canvas.classList.toggle('is-dim', idx === 3);
-    if (realVideo) idx === 3 ? realVideo.play().catch(() => {}) : realVideo.pause();
-  };
-  dots.forEach((d, i) => d.addEventListener('click', () => {
-    if (!trigger) return;
-    scrollTo({ top: trigger.start + (trigger.end - trigger.start) * STOPS[i], behavior: 'smooth' });
-  }));
+  let tourTimer = 0, toured = false, touched = false;
 
-  let trigger: ScrollTrigger | null = null;
-  const enableMotion = () => {
-    hero.classList.add('is-pinned');
-    trigger = ScrollTrigger.create({
-      trigger: hero,
-      refreshPriority: 10,
-      start: 'top top',
-      end: '+=320%',
-      pin: true,
-      scrub: 0.6,
-      onUpdate: (self) => { state.p = self.progress; setStep(self.progress); visible = true; start(); },
+  const go = (i: number) => {
+    tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
+    captions.forEach((c, k) => (c.hidden = k !== i));
+    const showReal = i === 3;
+    real?.classList.toggle('is-on', showReal);
+    canvas.classList.toggle('is-dim', showReal);
+    if (realVideo) showReal && motionOK() ? realVideo.play().catch(() => {}) : realVideo.pause();
+    gsap.killTweensOf(state, 'p');
+    if (motionOK()) { start(); gsap.to(state, { p: STOPS[i], duration: 2.4, ease: 'power2.inOut' }); }
+    else { state.p = STOPS[i]; render(); }
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => { touched = true; clearTimeout(tourTimer); go(i); });
+    t.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      e.preventDefault(); touched = true; clearTimeout(tourTimer);
+      const n = (i + d + tabs.length) % tabs.length; tabs[n].focus(); go(n);
     });
-    start();
-    setStep(0);
-    // The hero is loaded lazily, after other pinned sections were measured: re-order and re-measure
-    ScrollTrigger.sort();
-    ScrollTrigger.refresh();
-  };
-  const disableMotion = () => {
-    trigger?.kill(); trigger = null;
-    hero.classList.remove('is-pinned');
-    stop();
-    state.p = 0.25; state.intro = 1; // a single, static, informative frame
-    render();
-  };
-
-  // Jump links inside the hero ("Enter CA1") scroll to the end of the pinned journey
-  hero.querySelector('[data-enter-ca1]')?.addEventListener('click', (e) => {
-    if (!trigger) return;
-    e.preventDefault();
-    scrollTo({ top: trigger.end, behavior: 'smooth' });
   });
+  // A short guided tour on first view (brain → hippocampus → CA1), stopped by any interaction
+  function maybeTour() {
+    if (toured || touched || !motionOK()) return;
+    toured = true;
+    const next = (i: number) => { if (touched || i > 2) return; go(i); tourTimer = window.setTimeout(() => next(i + 1), 4200); };
+    tourTimer = window.setTimeout(() => next(1), 2600);
+  }
 
-  motionOK() ? enableMotion() : disableMotion();
+  go(0);
   if (motionOK()) {
     gsap.to(state, { intro: 1, duration: 2.6, ease: 'expo.out', delay: 0.1 });
     gsap.from(canvas, { opacity: 0, duration: 2, ease: 'power2.out' });
-  }
-  addEventListener('agz:motion', (e) => ((e as CustomEvent).detail.allowed ? enableMotion() : disableMotion()));
+  } else { state.intro = 1; render(); }
+  addEventListener('agz:motion', (e) => { if ((e as CustomEvent).detail.allowed) start(); else { stop(); state.intro = 1; render(); } });
   addEventListener('agz:palette', () => location.reload());
 }
 
