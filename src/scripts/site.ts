@@ -1,5 +1,5 @@
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { initMotion } from './motion';
 
 const root = document.documentElement;
 
@@ -72,21 +72,5 @@ sidebar.addEventListener('keydown', (e) => {
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 });
 
-/* ---------- Card spotlight (pointer-following glow) ---------- */
-document.querySelectorAll<HTMLElement>('a.card').forEach((card) => {
-  card.addEventListener('pointermove', (e) => {
-    const r = card.getBoundingClientRect();
-    card.style.setProperty('--mx', `${e.clientX - r.left}px`);
-    card.style.setProperty('--my', `${e.clientY - r.top}px`);
-  });
-});
-
-/* ---------- Scroll reveals ---------- */
-gsap.registerPlugin(ScrollTrigger);
-if (motionAllowed()) {
-  ScrollTrigger.batch('[data-reveal]', {
-    start: 'top 90%',
-    once: true,
-    onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08 }),
-  });
-}
+/* ---------- Motion & micro-interactions ---------- */
+initMotion();

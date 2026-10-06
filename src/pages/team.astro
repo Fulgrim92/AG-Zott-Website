@@ -17,7 +17,7 @@ const initials = (n: string) => n.replace(/\[.*?\]/g, '').trim().split(/\s+/).ma
       <ul class="people" role="list">
         {team.map((m) => (
           <li data-person data-role={m.role} data-reveal>
-            <article class="person card">
+            <article class="person card" data-tilt>
               {m.photo
                 ? <img src={url(m.photo)} alt={`Portrait of ${m.name}`} loading="lazy" width="320" height="320" />
                 : <div class="avatar" aria-hidden="true"><span>{initials(m.name) || '—'}</span><small>photo placeholder</small></div>}
@@ -51,9 +51,11 @@ const initials = (n: string) => n.replace(/\[.*?\]/g, '').trim().split(/\s+/).ma
   [data-person][hidden] { display: none; }
 </style>
 <script>
+  import { flipFilter } from '../scripts/flipfilter';
   const btns = document.querySelectorAll<HTMLButtonElement>('[data-role]:is(button)');
   btns.forEach((b) => b.addEventListener('click', () => {
     btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    document.querySelectorAll<HTMLElement>('[data-person]').forEach((p) => (p.hidden = b.dataset.role !== 'all' && p.dataset.role !== b.dataset.role));
+    const people = [...document.querySelectorAll<HTMLElement>('[data-person]')];
+    flipFilter(people, () => people.forEach((p) => (p.hidden = b.dataset.role !== 'all' && p.dataset.role !== b.dataset.role)));
   }));
 </script>

@@ -115,9 +115,23 @@ function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
     dend.push(x, y, z, x + (rand() - 0.5) * 0.02, y - 0.09 - rand() * 0.05, z + (rand() - 0.5) * 0.02);
     dend.push(x, y, z, x + (rand() - 0.5) * 0.03, y + 0.03 + rand() * 0.02, z + (rand() - 0.5) * 0.03);
   }
-  const somaMat = new THREE.PointsMaterial({ size: 0.018, map: dotTex, color: ca1Color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  // Each soma "fires" now and then: a fast rise and slow decay, like a calcium transient
+  const nSoma = somata.length / 3, act = new Float32Array(nSoma);
+  const somaCol = new THREE.Float32BufferAttribute(new Float32Array(nSoma * 3), 3);
+  const somaGeo = geo(somata); somaGeo.setAttribute('color', somaCol);
+  const somaMat = new THREE.PointsMaterial({ size: 0.02, map: dotTex, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const fire = () => {
+    for (let i = 0; i < nSoma; i++) {
+      if (act[i] < 0.02 && Math.random() < 0.004) act[i] = 1;
+      act[i] *= 0.94;
+      const k = 0.3 + act[i] * 2.2;
+      somaCol.setXYZ(i, ca1Color.r * k, ca1Color.g * k, ca1Color.b * k);
+    }
+    somaCol.needsUpdate = true;
+  };
+  fire();
   const dendMat = new THREE.LineBasicMaterial({ color: ca1Color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending });
-  cell.add(new THREE.Points(geo(somata), somaMat), new THREE.LineSegments(geo(dend), dendMat));
+  cell.add(new THREE.Points(somaGeo, somaMat), new THREE.LineSegments(geo(dend), dendMat));
   cell.position.copy(ca1Target);
   cell.lookAt(0, 0, 0);
   group.add(cell);
@@ -127,7 +141,7 @@ function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
   const camMid = new THREE.Vector3(2.0, 0.6, 2.4);
   const camEnd = ca1Target.clone().add(new THREE.Vector3(0.5, 0.14, 0.5));
   const lookStart = new THREE.Vector3(0, 0, 0);
-  const state = { p: 0 };
+  const state = { p: 0, intro: motionOK() ? 0 : 1 };
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
 
   const resize = () => {
@@ -144,10 +158,11 @@ function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
   const render = (time = 0) => {
     const p = state.p;
     // Two-stage Bézier-ish blend: start → mid → end
-    const a = Math.min(p / 0.55, 1), b = Math.max((p - 0.55) / 0.45, 0);
+    const a = Math.min(p / 0.5, 1), b = Math.min(Math.max((p - 0.5) / 0.3, 0), 1);
     tmp.lerpVectors(camStart, camMid, ease(a)).lerp(camEnd, ease(b));
     camera.position.copy(tmp);
-    look.lerpVectors(lookStart, ca1Target, ease(Math.min(p / 0.7, 1)));
+    camera.position.z += (1 - state.intro) * 5; camera.position.y += (1 - state.intro) * 1.2;
+    look.lerpVectors(lookStart, ca1Target, ease(Math.min(p / 0.6, 1)));
     camera.lookAt(look);
 
     pointer.x += (pointer.tx - pointer.x) * 0.05;
@@ -157,6 +172,8 @@ function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
 
     (brain.material as THREE.PointsMaterial).opacity = 0.55 * (1 - ease(b) * 0.85);
     somaMat.opacity = ease(b);
+    if (b > 0 && motionOK()) fire();
+    cell.rotation.z = (motionOK() ? time * 0.00003 : 0) * b;
     dendMat.opacity = ease(b) * 0.35;
     renderer.render(scene, camera);
   };
@@ -173,29 +190,51 @@ function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
   addEventListener('pointermove', (e) => { pointer.tx = e.clientX / innerWidth - 0.5; pointer.ty = e.clientY / innerHeight - 0.5; }, { passive: true });
 
   const steps = [...hero.querySelectorAll<HTMLElement>('[data-step]')];
+  const dots = [...hero.querySelectorAll<HTMLButtonElement>('[data-dot]')];
+  const real = hero.querySelector<HTMLElement>('[data-hero-real]');
+  const realVideo = real?.querySelector('video');
+  const cue = hero.querySelector<HTMLElement>('[data-cue]');
+  const STOPS = [0, 0.3, 0.62, 0.92]; // scroll progress at which each step is fully in view
+  let current = -1;
   const setStep = (p: number) => {
-    const idx = p < 0.3 ? 0 : p < 0.7 ? 1 : 2;
+    const idx = p < 0.2 ? 0 : p < 0.5 ? 1 : p < 0.8 ? 2 : 3;
+    cue?.classList.toggle('is-hidden', p > 0.02);
+    if (idx === current) return;
+    current = idx;
     steps.forEach((s, i) => s.classList.toggle('is-current', i === idx));
+    dots.forEach((d, i) => d.setAttribute('aria-current', i === idx ? 'step' : 'false'));
+    real?.classList.toggle('is-on', idx === 3);
+    canvas.classList.toggle('is-dim', idx === 3);
+    if (realVideo) idx === 3 ? realVideo.play().catch(() => {}) : realVideo.pause();
   };
+  dots.forEach((d, i) => d.addEventListener('click', () => {
+    if (!trigger) return;
+    scrollTo({ top: trigger.start + (trigger.end - trigger.start) * STOPS[i], behavior: 'smooth' });
+  }));
 
   let trigger: ScrollTrigger | null = null;
   const enableMotion = () => {
     hero.classList.add('is-pinned');
     trigger = ScrollTrigger.create({
       trigger: hero,
+      refreshPriority: 10,
       start: 'top top',
-      end: '+=220%',
+      end: '+=320%',
       pin: true,
       scrub: 0.6,
       onUpdate: (self) => { state.p = self.progress; setStep(self.progress); visible = true; start(); },
     });
     start();
+    setStep(0);
+    // The hero is loaded lazily, after other pinned sections were measured: re-order and re-measure
+    ScrollTrigger.sort();
+    ScrollTrigger.refresh();
   };
   const disableMotion = () => {
     trigger?.kill(); trigger = null;
     hero.classList.remove('is-pinned');
     stop();
-    state.p = 0.25; // a single, static, informative frame
+    state.p = 0.25; state.intro = 1; // a single, static, informative frame
     render();
   };
 
@@ -207,6 +246,10 @@ function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
   });
 
   motionOK() ? enableMotion() : disableMotion();
+  if (motionOK()) {
+    gsap.to(state, { intro: 1, duration: 2.6, ease: 'expo.out', delay: 0.1 });
+    gsap.from(canvas, { opacity: 0, duration: 2, ease: 'power2.out' });
+  }
   addEventListener('agz:motion', (e) => ((e as CustomEvent).detail.allowed ? enableMotion() : disableMotion()));
   addEventListener('agz:palette', () => location.reload());
 }

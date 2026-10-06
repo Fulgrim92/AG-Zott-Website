@@ -40,6 +40,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 </head>
 <body style={accent ? `--accent:${accent}` : undefined}>
   <a class="skip-link" href="#content">Skip to content</a>
+  <div class="progress" data-progress aria-hidden="true"></div>
   <div class="shell">
     <Sidebar />
     <main id="content" class="main" tabindex="-1">

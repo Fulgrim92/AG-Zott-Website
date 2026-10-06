@@ -1,27 +1,48 @@
 ---
 import Base from '../layouts/Base.astro';
 import Label from '../components/Label.astro';
-import assets from '../data/assets.json';
+import RoiFigure from '../components/RoiFigure.astro';
 import CA1Layers from '../components/CA1Layers.astro';
 import FunderLogo from '../components/FunderLogo.astro';
+import assets from '../data/assets.json';
 import site from '../data/site.json';
 import news from '../data/news.json';
 import papers from '../data/papers.json';
+import { datasets } from '../scripts/signals';
 import { url } from '../lib/url';
 
-const methods = [
-  { href: '/research/two-photon/', title: 'Two-photon imaging', sub: 'Hippocampal CA1', color: 'var(--green)', text: 'Watching hundreds of neurons in the living hippocampus — and catching the earliest, Alzheimer’s-related hyperactivity.' },
-  { href: '/research/immunohistochemistry/', title: 'Immunohistochemistry', sub: 'Plaques & cells', color: 'var(--blue)', text: 'Staining brain sections to map amyloid plaques and the cells around them.' },
-  { href: '/research/electrophysiology/', title: 'Electrophysiology', sub: 'EEG · LTP · LFP', color: 'var(--red)', text: 'From seizures in the whole brain to plasticity at single synapses.' },
-  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', title: 'Glymphatic system', sub: 'Brain clearance', color: 'var(--magenta)', text: 'How cerebrospinal fluid moves through brain tissue and clears waste.' }] : []),
-];
 const rec = assets.twoPhoton.recordings[0];
+const rec2 = assets.twoPhoton.recordings[1] ?? rec;
+const confocal = assets.ihc.sections[assets.ihc.sections.length - 1];
 const latestNews = [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
-const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
+const latestPapers = [...papers].filter((p) => !p.placeholder).sort((a, b) => b.year - a.year).slice(0, 3);
+
+// Build-time SVG path of the illustrative LFP (min/max decimation to ~600 columns)
+const lfp = datasets.lfp().series[0];
+const cols = 600, per = Math.floor(lfp.y.length / cols);
+let lfpPath = '';
+for (let c = 0; c < cols; c++) {
+  let lo = Infinity, hi = -Infinity;
+  for (let i = c * per; i < (c + 1) * per; i++) { const v = lfp.y[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+  const x = (c / cols) * 1000, Y = (v: number) => (100 - v * 120).toFixed(1);
+  lfpPath += `${c ? 'L' : 'M'}${x.toFixed(1)} ${Y(hi)}L${x.toFixed(1)} ${Y(lo)}`;
+}
+
+const panels = [
+  { href: '/research/two-photon/', n: '01', title: 'Two-photon imaging', sub: 'Hippocampal CA1 · in vivo', color: 'var(--green)', text: 'Hundreds of neurons, watched simultaneously in the living brain. Each flash is a calcium transient — a neuron firing. We use it to catch the earliest, Alzheimer’s-related hyperactivity.', media: 'video' },
+  { href: '/research/immunohistochemistry/', n: '02', title: 'Immunohistochemistry', sub: 'Plaques & cells · confocal', color: 'var(--blue)', text: 'Staining brain sections reveals when and where β-amyloid plaques appear — here, an 8-month-old APP23xPS45 brain studded with plaques (cyan).', media: 'image' },
+  { href: '/research/electrophysiology/', n: '03', title: 'Electrophysiology', sub: 'EEG · LTP · LFP', color: 'var(--red)', text: 'From seizures across the whole brain to plasticity at single synapses: electrical recordings resolve network activity millisecond by millisecond.', media: 'trace' },
+  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', n: '04', title: 'Glymphatic system', sub: 'Brain clearance', color: 'var(--magenta)', text: 'Cerebrospinal fluid flows along blood vessels and through brain tissue, washing out waste such as β-amyloid — most actively during sleep.', media: 'flow' }] : []),
+];
+const words = ['Two-photon imaging', 'CA1', 'β-amyloid', 'Hyperactivity', 'Glutamate', 'Immunohistochemistry', 'EEG', 'LTP', 'Sharp-wave ripples', 'Alzheimer’s disease'];
 ---
 <Base>
-  <svg width="0" height="0" aria-hidden="true" style="position:absolute"><filter id="home-lut" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.15 0.15 0.15 0 0  0.5 0.5 0.5 0 0.02  0.25 0.25 0.25 0 0  0 0 0 1 0" /></filter></svg>
-  <!-- ======== HERO: brain → hippocampus → CA1 ======== -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <filter id="home-lut" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.15 0.15 0.15 0 0  0.5 0.5 0.5 0 0.02  0.25 0.25 0.25 0 0  0 0 0 1 0" /></filter>
+    <filter id="home-fire" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0" /><feComponentTransfer><feFuncR type="table" tableValues="0 0.35 0.85 1 1 1" /><feFuncG type="table" tableValues="0 0 0.1 0.5 0.85 1" /><feFuncB type="table" tableValues="0 0.45 0.2 0 0.2 1" /></feComponentTransfer></filter>
+  </svg>
+
+  <!-- ======== HERO: brain → hippocampus → CA1 → real data ======== -->
   <section class="hero" data-hero aria-labelledby="hero-title">
     <canvas class="hero__canvas" data-hero-canvas aria-hidden="true"></canvas>
     <div class="hero__fallback" aria-hidden="true"></div>
@@ -29,12 +50,12 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
 
     <div class="hero__steps">
       <div class="hero__step is-current" data-step>
-        <p class="eyebrow">Neuroscience research group</p>
-        <h1 id="hero-title">{site.name}<span class="hero__tag">{site.tagline}.</span></h1>
-        <p class="lead">Two-photon imaging, immunohistochemistry and electrophysiology — to understand how hippocampal circuits fail early in Alzheimer’s disease — and how to protect them.</p>
-        <div class="hero__cta">
-          <a class="btn btn--primary" href="#ca1" data-enter-ca1>Enter CA1 ↓</a>
-          <a class="btn" href={url('/research/')}>Our research</a>
+        <p class="eyebrow" data-intro>Neuroscience research group</p>
+        <h1 id="hero-title"><span class="hero__name" data-hero-name>{site.name}</span><span class="hero__tag" data-intro>{site.tagline}.</span></h1>
+        <p class="lead" data-intro>Two-photon imaging, immunohistochemistry and electrophysiology — to understand how hippocampal circuits fail early in Alzheimer’s disease, and how to protect them.</p>
+        <div class="hero__cta" data-intro>
+          <a class="btn btn--primary" href="#ca1" data-enter-ca1>Dive into CA1 ↓</a>
+          <a class="btn" href={url('/research/')} data-magnetic>Our research</a>
         </div>
       </div>
       <div class="hero__step" data-step>
@@ -43,54 +64,126 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
       </div>
       <div class="hero__step" data-step>
         <p class="eyebrow">02 — Region CA1</p>
-        <h2>Here, thousands of pyramidal neurons line up in a single layer — the hippocampus’ main output.</h2>
+        <h2>Thousands of pyramidal neurons line up in a single layer — and each one flashes when it fires.</h2>
+      </div>
+      <div class="hero__step" data-step>
+        <p class="eyebrow">03 — Real data</p>
+        <h2>This is what it really looks like: CA1 neurons in a living brain, imaged with two photons.</h2>
+        <a class="btn" href={url('/research/two-photon/')} data-magnetic>Explore the recordings →</a>
       </div>
     </div>
 
-    <div class="hero__meta"><Label kind="schematic" text="Illustrative schematic — not anatomical data" /></div>
+    <figure class="hero__real" data-hero-real aria-hidden="true">
+      <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="none"></video>
+      <figcaption><Label kind="data" /> <span>In vivo two-photon recording · {rec.label} · 4× real time</span></figcaption>
+    </figure>
+
+    <ol class="hero__dots" aria-label="Journey steps">
+      {['Lab', 'Hippocampus', 'CA1', 'Real data'].map((l, i) => <li><button data-dot aria-current={i === 0 ? 'step' : 'false'}><span class="visually-hidden">{l}</span><i>{l}</i></button></li>)}
+    </ol>
+    <div class="hero__cue" data-cue aria-hidden="true"><span>Scroll to dive in</span><i></i></div>
+    <div class="hero__meta"><Label kind="schematic" text="3D model: illustrative schematic" /></div>
   </section>
 
   <!-- ======== CA1 layers ======== -->
-  <section id="ca1" class="section" aria-labelledby="ca1-h">
+  <section id="ca1" class="section" aria-labelledby="ca1-h" data-accent="var(--green)">
     <div class="container">
-      <p class="eyebrow" data-reveal>03 — Inside CA1</p>
-      <h2 id="ca1-h" data-reveal>Explore the layers we image and record from</h2>
+      <p class="eyebrow" data-reveal>Inside CA1</p>
+      <h2 id="ca1-h" data-split>Explore the layers we image and record from</h2>
       <p class="lead" data-reveal>Select a layer to see what it contains. Our two-photon imaging focuses on the cell bodies of stratum pyramidale; dendrites in the layers above and below receive the circuit’s inputs.</p>
       <div data-reveal style="margin-top:var(--s5)"><CA1Layers /></div>
+    </div>
+  </section>
 
-      <div class="grid grid-2" style="margin-top:var(--s6)" data-reveal>
-        <figure class="figure home-2p">
-          <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="metadata" data-autoplay aria-label={rec.alt}></video>
-          <figcaption><Label kind="data" /> <span>In vivo two-photon imaging of CA1 pyramidal neurons ({rec.label}). Cells flash when active · 4× real time. <a href={url('/research/two-photon/')}>Explore recordings →</a></span></figcaption>
-        </figure>
-        <div>
-          <p class="eyebrow">Mission</p>
-          <p class="lead ph">{site.mission}</p>
-          <p class="muted ph">{site.summary}</p>
-        </div>
+  <!-- ======== From pixels to traces + mission ======== -->
+  <section class="section section--tight" aria-labelledby="mission-h">
+    <div class="container mission">
+      <div data-wipe><RoiFigure /></div>
+      <div>
+        <p class="eyebrow" data-reveal>Mission</p>
+        <h2 id="mission-h" class="ph" data-split>{site.mission}</h2>
+        <p class="muted ph" data-reveal>{site.summary}</p>
       </div>
     </div>
   </section>
 
-  <!-- ======== Methods ======== -->
-  <section class="section section--tight" aria-labelledby="methods-h">
-    <div class="container">
-      <p class="eyebrow" data-reveal>Research</p>
-      <h2 id="methods-h" data-reveal>Complementary windows on the same circuit</h2>
-      <div class="grid grid-3 methods" style="margin-top:var(--s5)">
-        {methods.map((m, i) => (
-          <a href={url(m.href)} class="card method" style={`--card-c:${m.color}`} data-reveal>
-            <span class="card__glow" aria-hidden="true"></span>
-            <span class="method__num mono">0{i + 1}</span>
-            <span class="method__sub">{m.sub}</span>
-            <h3>{m.title}</h3>
-            <p class="muted">{m.text}</p>
-            <span class="method__go">Explore →</span>
-          </a>
+  <!-- ======== Methods showcase (horizontal on desktop) ======== -->
+  <section class="showcase" data-showcase aria-labelledby="methods-h">
+    <div class="showcase__head">
+      <div>
+        <p class="eyebrow">Research</p>
+        <h2 id="methods-h" data-split>Complementary windows on the same circuit</h2>
+      </div>
+      <div class="showcase__meter" aria-hidden="true"><span class="mono" data-sc-count>01 / 0{panels.length}</span><i><b data-sc-bar></b></i></div>
+    </div>
+    <div class="showcase__viewport">
+      <ol class="showcase__track" data-track role="list">
+        {panels.map((p) => (
+          <li class="panel" style={`--pc:${p.color}`} data-panel-accent={p.color}>
+            <a class="panel__link" href={url(p.href)}>
+              <div class="panel__media">
+                {p.media === 'video' && (
+                  <>
+                    <video src={url(rec2.src)} poster={url(rec2.poster)} muted loop playsinline preload="none" data-autoplay style="filter:url(#home-fire)" aria-label={rec2.alt}></video>
+                    <span class="panel__label"><Label kind="data" /></span>
+                  </>
+                )}
+                {p.media === 'image' && (
+                  <>
+                    <img src={url(confocal.src)} alt={confocal.alt} loading="lazy" />
+                    <span class="panel__label"><Label kind="data" text="Published lab data" /></span>
+                  </>
+                )}
+                {p.media === 'trace' && (
+                  <>
+                    <svg viewBox="0 0 1000 300" preserveAspectRatio="none" class="panel__trace" role="img" aria-label="Illustrative local field potential: theta oscillations followed by sharp-wave ripples.">
+                      <path d={lfpPath} pathLength="1" />
+                    </svg>
+                    <span class="panel__label"><Label kind="schematic" text="Illustrative simulation" /></span>
+                  </>
+                )}
+                {p.media === 'flow' && (
+                  <>
+                    <svg viewBox="0 0 400 240" class="panel__flow" role="img" aria-label="Schematic of fluid flowing in along an artery, through tissue and out along a vein.">
+                      <rect x="40" y="0" width="22" height="240" fill="#c0392b" opacity=".8" /><rect x="338" y="0" width="22" height="240" fill="#2c3e8f" opacity=".9" />
+                      {[40, 80, 120, 160, 200].map((y) => <path d={`M70 ${y - 20} C 160 ${y + 30}, 240 ${y - 30}, 330 ${y + 10}`} class="flow-path" />)}
+                      {[[130, 60], [210, 110], [170, 170], [260, 50], [250, 190], [110, 140]].map(([x, y]) => <circle cx={x} cy={y} r="13" fill="var(--green)" opacity=".18" />)}
+                    </svg>
+                    <span class="panel__label"><Label kind="schematic" /></span>
+                  </>
+                )}
+              </div>
+              <div class="panel__text">
+                <span class="mono panel__n">{p.n}</span>
+                <span class="panel__sub">{p.sub}</span>
+                <h3>{p.title}</h3>
+                <p class="muted">{p.text}</p>
+                <span class="panel__go">Explore <span aria-hidden="true">→</span></span>
+              </div>
+            </a>
+          </li>
         ))}
-      </div>
+      </ol>
     </div>
   </section>
+
+  <!-- ======== In numbers ======== -->
+  <section class="section section--tight" aria-labelledby="numbers-h" data-accent="var(--magenta)">
+    <div class="container">
+      <p class="eyebrow" data-reveal>In numbers</p>
+      <h2 id="numbers-h" data-split>Hyperactivity, counted cell by cell</h2>
+      <dl class="stats">
+        <div data-reveal><dt>CA1 neurons imaged in old APP23xPS45 mice</dt><dd><span data-count="237">237</span></dd></div>
+        <div data-reveal><dt>mice</dt><dd><span data-count="5">5</span></dd></div>
+        <div data-reveal><dt>of these neurons were hyperactive</dt><dd><span data-count="19">19</span><small>%</small></dd></div>
+      </dl>
+      <p class="small muted" data-reveal>Source: Zott et al. (2024) <i>Nat Commun</i>, Supplementary Fig. S13B. <a href="https://doi.org/10.1038/s41467-024-50153-y">doi:10.1038/s41467-024-50153-y</a></p>
+    </div>
+  </section>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee__track">{[...words, ...words].map((w) => <span>{w} ·</span>)}</div>
+  </div>
 
   <!-- ======== News + Papers ======== -->
   <section class="section section--tight" aria-label="Latest">
@@ -100,8 +193,11 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
         <ul class="list" role="list">
           {latestNews.map((n) => (
             <li>
-              <time class="mono muted" datetime={n.date}>{n.date}</time>
-              <a href={url(`/news/${n.slug}/`)} class:list={[{ ph: n.placeholder }]}>{n.title}</a>
+              <a class="row-link" href={url(`/news/${n.slug}/`)}>
+                <time class="mono muted" datetime={n.date}>{n.date} · {n.category}</time>
+                <span class:list={[{ ph: n.placeholder }]}>{n.title}</span>
+                <i aria-hidden="true">→</i>
+              </a>
             </li>
           ))}
         </ul>
@@ -111,8 +207,11 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
         <ul class="list" role="list">
           {latestPapers.map((p) => (
             <li>
-              <span class="mono muted">{p.year} · {p.journal}</span>
-              <span class:list={[{ ph: p.placeholder }]}>{p.title}</span>
+              <a class="row-link" href={p.doi ? `https://doi.org/${p.doi}` : url('/papers/')}>
+                <span class="mono muted">{p.year} · {p.journal}</span>
+                <span>{p.title}</span>
+                <i aria-hidden="true">↗</i>
+              </a>
             </li>
           ))}
         </ul>
@@ -122,7 +221,7 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
 
   <!-- ======== Funding acknowledgment ======== -->
   <section class="section section--tight" aria-labelledby="fund-h">
-    <div class="container funding-strip" data-reveal>
+    <div class="container funding-strip" data-reveal data-tilt>
       <div>
         <p class="eyebrow">Support</p>
         <h2 id="fund-h" style="font-size:1.6rem">Our research is supported by the European Research Council and the Deutsche Forschungsgemeinschaft.</h2>
@@ -138,20 +237,23 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
 
   <!-- ======== CTA ======== -->
   <section class="section section--tight" aria-labelledby="join-h">
-    <div class="container join" data-reveal>
-      <h2 id="join-h">Curious about the hippocampus?</h2>
-      <p class="lead">We welcome enquiries from students, postdocs and collaborators.</p>
-      <div class="hero__cta">
+    <div class="container join">
+      <h2 id="join-h" data-split>Curious about the hippocampus?</h2>
+      <p class="lead" data-reveal>We welcome enquiries from students, postdocs and collaborators.</p>
+      <div class="hero__cta" data-reveal>
         <a class="btn btn--primary" href={url('/contact/')}>Contact &amp; open positions</a>
-        <a class="btn" href={url('/teaching/')}>Thesis projects</a>
+        <a class="btn" href={url('/teaching/')} data-magnetic>Thesis projects</a>
       </div>
     </div>
   </section>
 </Base>
 
 <style>
+  /* ---------- Hero ---------- */
   .hero { position: relative; height: 100vh; min-height: 560px; overflow: hidden; display: grid; align-items: center; }
   .hero__canvas, .hero__fallback, .hero__veil { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero__canvas { transition: filter 1s var(--ease); }
+  .hero__canvas.is-dim { filter: brightness(.35) blur(3px); }
   .hero__fallback { display: none; background:
     radial-gradient(40% 35% at 70% 45%, color-mix(in srgb, var(--magenta) 18%, transparent), transparent 70%),
     radial-gradient(25% 20% at 74% 48%, color-mix(in srgb, var(--green) 28%, transparent), transparent 70%),
@@ -160,49 +262,197 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
   .hero.no-webgl .hero__fallback { display: block; }
   .hero__veil { background: linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 38%, transparent 70%); pointer-events: none; }
   .hero__steps { position: relative; z-index: 2; padding: 0 clamp(var(--s3), 6vw, var(--s7)); display: grid; }
-  .hero__step { grid-area: 1 / 1; max-width: 640px; transition: opacity .6s var(--ease), transform .6s var(--ease); }
-  .hero.is-pinned .hero__step:not(.is-current) { opacity: 0; transform: translateY(20px); pointer-events: none; visibility: hidden; }
-  /* Without pinning (reduced motion / no JS), only the intro step is shown in the hero */
+  .hero__step { grid-area: 1 / 1; max-width: 620px; transition: opacity .7s var(--ease), transform .9s var(--ease), filter .7s; }
+  .hero.is-pinned .hero__step:not(.is-current) { opacity: 0; transform: translateY(32px); filter: blur(6px); pointer-events: none; visibility: hidden; }
   .hero:not(.is-pinned) .hero__step:not(:first-child) { display: none; }
-  .hero__step h2 { font-size: clamp(1.8rem, 3.6vw, 3rem); }
+  .hero__step h2 { font-size: clamp(1.8rem, 3.4vw, 2.9rem); }
+  .hero__step .btn { margin-top: var(--s3); }
+  @media (min-width: 768px) { .hero__step:last-child { max-width: min(440px, 38vw); } }
+  .hero__name { display: inline-block; }
   .hero__tag { display: block; font-size: .42em; color: var(--text-2); font-style: italic; margin-top: .4em; }
   .hero__cta { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s4); }
   .hero__meta { position: absolute; right: var(--s3); bottom: var(--s3); z-index: 2; }
+
+  .hero__real { position: absolute; z-index: 2; right: clamp(24px, 7vw, 120px); top: 50%; width: min(40%, 480px); margin: 0;
+    opacity: 0; transform: translateY(-50%) scale(.9) rotate(-2deg); transition: opacity .9s var(--ease), transform 1.2s var(--ease); pointer-events: none; }
+  .hero__real.is-on { opacity: 1; transform: translateY(-50%) scale(1) rotate(0); pointer-events: auto; }
+  .hero__real video { width: 100%; aspect-ratio: 502 / 458; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--green) 40%, var(--line)); filter: url(#home-lut);
+    box-shadow: 0 30px 80px -20px color-mix(in srgb, var(--green) 35%, transparent); }
+  .hero__real figcaption { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: .8rem; color: var(--text-2); }
+  .hero:not(.is-pinned) .hero__real, .hero:not(.is-pinned) .hero__dots, .hero:not(.is-pinned) .hero__cue { display: none; }
+
+  .hero__dots { position: absolute; z-index: 3; right: var(--s3); top: 50%; transform: translateY(-50%); list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .hero__dots button { display: flex; align-items: center; gap: 10px; flex-direction: row-reverse; background: none; border: 0; cursor: pointer; padding: 4px; color: var(--text-3); }
+  .hero__dots button::before { content: ''; width: 8px; height: 8px; border-radius: 50%; border: 1px solid currentColor; transition: all .4s var(--ease); }
+  .hero__dots button i { font: normal .65rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; opacity: 0; transform: translateX(6px); transition: all .35s var(--ease); }
+  .hero__dots button:hover i, .hero__dots button[aria-current='step'] i { opacity: 1; transform: none; }
+  .hero__dots button[aria-current='step'] { color: var(--accent); }
+  .hero__dots button[aria-current='step']::before { background: var(--accent); box-shadow: 0 0 12px var(--accent); transform: scale(1.3); }
+  .hero__real.is-on ~ .hero__dots { right: var(--s2); }
+
+  .hero__cue { position: absolute; z-index: 2; left: clamp(var(--s3), 6vw, var(--s7)); bottom: var(--s4); display: flex; align-items: center; gap: 12px;
+    font: .7rem var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--text-3); transition: opacity .5s; }
+  .hero__cue i { width: 60px; height: 1px; background: var(--line); position: relative; overflow: hidden; }
+  .hero__cue i::after { content: ''; position: absolute; inset: 0; background: var(--accent); animation: cue 2.2s var(--ease) infinite; }
+  .hero__cue.is-hidden { opacity: 0; }
+  @keyframes cue { 0% { transform: translateX(-100%); } 60%, 100% { transform: translateX(100%); } }
+
+  @media (max-width: 1023px) { .hero__real { width: 46%; right: 56px; } }
   @media (max-width: 767px) {
     .hero { height: calc(100svh - 60px); align-items: end; padding-bottom: var(--s7); }
     .hero__veil { background: linear-gradient(0deg, var(--bg) 10%, color-mix(in srgb, var(--bg) 60%, transparent) 55%, transparent); }
     .hero__steps { padding: 0 var(--s2); }
+    .hero__real { top: var(--s3); left: var(--s2); right: var(--s2); width: auto; max-width: 340px; margin-inline: auto; transform: scale(.9); }
+    .hero__real.is-on { transform: none; }
+    .hero__dots { right: 8px; } .hero__dots i { display: none; }
+    .hero__cue { display: none; }
   }
 
-  .method { display: flex; flex-direction: column; gap: 4px; min-height: 280px; }
-  .method__num { color: var(--card-c); }
-  .method__sub { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); margin-top: var(--s4); }
-  .method h3 { margin: 6px 0 var(--s2); }
-  .method__go { margin-top: auto; color: var(--card-c); font-size: .9rem; }
+  /* ---------- Mission ---------- */
+  .mission { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--s6); align-items: center; }
+  .mission h2 { font-size: clamp(1.6rem, 2.6vw, 2.3rem); }
+  @media (max-width: 960px) { .mission { grid-template-columns: 1fr; } }
 
-  .row-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); margin-bottom: var(--s2); }
+  /* ---------- Showcase ---------- */
+  .showcase { padding: var(--s7) 0; position: relative; }
+  .showcase__head { display: flex; justify-content: space-between; align-items: end; gap: var(--s3); padding: 0 clamp(var(--s3), 6vw, var(--s7)); margin-bottom: var(--s5); flex-wrap: wrap; }
+  .showcase__head h2 { max-width: 16ch; margin: 0; }
+  .showcase__meter { display: none; align-items: center; gap: 12px; color: var(--text-2); font-size: .8rem; }
+  .showcase__meter i { width: 120px; height: 2px; background: var(--line); display: block; }
+  .showcase__meter b { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); box-shadow: 0 0 8px var(--accent); }
+  .showcase__viewport { padding: 0 clamp(var(--s3), 6vw, var(--s7)); }
+  .showcase__track { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+  .panel__link { display: grid; gap: var(--s3); text-decoration: none; height: 100%; padding: var(--s3); border: 1px solid var(--line); border-radius: calc(var(--radius) + 6px);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--pc) 7%, var(--surface)), var(--bg-2) 60%); transition: border-color .4s; }
+  .panel__link:hover { border-color: color-mix(in srgb, var(--pc) 55%, var(--line)); color: inherit; }
+  .panel__media { position: relative; aspect-ratio: 16 / 10; border-radius: var(--radius); overflow: hidden; background: #000; }
+  .panel__media video, .panel__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease); }
+  .panel__media img { object-fit: contain; }
+  .panel__link:hover .panel__media video, .panel__link:hover .panel__media img { transform: scale(1.05); }
+  .panel__label { position: absolute; left: 12px; bottom: 12px; background: rgba(5,7,11,.7); border-radius: 6px; backdrop-filter: blur(6px); }
+  .panel__trace { width: 100%; height: 100%; background: radial-gradient(80% 80% at 50% 50%, color-mix(in srgb, var(--red) 10%, transparent), transparent); }
+  .panel__trace path { fill: none; stroke: var(--red); stroke-width: 1.4; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px var(--red)); stroke-dasharray: 1; stroke-dashoffset: 0; }
+  .panel__flow { width: 100%; height: 100%; }
+  .flow-path { fill: none; stroke: var(--blue); stroke-width: 2; stroke-dasharray: 3 12; opacity: .8; animation: flow 2.4s linear infinite; filter: drop-shadow(0 0 3px var(--blue)); }
+  .flow-path:nth-child(even) { stroke: var(--magenta); animation-duration: 3.1s; }
+  @keyframes flow { to { stroke-dashoffset: -60; } }
+  .panel__text { display: flex; flex-direction: column; gap: 4px; }
+  .panel__n { color: var(--pc); }
+  .panel__sub { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
+  .panel__text h3 { font-size: clamp(1.6rem, 2.6vw, 2.4rem); margin: 6px 0 var(--s1); }
+  .panel__go { color: var(--pc); font-size: .95rem; margin-top: auto; }
+  .panel__go span { display: inline-block; transition: transform .35s var(--ease); }
+  .panel__link:hover .panel__go span { transform: translateX(6px); }
+
+  /* Horizontal mode (desktop + motion; enabled by JS) */
+  .showcase.is-horizontal { height: 100vh; padding: var(--s6) 0 var(--s5); display: flex; flex-direction: column; overflow: hidden; }
+  .showcase.is-horizontal .showcase__meter { display: flex; }
+  .showcase.is-horizontal .showcase__viewport { flex: 1; min-height: 0; }
+  .showcase.is-horizontal .showcase__track { display: flex; height: 100%; width: max-content; gap: var(--s5); }
+  .showcase.is-horizontal .panel { width: min(1040px, 72vw); height: 100%; }
+  .showcase.is-horizontal .panel__link { grid-template-columns: 1.35fr 1fr; align-items: stretch; padding: var(--s4); }
+  .showcase.is-horizontal .panel__media { aspect-ratio: auto; height: 100%; min-height: 0; }
+  .showcase.is-horizontal .panel__text { justify-content: center; padding: var(--s3) var(--s2); }
+  .showcase.is-horizontal .panel__go { margin-top: var(--s3); }
+
+  /* ---------- Numbers ---------- */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s4); margin: var(--s5) 0 var(--s3); }
+  .stats div { border-top: 1px solid var(--line); padding-top: var(--s3); display: flex; flex-direction: column; gap: 6px; }
+  .stats dd { order: -1; }
+  .stats dt { color: var(--text-2); }
+  .stats dd { margin: 0; font-family: var(--font-serif); font-size: clamp(3.5rem, 8vw, 6.5rem); line-height: 1; color: var(--accent); text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 40%, transparent); font-variant-numeric: tabular-nums; }
+  .stats small { font-size: .45em; margin-left: 4px; }
+
+  /* ---------- Lists ---------- */
+  .row-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); margin-bottom: var(--s1); }
   .row-head h2 { font-size: 1.8rem; margin: 0 0 var(--s2); }
   .row-head a { font-size: .9rem; color: var(--text-2); }
   .list { list-style: none; padding: 0; margin: 0; }
-  .list li { display: grid; gap: 2px; padding: var(--s2) 0; border-bottom: 1px solid var(--line); }
-  .list .mono { font-size: .75rem; }
+  .list li { border-bottom: 1px solid var(--line); }
+  .row-link { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--s2); padding: var(--s2) var(--s1); text-decoration: none; border-radius: 8px; transition: background .3s, padding .4s var(--ease); background: none !important; }
+  .row-link .mono { font-size: .75rem; grid-column: 1; }
+  .row-link span:not(.mono) { grid-column: 1; }
+  .row-link i { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-style: normal; color: var(--accent); opacity: 0; transform: translateX(-8px); transition: all .35s var(--ease); }
+  .row-link:hover { background: color-mix(in srgb, var(--accent) 6%, transparent) !important; padding-left: var(--s2); color: inherit; }
+  .row-link:hover i { opacity: 1; transform: none; }
 
   .funding-strip { display: flex; justify-content: space-between; align-items: center; gap: var(--s4); flex-wrap: wrap;
     padding: var(--s5); border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-2); }
   .funding-strip > div:first-child { max-width: 640px; }
   .funding-strip__logos { display: flex; gap: var(--s3); align-items: center; flex-wrap: wrap; }
-
-  .join { text-align: center; } .join p { margin-inline: auto; } .join .hero__cta { justify-content: center; }
-  .home-2p video { width: 100%; aspect-ratio: 502 / 458; border-radius: var(--radius); border: 1px solid var(--line); background: #000; filter: url(#home-lut); }
+  .join { text-align: center; } .join h2 { margin-inline: auto; } .join p { margin-inline: auto; } .join .hero__cta { justify-content: center; }
 </style>
 
 <script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { SplitText } from 'gsap/SplitText';
+  gsap.registerPlugin(ScrollTrigger, SplitText);
+  const motionOK = () => document.documentElement.dataset.motion !== 'off';
+
   // Three.js is loaded only on the homepage, after first paint
   if (document.querySelector('[data-hero]')) import('../scripts/hero');
-  // Muted autoplay of the CA1 recording when visible (skipped with reduced motion)
+
+  /* Hero intro: letters rise, then supporting text */
+  if (motionOK()) {
+    const name = document.querySelector<HTMLElement>('[data-hero-name]');
+    const tl = gsap.timeline({ delay: 0.15 });
+    if (name) {
+      const split = SplitText.create(name, { type: 'chars', mask: 'chars', aria: 'auto' });
+      tl.from(split.chars, { yPercent: 120, rotate: 8, duration: 1.4, ease: 'expo.out', stagger: 0.06 });
+    }
+    tl.from('[data-intro]', { y: 24, opacity: 0, filter: 'blur(8px)', duration: 1.1, ease: 'power3.out', stagger: 0.12 }, 0.35);
+  }
+
+  /* Muted autoplay of media when visible (skipped with reduced motion) */
   document.querySelectorAll<HTMLVideoElement>('video[data-autoplay]').forEach((v) => {
     new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && document.documentElement.dataset.motion !== 'off') v.play().catch(() => {}); else v.pause();
+      if (e.isIntersecting && motionOK()) v.play().catch(() => {}); else v.pause();
     }, { threshold: 0.3 }).observe(v);
   });
+
+  /* Methods showcase: pinned horizontal scroll on desktop */
+  const sc = document.querySelector<HTMLElement>('[data-showcase]');
+  const track = sc?.querySelector<HTMLElement>('[data-track]');
+  if (sc && track) {
+    const panels = [...track.querySelectorAll<HTMLElement>('.panel')];
+    const count = sc.querySelector<HTMLElement>('[data-sc-count]')!;
+    const bar = sc.querySelector<HTMLElement>('[data-sc-bar]')!;
+    const trace = sc.querySelector<SVGPathElement>('.panel__trace path');
+    const mm = gsap.matchMedia();
+    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+      if (!motionOK()) return;
+      sc.classList.add('is-horizontal');
+      const dist = () => track.scrollWidth - sc.clientWidth + parseFloat(getComputedStyle(track.parentElement!).paddingLeft) * 2;
+      let last = -1;
+      const tween = gsap.to(track, {
+        x: () => -dist(), ease: 'none',
+        scrollTrigger: {
+          trigger: sc, start: 'top top', end: () => `+=${dist()}`, pin: true, scrub: 0.8, invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            gsap.set(bar, { scaleX: self.progress });
+            const i = Math.min(panels.length - 1, Math.round(self.progress * (panels.length - 1)));
+            if (i !== last) {
+              last = i; count.textContent = `0${i + 1} / 0${panels.length}`;
+              document.body.style.setProperty('--accent', panels[i].dataset.panelAccent!);
+            }
+          },
+          onLeave: () => document.body.style.removeProperty('--accent'),
+          onLeaveBack: () => document.body.style.removeProperty('--accent'),
+        },
+      });
+      panels.forEach((panel) => {
+        const media = panel.querySelector('.panel__media'), text = panel.querySelector('.panel__text');
+        gsap.from(media, { scale: 0.86, opacity: 0.25, ease: 'none', scrollTrigger: { trigger: panel, containerAnimation: tween, start: 'left 95%', end: 'left 35%', scrub: true } });
+        gsap.from(text, { x: 80, opacity: 0, ease: 'none', scrollTrigger: { trigger: panel, containerAnimation: tween, start: 'left 80%', end: 'left 30%', scrub: true } });
+      });
+      if (trace) gsap.fromTo(trace, { strokeDashoffset: 1 }, { strokeDashoffset: 0, ease: 'none', scrollTrigger: { trigger: trace.closest('.panel'), containerAnimation: tween, start: 'left 90%', end: 'right 80%', scrub: true } });
+      return () => { sc.classList.remove('is-horizontal'); gsap.set(track, { clearProps: 'transform' }); };
+    });
+    // Narrow screens: draw the trace once when it enters view
+    mm.add('(max-width: 1023px)', () => {
+      if (!trace || !motionOK()) return;
+      gsap.fromTo(trace, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.4, ease: 'power2.inOut', scrollTrigger: { trigger: trace, start: 'top 85%', once: true } });
+    });
+  }
 </script>

@@ -27,7 +27,7 @@ const sections = a.sections.filter((s) => s.src).map((s) => ({ ...s, src: url(s.
       <button class="btn btn--sm" data-home>Reset view</button>
     </div>
   </div>
-  <div class="dz__viewer" data-dz-viewer role="application" aria-label="Zoomable confocal image. Use the zoom buttons or scroll, drag to pan; numbered markers explain structures."></div>
+  <div class="dz__viewer" data-wipe data-dz-viewer role="application" aria-label="Zoomable confocal image. Use the zoom buttons or scroll, drag to pan; numbered markers explain structures."></div>
   <ul class="dz__legend small">
     {a.stains.map((s) => <li><i style={`--c:${s.color === 'grey' ? '#bbb' : '#3fe0ff'}`}></i><b>{s.name}</b> — {s.target}</li>)}
   </ul>

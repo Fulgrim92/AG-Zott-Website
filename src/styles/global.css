@@ -177,3 +177,82 @@ a.card:hover .card__glow { opacity: 1; }
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
 :root[data-motion='off'] *, :root[data-motion='off'] *::before { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+
+/* =====================================================================
+   Motion layer
+   ===================================================================== */
+
+/* Animate the accent colour when it changes (sections can retint the page) */
+@property --accent { syntax: '<color>'; inherits: true; initial-value: #4dff9a; }
+body { transition: --accent .9s var(--ease); }
+
+/* Cross-document page transitions (progressive enhancement; ignored where unsupported) */
+@view-transition { navigation: auto; }
+.sidebar { view-transition-name: sidebar; }
+.topbar { view-transition-name: topbar; }
+::view-transition-old(root) { animation: vt-out .35s var(--ease) both; }
+::view-transition-new(root) { animation: vt-in .6s var(--ease) both; }
+@keyframes vt-out { to { opacity: 0; transform: translateY(-12px); filter: blur(4px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(18px); filter: blur(6px); } }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
+:root[data-motion='off']::view-transition-old(root), :root[data-motion='off']::view-transition-new(root) { animation: none; }
+
+/* Scroll progress (fluorescence trace across the top) */
+.progress { position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: 2px; z-index: 95; pointer-events: none;
+  background: linear-gradient(90deg, var(--blue), var(--green), var(--magenta)); transform-origin: 0 50%; transform: scaleX(0);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent); }
+@media (max-width: 1199px) { .progress { left: var(--rail-w); } }
+@media (max-width: 767px) { .progress { left: 0; top: 60px; } }
+
+/* Cursor glow (fine pointers only; created by JS) */
+.cursor-glow { position: fixed; left: 0; top: 0; width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; pointer-events: none; z-index: 1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 65%); mix-blend-mode: screen; opacity: 0; transition: opacity .4s; }
+.cursor-dot { position: fixed; left: 0; top: 0; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; pointer-events: none; z-index: 1001;
+  background: var(--accent); box-shadow: 0 0 12px var(--accent); opacity: 0; transition: opacity .3s, width .25s, height .25s, margin .25s, background .25s; }
+.cursor-dot.is-hover { width: 36px; height: 36px; margin: -18px 0 0 -18px; background: color-mix(in srgb, var(--accent) 18%, transparent); box-shadow: 0 0 0 1px var(--accent); }
+.has-cursor .cursor-glow, .has-cursor .cursor-dot { opacity: 1; }
+
+/* Split-text headings: hidden until split & animated (only when motion is on) */
+.js-motion [data-split] { visibility: hidden; }
+.split-line { padding-bottom: .06em; margin-bottom: -.06em; }
+
+/* Figures reveal with a clip-path wipe */
+.js-motion [data-wipe] { clip-path: inset(0 0 100% 0); }
+
+/* Prose links: underline wipe */
+main p a:not(.btn), main li a:not(.btn):not(.tag) { text-decoration: none; background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat; transition: background-size .35s var(--ease), color .2s; }
+main p a:not(.btn):hover, main li a:not(.btn):not(.tag):hover { background-size: 0 1px; background-position: 100% 100%; }
+
+/* Buttons: arrow nudge + press feedback */
+.btn { will-change: transform; }
+.btn:active { transform: scale(.97); }
+
+/* Marquee */
+.marquee { overflow: hidden; border-block: 1px solid var(--line); padding: var(--s3) 0; white-space: nowrap; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.marquee__track { display: inline-flex; gap: var(--s5); animation: marquee 40s linear infinite; font-family: var(--font-serif); font-size: clamp(1.6rem, 3.4vw, 3rem); color: var(--text-3); }
+.marquee__track span:nth-child(3n+1) { color: var(--green); } .marquee__track span:nth-child(3n+2) { -webkit-text-stroke: 1px var(--text-2); color: transparent; }
+.marquee:hover .marquee__track { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+:root[data-motion='off'] .marquee__track { animation: none; }
+
+/* Footer wordmark */
+.wordmark { font-family: var(--font-serif); font-size: clamp(4rem, 16vw, 15rem); line-height: .85; letter-spacing: -.04em; margin: var(--s6) 0 0;
+  color: transparent; -webkit-text-stroke: 1px color-mix(in srgb, var(--text) 25%, transparent);
+  background: linear-gradient(90deg, var(--blue), var(--green), var(--magenta)) 0 0 / 0% 100% no-repeat; -webkit-background-clip: text; background-clip: text;
+  transition: background-size 1.2s var(--ease); user-select: none; }
+.wordmark:hover, .wordmark.is-lit { background-size: 100% 100%; }
+
+/* Sidebar hover pill (created by JS) */
+.nav > ul { position: relative; }
+.nav-pill { position: absolute; left: 0; top: 0; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); opacity: 0; pointer-events: none; }
+.nav > ul.has-pill a { position: relative; z-index: 1; }
+.nav > ul.has-pill .nav__item > a:hover { background: transparent; }
+.nav__item > a .nav__label { transition: letter-spacing .35s var(--ease); }
+.nav__item > a:hover .nav__label { letter-spacing: .2em; }
+
+/* Brand mark breathes like a fluorescent cell */
+.brand__mark { animation: breathe 4.5s ease-in-out infinite; }
+@keyframes breathe { 50% { box-shadow: 0 0 26px color-mix(in srgb, var(--green) 55%, transparent), inset 0 0 0 1px var(--line); filter: saturate(1.3); } }
+.site-footer a { background: none !important; }
+.site-footer a:hover { color: var(--accent); }
+.wordmark.is-lit, .wordmark:hover { -webkit-text-stroke-color: transparent; }

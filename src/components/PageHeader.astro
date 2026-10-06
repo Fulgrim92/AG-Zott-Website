@@ -1,12 +1,18 @@
 ---
+import FluoField from './FluoField.astro';
 interface Props { eyebrow: string; title: string; lead?: string; color?: string }
 const { eyebrow, title, lead, color } = Astro.props;
 ---
 <header class="page-header" style={color ? `--accent:${color}` : undefined}>
-  <div class="container">
+  <FluoField />
+  <div class="container page-header__inner">
     <p class="eyebrow" data-reveal>{eyebrow}</p>
-    <h1 data-reveal>{title}</h1>
+    <h1 data-split>{title}</h1>
     {lead && <p class="lead" data-reveal>{lead}</p>}
     <slot />
   </div>
 </header>
+<style>
+  .page-header { position: relative; overflow: hidden; }
+  .page-header__inner { position: relative; z-index: 1; }
+</style>

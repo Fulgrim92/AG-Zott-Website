@@ -60,6 +60,7 @@ const themes = Object.keys(themeLabel);
   @media (max-width: 600px) { .pub { grid-template-columns: 1fr; gap: 4px; } }
 </style>
 <script>
+  import { flipFilter } from '../scripts/flipfilter';
   const $ = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const q = $<HTMLInputElement>('#q'), fy = $<HTMLSelectElement>('#f-year'), ft = $<HTMLSelectElement>('#f-theme'),
         fty = $<HTMLSelectElement>('#f-type'), fg = $<HTMLSelectElement>('#f-grant'), count = $('#count');
@@ -67,20 +68,21 @@ const themes = Object.keys(themeLabel);
   // Deep links: /papers/?theme=two-photon&q=ca1
   const params = new URLSearchParams(location.search);
   q.value = params.get('q') ?? ''; ft.value = params.get('theme') ?? ''; fy.value = params.get('year') ?? ''; fg.value = params.get('funder') ?? '';
-  const apply = () => {
+  const apply = (animate = true) => {
     const terms = q.value.toLowerCase().split(/\s+/).filter(Boolean);
     let n = 0;
-    for (const el of items) {
+    const change = () => { n = 0; for (const el of items) {
       const d = el.dataset;
       const ok = terms.every((t) => d.text!.includes(t)) && (!fy.value || d.year === fy.value) && (!fty.value || d.type === fty.value)
         && (!ft.value || d.themes!.split(' ').includes(ft.value)) && (!fg.value || d.grants!.split(' ').includes(fg.value));
       el.hidden = !ok; if (ok) n++;
-    }
+    } };
+    animate ? flipFilter(items, change) : change();
     count.textContent = `${n} of ${items.length} publications`;
     const p = new URLSearchParams();
     if (q.value) p.set('q', q.value); if (ft.value) p.set('theme', ft.value); if (fy.value) p.set('year', fy.value); if (fg.value) p.set('funder', fg.value);
     history.replaceState(null, '', p.toString() ? `?${p}` : location.pathname);
   };
-  [q, fy, ft, fty, fg].forEach((el) => el.addEventListener('input', apply));
-  apply();
+  [q, fy, ft, fty, fg].forEach((el) => el.addEventListener('input', () => apply()));
+  apply(false);
 </script>

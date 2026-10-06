@@ -40,7 +40,7 @@ const meta = Object.entries(a.meta).filter(([, v]) => v);
     </div>
   </div>
 
-  <div class="player__stage" data-stage data-mode="single" data-lut="green">
+  <div class="player__stage" data-wipe data-stage data-mode="single" data-lut="green">
     {recs.map((r, i) => (
       <figure class="clip" data-clip={r.id} hidden={i !== 0}>
         <video src={url(r.src)} poster={url(r.poster)} muted loop playsinline preload={i === 0 ? 'auto' : 'metadata'} aria-label={r.alt}></video>
