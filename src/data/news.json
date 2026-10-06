@@ -1,6 +1,50 @@
 [
-  { "slug": "3sat-nano-alzheimer", "date": "2024-10-21", "category": "Media", "title": "Our lab on 3sat “nano”: Diagnose Alzheimer-Demenz", "body": "The science programme nano (3sat) featured our research in its episode on Alzheimer’s disease research — the lab appears in the first five minutes of the broadcast.", "link": "https://www.3sat.de/wissen/nano/241021-sendung-alzheimerforschung-nano-100.html", "linkLabel": "Watch on 3sat (external, German)", "placeholder": false },
-  { "slug": "anticalin-nature-communications", "date": "2024-08-14", "category": "Paper", "title": "Stopping Alzheimer’s-related hyperactivity at an early stage", "body": "In Nature Communications we show that an anticalin protein that scavenges β-amyloid monomers suppresses early neuronal hyperactivity and synaptic glutamate accumulation in the APP23xPS45 mouse model — but only before plaques form. TUM published a press release on the study.", "link": "https://doi.org/10.1038/s41467-024-50153-y", "linkLabel": "Read the paper (open access)", "placeholder": false },
-  { "slug": "vicious-cycle-science", "date": "2019-08-09", "category": "Paper", "title": "A vicious cycle of β-amyloid-dependent hyperactivation", "body": "Published in Science: β-amyloid causes neuronal hyperactivation by blocking glutamate reuptake, preferentially in neurons that are already active — a mechanism that can operate before plaques appear.", "link": "https://doi.org/10.1126/science.aay0198", "linkLabel": "Read the paper", "placeholder": false },
-  { "slug": "website-launch", "date": "2026-10-06", "category": "Lab", "title": "New lab website in development", "body": "We are building a new website to share our research, data and team. Content marked as placeholder will be replaced with verified information before launch.", "placeholder": false }
+  {
+    "slug": "silent-neurons-pnas",
+    "date": "2025-08-28",
+    "category": "Paper",
+    "title": "Why some neurons fall silent in Alzheimer’s disease",
+    "body": "New in PNAS: in mouse models of β-amyloidosis, silent neurons lose much of their presynaptic input and many dendritic spines — synaptic decoupling as a mechanism behind the decline of neuronal activity.",
+    "link": "https://doi.org/10.1073/pnas.2515113122",
+    "linkLabel": "Read the paper",
+    "placeholder": false
+  },
+  {
+    "slug": "3sat-nano-alzheimer",
+    "date": "2024-10-21",
+    "category": "Media",
+    "title": "Our lab on 3sat “nano”: Diagnose Alzheimer-Demenz",
+    "body": "The science programme nano (3sat) featured our research in its episode on Alzheimer’s disease research — the lab appears in the first five minutes of the broadcast.",
+    "link": "https://www.3sat.de/wissen/nano/241021-sendung-alzheimerforschung-nano-100.html",
+    "linkLabel": "Watch on 3sat (external, German)",
+    "placeholder": false
+  },
+  {
+    "slug": "anticalin-nature-communications",
+    "date": "2024-08-14",
+    "category": "Paper",
+    "title": "Stopping Alzheimer’s-related hyperactivity at an early stage",
+    "body": "In Nature Communications we show that an anticalin protein that scavenges β-amyloid monomers suppresses early neuronal hyperactivity and synaptic glutamate accumulation in the APP23xPS45 mouse model — but only before plaques form. TUM published a press release on the study.",
+    "link": "https://doi.org/10.1038/s41467-024-50153-y",
+    "linkLabel": "Read the paper (open access)",
+    "placeholder": false
+  },
+  {
+    "slug": "vicious-cycle-science",
+    "date": "2019-08-09",
+    "category": "Paper",
+    "title": "A vicious cycle of β-amyloid-dependent hyperactivation",
+    "body": "Published in Science: β-amyloid causes neuronal hyperactivation by blocking glutamate reuptake, preferentially in neurons that are already active — a mechanism that can operate before plaques appear.",
+    "link": "https://doi.org/10.1126/science.aay0198",
+    "linkLabel": "Read the paper",
+    "placeholder": false
+  },
+  {
+    "slug": "website-launch",
+    "date": "2026-10-06",
+    "category": "Lab",
+    "title": "New lab website in development",
+    "body": "We are building a new website to share our research, data and team. Content marked as placeholder will be replaced with verified information before launch.",
+    "placeholder": false
+  }
 ]
