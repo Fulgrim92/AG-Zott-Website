@@ -1,0 +1,169 @@
+---
+/**
+ * Animated schematic of glymphatic flow (Iliff et al., 2012; Xie et al., 2013):
+ * CSF enters along periarterial spaces, exchanges with interstitial fluid through
+ * astrocytic AQP4-rich endfeet, and leaves along perivenous spaces carrying solutes.
+ * ILLUSTRATIVE SCHEMATIC — not lab data, not to scale.
+ */
+import Label from './Label.astro';
+---
+<figure class="figure gf" data-gf>
+  <div class="gf__stage">
+    <canvas data-gf-canvas role="img" aria-label="Animated schematic: cerebrospinal fluid flows down along an artery on the left, crosses the brain tissue between astrocytes, picks up waste solutes and drains along a vein on the right."></canvas>
+    <ul class="gf__tags" aria-hidden="true">
+      <li style="left:12%;top:6%">Periarterial space</li>
+      <li style="left:44%;top:6%">Interstitium</li>
+      <li style="right:6%;top:6%">Perivenous space</li>
+    </ul>
+  </div>
+  <div class="gf__controls">
+    <div role="group" aria-label="Brain state">
+      <button class="btn btn--sm" aria-pressed="false" data-state="wake">Awake</button>
+      <button class="btn btn--sm" aria-pressed="true" data-state="sleep">Asleep</button>
+    </div>
+    <button class="btn btn--sm" data-gf-pause aria-pressed="false">Pause</button>
+    <ul class="gf__legend small">
+      <li><i style="--c:var(--blue)"></i>CSF tracer</li>
+      <li><i style="--c:var(--magenta)"></i>Waste solutes (e.g. amyloid-β)</li>
+      <li><i style="--c:var(--green)"></i>Astrocyte endfeet (AQP4)</li>
+    </ul>
+  </div>
+  <p class="small muted" data-gf-note aria-live="polite">Asleep: the interstitial space widens and CSF–ISF exchange increases (Xie et al., 2013).</p>
+  <figcaption><Label kind="schematic" /> <span>Glymphatic exchange, simplified. Based on published literature — not lab data, not to scale.</span></figcaption>
+</figure>
+
+<style>
+  .gf__stage { position: relative; height: 440px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #05070b; }
+  canvas { width: 100%; height: 100%; }
+  .gf__tags { list-style: none; margin: 0; padding: 0; }
+  .gf__tags li { position: absolute; font: .68rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-2); }
+  .gf__controls { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; margin-top: var(--s2); }
+  .gf__controls [role=group] { display: flex; gap: 6px; }
+  .gf__legend { list-style: none; display: flex; gap: var(--s3); flex-wrap: wrap; margin: 0 0 0 auto; padding: 0; color: var(--text-2); }
+  .gf__legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); margin-right: 6px; box-shadow: 0 0 8px var(--c); }
+  @media (max-width: 767px) { .gf__stage { height: 360px; } .gf__legend { margin-left: 0; } }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-gf]').forEach((root) => {
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-gf-canvas]')!;
+    const ctx = canvas.getContext('2d')!;
+    const note = root.querySelector<HTMLElement>('[data-gf-note]')!;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    const motionOK = () => document.documentElement.dataset.motion !== 'off';
+    let W = 0, H = 0, sleep = true, paused = false, raf = 0;
+
+    type P = { x: number; y: number; kind: 'csf' | 'waste'; phase: 0 | 1 | 2; life: number };
+    let ps: P[] = [];
+    let s = 5; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+
+    const geom = () => {
+      const art = W * 0.14, vein = W * 0.86, pvs = Math.max(14, W * 0.025);
+      return { art, vein, pvs, top: H * 0.12, bot: H * 0.95 };
+    };
+    const astro = () => {
+      const g = geom(), cells: { x: number; y: number; rad: number }[] = [];
+      let k = 9;
+      const rr = () => ((k = (k * 48271) % 2147483647) / 2147483647);
+      for (let i = 0; i < 16; i++) cells.push({ x: g.art + 50 + rr() * (g.vein - g.art - 100), y: g.top + 30 + rr() * (g.bot - g.top - 50), rad: 14 + rr() * 10 });
+      return cells;
+    };
+    let cells = astro();
+
+    const spawn = (): P => r() < 0.72
+      ? { x: geom().art + (r() - 0.5) * geom().pvs, y: geom().top, kind: 'csf', phase: 0, life: 0 }
+      : { x: geom().art + 60 + r() * (geom().vein - geom().art - 120), y: geom().top + 20 + r() * (geom().bot - geom().top - 30), kind: 'waste', phase: 1, life: 0 };
+
+    const resize = () => {
+      const dpr = Math.min(devicePixelRatio, 2);
+      W = canvas.clientWidth; H = canvas.clientHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cells = astro();
+      ps = Array.from({ length: Math.round(W / 3) }, () => { const p = spawn(); if (p.kind === 'csf') { p.phase = r() < 0.5 ? 0 : 1; p.y = geom().top + r() * (geom().bot - geom().top); if (p.phase === 1) p.x = geom().art + r() * (geom().vein - geom().art); } return p; });
+      if (!motionOK() || paused) frame(false);
+    };
+
+    const step = () => {
+      const g = geom(), speed = sleep ? 1 : 0.35, spread = sleep ? 1.6 : 0.8;
+      for (const p of ps) {
+        p.life++;
+        if (p.phase === 0) {           // down the periarterial space (pulsatile, driven by arterial pulsation)
+          p.y += (1.4 + Math.sin(p.life * 0.25) * 0.6) * speed + 0.4;
+          p.x = g.art + Math.sin(p.life * 0.1 + p.y) * g.pvs * 0.35;
+          if (p.y > g.top + 40 && r() < 0.012 * speed + 0.002) p.phase = 1;
+          if (p.y > g.bot) p.phase = 1;
+        } else if (p.phase === 1) {    // across the interstitium (advection + diffusion)
+          p.x += (0.55 * speed + 0.1) + (r() - 0.5) * spread;
+          p.y += (r() - 0.5) * spread * 1.2;
+          for (const c of cells) { const dx = p.x - c.x, dy = p.y - c.y, d = Math.hypot(dx, dy); if (d < c.rad) { p.x = c.x + (dx / d) * c.rad; p.y = c.y + (dy / d) * c.rad; } }
+          p.y = Math.max(g.top, Math.min(g.bot, p.y));
+          if (p.x >= g.vein - g.pvs * 0.5) p.phase = 2;
+        } else {                       // up and out along the perivenous space
+          p.y -= 1.2 * speed + 0.3;
+          p.x = g.vein + Math.sin(p.life * 0.08 + p.y) * g.pvs * 0.35;
+          if (p.y < g.top - 10) Object.assign(p, spawn());
+        }
+      }
+    };
+
+    const frame = (advance = true) => {
+      if (advance) step();
+      const g = geom();
+      ctx.clearRect(0, 0, W, H);
+      // vessels
+      const vessel = (x: number, c: string) => {
+        ctx.fillStyle = c; ctx.globalAlpha = .18; ctx.fillRect(x - g.pvs, 0, g.pvs * 2, H);
+        ctx.globalAlpha = .9; ctx.fillStyle = c; ctx.fillRect(x - g.pvs * 0.35, 0, g.pvs * 0.7, H);
+        ctx.globalAlpha = 1;
+      };
+      vessel(g.art, '#c0392b'); vessel(g.vein, '#2c3e8f');
+      ctx.font = '11px "JetBrains Mono Variable", monospace'; ctx.fillStyle = css('--text-3'); ctx.textAlign = 'center';
+      ctx.fillText('artery', g.art, H - 8); ctx.fillText('vein', g.vein, H - 8);
+      // astrocytes (soma + processes; endfeet line the vessels)
+      ctx.strokeStyle = css('--green'); ctx.fillStyle = css('--green');
+      const shrink = sleep ? 0.78 : 1; // interstitial space widens during sleep
+      for (const c of cells) {
+        ctx.globalAlpha = .14; ctx.beginPath(); ctx.arc(c.x, c.y, c.rad * shrink, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = .5; ctx.beginPath(); ctx.arc(c.x, c.y, 3, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = .55; ctx.setLineDash([2, 5]); ctx.lineWidth = 2;
+      for (const x of [g.art + g.pvs, g.vein - g.pvs]) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+      // particles
+      const csf = css('--blue'), waste = css('--magenta');
+      for (const p of ps) {
+        ctx.fillStyle = p.kind === 'csf' ? csf : waste;
+        ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.kind === 'csf' ? 1.6 : 2.2, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+      // flow arrows (static cue, useful when motion is off)
+      ctx.strokeStyle = css('--text-2'); ctx.lineWidth = 1.5;
+      const arrow = (x1: number, y1: number, x2: number, y2: number) => {
+        const a = Math.atan2(y2 - y1, x2 - x1);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.lineTo(x2 - 8 * Math.cos(a - .4), y2 - 8 * Math.sin(a - .4)); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 8 * Math.cos(a + .4), y2 - 8 * Math.sin(a + .4)); ctx.stroke();
+      };
+      arrow(g.art + g.pvs + 14, H * .22, g.art + g.pvs + 14, H * .34);
+      arrow(W * .44, H * .52, W * .56, H * .52);
+      arrow(g.vein - g.pvs - 14, H * .34, g.vein - g.pvs - 14, H * .22);
+    };
+
+    const loop = () => { frame(); raf = requestAnimationFrame(loop); };
+    const run = () => { cancelAnimationFrame(raf); raf = 0; if (motionOK() && !paused) raf = requestAnimationFrame(loop); else { for (let i = 0; i < 200; i++) step(); frame(false); } };
+
+    root.querySelectorAll<HTMLButtonElement>('[data-state]').forEach((b) => b.addEventListener('click', () => {
+      sleep = b.dataset.state === 'sleep';
+      root.querySelectorAll('[data-state]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      note.textContent = sleep
+        ? 'Asleep: the interstitial space widens and CSF–ISF exchange increases (Xie et al., 2013).'
+        : 'Awake: a narrower interstitial space and reduced CSF influx slow clearance (Xie et al., 2013).';
+      if (!raf) frame(false);
+    }));
+    const pauseBtn = root.querySelector<HTMLButtonElement>('[data-gf-pause]')!;
+    pauseBtn.addEventListener('click', () => { paused = !paused; pauseBtn.setAttribute('aria-pressed', String(paused)); pauseBtn.textContent = paused ? 'Play' : 'Pause'; run(); });
+    new ResizeObserver(resize).observe(canvas);
+    new IntersectionObserver(([e]) => (e.isIntersecting ? run() : (cancelAnimationFrame(raf), (raf = 0)))).observe(canvas);
+    addEventListener('agz:motion', run);
+  });
+</script>

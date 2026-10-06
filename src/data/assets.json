@@ -1,0 +1,42 @@
+{
+  "_readme": "Asset manifest. Put files in public/assets/lab/ and reference them here (paths relative to public/). Every entry needs source + caption + alt. Empty 'channels'/'src' renders a labelled placeholder.",
+  "twoPhoton": {
+    "title": "Two-photon imaging in CA1",
+    "source": "",
+    "caption": "",
+    "alt": "",
+    "meta": { "indicator": "", "species": "", "depth": "", "frameRate": "", "scaleBar": "" },
+    "channels": []
+  },
+  "twoPhotonExample": {
+    "_example": "Channel entries look like this (type 'video' or 'image'):",
+    "channels": [
+      { "name": "GCaMP", "color": "green", "type": "video", "src": "assets/lab/ca1_gcamp.mp4" },
+      { "name": "tdTomato", "color": "red", "type": "video", "src": "assets/lab/ca1_tdtomato.mp4" }
+    ]
+  },
+  "ihc": {
+    "title": "Immunohistochemistry",
+    "source": "",
+    "caption": "",
+    "alt": "",
+    "scaleBarMicronsPerPixel": null,
+    "channels": [],
+    "hotspots": []
+  },
+  "ihcExample": {
+    "_example": "Channels can be plain images or Deep Zoom (.dzi) tile sources:",
+    "channels": [
+      { "name": "DAPI", "color": "blue", "src": "assets/lab/ihc_dapi.dzi" },
+      { "name": "NeuN", "color": "green", "src": "assets/lab/ihc_neun.dzi" }
+    ],
+    "hotspots": [ { "x": 0.42, "y": 0.31, "label": "CA1 stratum pyramidale", "text": "Explanation." } ]
+  },
+  "ephys": {
+    "title": "Electrophysiology",
+    "source": "",
+    "caption": "",
+    "src": "",
+    "_format": "JSON: { \"dt_ms\": 0.05, \"unit\": \"mV\", \"y\": [..], \"annotations\": [{ \"t_ms\": 120, \"label\": \"Action potential\", \"expert\": \"...\", \"plain\": \"...\" }] }"
+  }
+}

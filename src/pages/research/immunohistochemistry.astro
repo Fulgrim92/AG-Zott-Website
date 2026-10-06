@@ -1,0 +1,28 @@
+---
+import Research from '../../layouts/Research.astro';
+import DeepZoom from '../../components/DeepZoom.astro';
+---
+<Research theme="immunohistochemistry" color="var(--blue)" eyebrow="Research · 02" title="Immunohistochemistry"
+  lead="Making molecules visible: mapping the cells and proteins behind the activity we record.">
+  <Fragment slot="question">
+    <h2 class="ph">[PLACEHOLDER] The lab’s question for this theme.</h2>
+    <p class="muted">Replace with the lab’s own description, e.g. which cell types, markers or structural changes are studied.</p>
+  </Fragment>
+
+  <Fragment slot="method">
+    <h2>Antibodies as molecular probes</h2>
+    <p>In immunohistochemistry, thin brain sections are incubated with antibodies that bind specific proteins. Fluorescent labels on these antibodies reveal where each protein sits — distinguishing, for example, neurons, astrocytes, interneuron subtypes or synaptic markers in the same section.</p>
+    <p class="muted">Combining several labels (channels) in one section shows how cell types are arranged relative to each other — and links back to the cells imaged in vivo.</p>
+  </Fragment>
+
+  <Fragment slot="data">
+    <h2 data-reveal>Inspect a section</h2>
+    <p class="muted" data-reveal>Zoom from the whole hippocampus down to single cells. Switch channels on and off, use the minimap, and follow numbered hotspots for guided explanations.</p>
+    <div style="margin-top:var(--s4)"><DeepZoom /></div>
+  </Fragment>
+
+  <Fragment slot="findings">
+    <h2 class="ph">[PLACEHOLDER] Key findings</h2>
+    <ul class="muted"><li>[Finding 1 — link to paper]</li><li>[Finding 2 — link to paper]</li></ul>
+  </Fragment>
+</Research>

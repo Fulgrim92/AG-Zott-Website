@@ -1,0 +1,9 @@
+{
+  "courses": [
+    { "title": "[PLACEHOLDER] Lecture: Cellular & Systems Neuroscience", "level": "BSc / MSc", "semester": "[Winter term — to verify]", "description": "[PLACEHOLDER: course description]", "materials": [] },
+    { "title": "[PLACEHOLDER] Lab course: Two-photon imaging & electrophysiology", "level": "MSc", "semester": "[Summer term — to verify]", "description": "[PLACEHOLDER: course description]", "materials": [] }
+  ],
+  "theses": [
+    { "level": "BSc / MSc", "title": "[PLACEHOLDER] Thesis topic", "description": "[PLACEHOLDER: short description and required skills]" }
+  ]
+}

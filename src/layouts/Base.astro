@@ -1,0 +1,54 @@
+---
+import '../styles/global.css';
+import Sidebar from '../components/Sidebar.astro';
+import Footer from '../components/Footer.astro';
+import site from '../data/site.json';
+
+interface Props { title?: string; description?: string; accent?: string; noindex?: boolean }
+const { title, description = `${site.name} — ${site.tagline}. Two-photon imaging in hippocampal CA1, immunohistochemistry and electrophysiology.`, accent, noindex } = Astro.props;
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} — ${site.tagline}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{fullTitle}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
+  <meta name="theme-color" content="#07090d" />
+  <meta property="og:title" content={fullTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:type" content="website" />
+  {noindex && <meta name="robots" content="noindex" />}
+  <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />
+  <script is:inline>
+    // Apply saved display preferences before paint (no cookies; localStorage only).
+    (function () {
+      var d = document.documentElement, s = {};
+      try { s = JSON.parse(localStorage.getItem('agz-prefs') || '{}'); } catch (e) {}
+      if (s.palette === 'cb') d.dataset.palette = 'cb';
+      var reduce = s.motion === 'off' || (s.motion !== 'on' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+      if (reduce) d.dataset.motion = 'off'; else d.classList.add('js-motion');
+    })();
+  </script>
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'ResearchOrganization', name: site.name,
+    description: site.tagline, url: Astro.site?.toString(), email: site.email,
+  })} />
+</head>
+<body style={accent ? `--accent:${accent}` : undefined}>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <div class="shell">
+    <Sidebar />
+    <main id="content" class="main" tabindex="-1">
+      <slot />
+      <Footer />
+    </main>
+  </div>
+  <script>
+    import '../scripts/site';
+  </script>
+</body>
+</html>

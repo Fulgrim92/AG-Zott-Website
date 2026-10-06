@@ -1,0 +1,6 @@
+[
+  { "slug": "website-launch", "date": "2026-10-06", "category": "Lab", "title": "New lab website in development", "body": "We are building a new website to share our research, data and team. Content marked as placeholder will be replaced with verified information before launch.", "placeholder": false },
+  { "slug": "placeholder-paper", "date": "2026-09-01", "category": "Paper", "title": "[PLACEHOLDER] New paper announcement", "body": "[PLACEHOLDER: Short summary of the paper and link to the publication.]", "placeholder": true },
+  { "slug": "placeholder-people", "date": "2026-07-15", "category": "People", "title": "[PLACEHOLDER] Welcome to new lab members", "body": "[PLACEHOLDER: Announcement text.]", "placeholder": true },
+  { "slug": "placeholder-event", "date": "2026-05-20", "category": "Event", "title": "[PLACEHOLDER] Conference talk or award", "body": "[PLACEHOLDER: Announcement text.]", "placeholder": true }
+]

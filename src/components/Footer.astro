@@ -1,0 +1,40 @@
+---
+import site from '../data/site.json';
+import { url } from '../lib/url';
+---
+<footer class="site-footer">
+  <div class="container">
+    <div class="cols">
+      <div>
+        <h2>AG Zott</h2>
+        <address style="font-style:normal">{site.address.map((l) => <>{l}<br /></>)}</address>
+        <p><a href={`mailto:${site.email}`}>{site.email}</a></p>
+      </div>
+      <div>
+        <h2>Explore</h2>
+        <ul>
+          <li><a href={url('/research/')}>Research</a></li>
+          <li><a href={url('/papers/')}>Papers</a></li>
+          <li><a href={url('/team/')}>Team</a></li>
+          <li><a href={url('/contact/')}>Contact &amp; positions</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Support</h2>
+        <p class="small">Our research is supported by the European Research Council (ERC) and the Deutsche Forschungsgemeinschaft (DFG). <a href={url('/funding/')}>Funding details →</a></p>
+      </div>
+      <div>
+        <h2>Legal</h2>
+        <ul>
+          <li><a href={url('/impressum/')}>Impressum</a></li>
+          <li><a href={url('/datenschutz/')}>Datenschutz</a></li>
+          <li><a href={url('/accessibility/')}>Accessibility</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="small" style="margin-top:var(--s5);color:var(--text-3)">
+      Content labels: <span class="label label--data">Lab data</span> <span class="label label--schematic">Illustrative schematic</span> <span class="label label--placeholder">Placeholder</span>
+      · Last updated <time datetime={site.lastUpdated}>{site.lastUpdated}</time>
+    </p>
+  </div>
+</footer>

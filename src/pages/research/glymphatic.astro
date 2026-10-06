@@ -1,0 +1,34 @@
+---
+import Research from '../../layouts/Research.astro';
+import GlymphaticFlow from '../../components/GlymphaticFlow.astro';
+import site from '../../data/site.json';
+---
+<Research theme="glymphatic" color="var(--magenta)" eyebrow="Research · 04" title="The glymphatic system"
+  lead="How the brain rinses itself: cerebrospinal fluid flow and the clearance of waste.">
+  <Fragment slot="question">
+    {!site.features.glymphaticVerified && (
+      <p class="banner" style="margin-bottom:var(--s3)"><strong class="ph">To verify:</strong> this section is shown only if the glymphatic system is part of the lab’s actual work. Confirm and link publications, then set <code>features.glymphaticVerified</code> to <code>true</code> (or disable the section with <code>features.glymphatic</code>).</p>
+    )}
+    <h2 class="ph">[PLACEHOLDER] The lab’s question for this theme.</h2>
+  </Fragment>
+
+  <Fragment slot="method">
+    <h2>A brain-wide clearance pathway</h2>
+    <p>The brain has no conventional lymphatic vessels in its tissue. Instead, cerebrospinal fluid (CSF) flows into the brain along spaces surrounding arteries, exchanges with the interstitial fluid between cells — facilitated by aquaporin-4 water channels on astrocyte endfeet — and drains along spaces around veins, carrying solutes such as amyloid-β with it (Iliff et al., 2012).</p>
+    <p class="muted">This exchange is markedly more active during sleep, when the interstitial space expands (Xie et al., 2013).</p>
+  </Fragment>
+
+  <Fragment slot="data">
+    <h2 data-reveal>Follow the flow</h2>
+    <p class="muted" data-reveal>Switch between awake and asleep to compare how fluid and solutes move. Pause at any time.</p>
+    <div style="margin-top:var(--s4)"><GlymphaticFlow /></div>
+    <p class="small muted" style="margin-top:var(--s3)">
+      References: Iliff JJ et al. (2012) <i>Sci Transl Med</i> 4:147ra111 · Xie L et al. (2013) <i>Science</i> 342:373–377.
+    </p>
+  </Fragment>
+
+  <Fragment slot="findings">
+    <h2 class="ph">[PLACEHOLDER] Key findings</h2>
+    <ul class="muted"><li>[Finding — link to paper]</li></ul>
+  </Fragment>
+</Research>

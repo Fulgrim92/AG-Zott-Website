@@ -1,0 +1,46 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import alumni from '../data/alumni.json';
+const roles = [...new Set(alumni.map((a) => a.role))];
+---
+<Base title="Alumni">
+  <PageHeader eyebrow="Alumni" title="Where our people went next" lead="Former members of the lab and their current positions." />
+  <section class="section section--tight">
+    <div class="container">
+      <div class="filters" role="group" aria-label="Filter by former role">
+        <button class="btn btn--sm" aria-pressed="true" data-arole="all">All</button>
+        {roles.map((r) => <button class="btn btn--sm" aria-pressed="false" data-arole={r}>{r}</button>)}
+      </div>
+      <div class="table-wrap">
+        <table>
+          <caption class="visually-hidden">Lab alumni</caption>
+          <thead><tr><th scope="col">Name</th><th scope="col">Role in lab</th><th scope="col">Years</th><th scope="col">Now</th></tr></thead>
+          <tbody>
+            {alumni.map((a) => (
+              <tr data-alum data-role={a.role} class:list={[{ ph: a.placeholder }]}>
+                <th scope="row">{a.name}</th><td>{a.role}</td><td class="mono">{a.years}</td><td>{a.now}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</Base>
+<style>
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--s4); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: var(--s2); border-bottom: 1px solid var(--line); }
+  thead th { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); font-weight: 400; }
+  tbody th { font-weight: 500; }
+  tr[hidden] { display: none; }
+</style>
+<script>
+  const btns = document.querySelectorAll<HTMLButtonElement>('[data-arole]');
+  btns.forEach((b) => b.addEventListener('click', () => {
+    btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    document.querySelectorAll<HTMLElement>('[data-alum]').forEach((r) => (r.hidden = b.dataset.arole !== 'all' && r.dataset.role !== b.dataset.arole));
+  }));
+</script>

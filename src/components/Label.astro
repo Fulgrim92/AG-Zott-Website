@@ -1,0 +1,7 @@
+---
+/** Provenance label: every visual is lab data, an illustrative schematic, or a placeholder. */
+interface Props { kind: 'data' | 'schematic' | 'placeholder'; text?: string }
+const { kind, text } = Astro.props;
+const defaults = { data: 'Lab data', schematic: 'Illustrative schematic', placeholder: 'Placeholder' };
+---
+<span class={`label label--${kind}`}>{text ?? defaults[kind]}</span>

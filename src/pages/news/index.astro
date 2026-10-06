@@ -1,0 +1,35 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import news from '../../data/news.json';
+import { url } from '../../lib/url';
+const items = [...news].sort((a, b) => b.date.localeCompare(a.date));
+const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+<Base title="News">
+  <PageHeader eyebrow="News" title="From the lab" lead="Papers, people, talks and events." />
+  <section class="section section--tight">
+    <div class="container">
+      <ol class="news" role="list">
+        {items.map((n) => (
+          <li data-reveal>
+            <a class="card item" href={url(`/news/${n.slug}/`)}>
+              <span class="card__glow" aria-hidden="true"></span>
+              <time class="mono small muted" datetime={n.date}>{fmt(n.date)}</time>
+              <span class="tag">{n.category}</span>
+              <h2 class:list={[{ ph: n.placeholder }]}>{n.title}</h2>
+              <p class:list={['muted', { ph: n.placeholder }]}>{n.body}</p>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+</Base>
+<style>
+  .news { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+  .item { height: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .item .tag { align-self: flex-start; }
+  .item h2 { font-size: 1.4rem; margin: 6px 0 0; }
+  .item p { margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+</style>

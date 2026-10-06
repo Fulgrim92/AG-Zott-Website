@@ -1,0 +1,89 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import FunderLogo from '../components/FunderLogo.astro';
+import FundingAck from '../components/FundingAck.astro';
+import grants from '../data/grants.json';
+import papers from '../data/papers.json';
+import { url, themeLabel, themeColor } from '../lib/url';
+const v = (x: string | null | undefined) => (x && !x.startsWith('[') ? x : null);
+---
+<Base title="Funding">
+  <PageHeader eyebrow="Funding" title="Research support" lead="Our work is made possible by the European Research Council and the Deutsche Forschungsgemeinschaft. Each funded project is listed with its research theme and resulting publications.">
+    <div class="logos">
+      <FunderLogo funder="EU" height={64} />
+      <FunderLogo funder="ERC" height={64} />
+      <FunderLogo funder="DFG" height={64} />
+    </div>
+  </PageHeader>
+
+  <section class="section section--tight">
+    <div class="container">
+      <p class="banner" style="margin-bottom:var(--s5)">
+        Fields marked <span class="ph mono">[… — TO VERIFY]</span> are placeholders. Enter verified details in <code>src/data/grants.json</code> and set <code>"verified": true</code>.
+        Place official logo files (unaltered, per funder brand guidelines) in <code>public/assets/logos/</code>.
+      </p>
+
+      <div class="grants">
+        {grants.map((g) => {
+          const pubs = papers.filter((p) => p.grants.includes(g.id));
+          return (
+            <article id={g.id} class="card grant" data-reveal>
+              <header class="grant__head">
+                <div class="grant__logos">
+                  {g.funder === 'ERC' && <FunderLogo funder="EU" height={44} />}
+                  <FunderLogo funder={g.funder as 'ERC' | 'DFG'} height={44} />
+                </div>
+                <span class:list={['label', g.verified ? 'label--data' : 'label--placeholder']}>{g.verified ? 'Verified' : 'Details to verify'}</span>
+              </header>
+              <p class="mono small muted">{g.funderName}</p>
+              <h2 class:list={[{ ph: !v(g.title) }]}>{g.title}</h2>
+              <dl class="facts">
+                <div><dt>Programme</dt><dd class:list={[{ ph: !v(g.programme) }]}>{g.programme}</dd></div>
+                {g.funder === 'ERC' && <div><dt>Acronym</dt><dd class:list={[{ ph: !v(g.acronym) }]}>{g.acronym ?? '[TO VERIFY]'}</dd></div>}
+                <div><dt>{g.funder === 'ERC' ? 'Grant agreement no.' : 'Project number'}</dt><dd class:list={['mono', { ph: !v(g.identifier) }]}>{g.identifier ?? '[TO VERIFY]'}</dd></div>
+                <div><dt>Award period</dt><dd class:list={['mono', { ph: !v(g.period) }]}>{g.period ?? '[TO VERIFY]'}</dd></div>
+                <div><dt>Principal investigator</dt><dd class:list={[{ ph: !v(g.pi) }]}>{g.pi}</dd></div>
+              </dl>
+              <div class="grant__links">
+                <div>
+                  <h3>Research themes</h3>
+                  <p>{g.themes.map((t) => <a class="tag" style={`color:${themeColor[t]}`} href={url(`/research/${t}/`)}>{themeLabel[t]}</a>)}</p>
+                </div>
+                <div>
+                  <h3>Publications ({pubs.length})</h3>
+                  {pubs.length ? <ul>{pubs.map((p) => <li class:list={['small', { ph: p.placeholder }]}>{p.year} — {p.title}</li>)}</ul> : <p class="small muted">None tagged yet.</p>}
+                  <a class="small" href={url(`/papers/?funder=${g.id}`)}>View in publication list →</a>
+                </div>
+              </div>
+              <div class="grant__ack">
+                <h3>Acknowledgment</h3>
+                <FundingAck grantId={g.id} />
+                {g.funder === 'DFG' && <FundingAck grantId={g.id} lang="de" />}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <p class="small muted" style="margin-top:var(--s5)">Acknowledgment wording follows the standard ERC (Horizon Europe / Horizon 2020) and DFG formulas; verify against the current funder guidelines and the grant agreement before publication.</p>
+    </div>
+  </section>
+</Base>
+<style>
+  .logos { display: flex; gap: var(--s3); flex-wrap: wrap; margin-top: var(--s4); align-items: center; }
+  .grants { display: grid; gap: var(--s4); }
+  .grant { padding: var(--s5); }
+  .grant__head { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s3); }
+  .grant__logos { display: flex; gap: var(--s2); }
+  .grant h2 { font-size: clamp(1.5rem, 2.4vw, 2rem); }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s2) var(--s3); margin: var(--s3) 0; padding: var(--s3) 0; border-block: 1px solid var(--line); }
+  .facts dt { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); }
+  .facts dd { margin: 4px 0 0; }
+  .grant h3 { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
+  .grant__links { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s4); }
+  .grant__links p { display: flex; gap: 6px; flex-wrap: wrap; }
+  .grant__links .tag { text-decoration: none; }
+  .grant__links ul { padding-left: 1.1em; color: var(--text-2); }
+  .grant__ack { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--line); }
+</style>

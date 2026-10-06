@@ -1,0 +1,10 @@
+---
+import Label from './Label.astro';
+interface Props { title: string; hint?: string; minHeight?: string }
+const { title, hint, minHeight } = Astro.props;
+---
+<div class="placeholder-box" style={minHeight ? `min-height:${minHeight}` : undefined} role="note">
+  <div><Label kind="placeholder" text="Placeholder — awaiting lab data" /></div>
+  <strong>{title}</strong>
+  {hint && <p class="small">{hint}</p>}
+</div>

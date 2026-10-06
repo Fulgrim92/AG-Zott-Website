@@ -1,0 +1,7 @@
+[
+  { "title": "[PLACEHOLDER] Publication title — import from BibTeX / ORCID", "authors": "Author A, Author B, Zott [initials]", "journal": "[Journal]", "year": 2026, "type": "article", "doi": "", "themes": ["two-photon"], "grants": ["erc"], "placeholder": true },
+  { "title": "[PLACEHOLDER] Publication title — import from BibTeX / ORCID", "authors": "Author C, Zott [initials]", "journal": "[Journal]", "year": 2025, "type": "article", "doi": "", "themes": ["electrophysiology"], "grants": ["erc"], "placeholder": true },
+  { "title": "[PLACEHOLDER] Publication title — import from BibTeX / ORCID", "authors": "Author D, Author E, Zott [initials]", "journal": "[Journal]", "year": 2025, "type": "article", "doi": "", "themes": ["immunohistochemistry", "glymphatic"], "grants": ["dfg"], "placeholder": true },
+  { "title": "[PLACEHOLDER] Preprint title", "authors": "Author F, Zott [initials]", "journal": "bioRxiv", "year": 2026, "type": "preprint", "doi": "", "themes": ["two-photon", "immunohistochemistry"], "grants": [], "placeholder": true },
+  { "title": "[PLACEHOLDER] Review title", "authors": "Zott [initials]", "journal": "[Journal]", "year": 2024, "type": "review", "doi": "", "themes": ["glymphatic"], "grants": [], "placeholder": true }
+]

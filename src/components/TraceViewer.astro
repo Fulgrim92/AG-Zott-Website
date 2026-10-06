@@ -1,0 +1,221 @@
+---
+/**
+ * Interactive electrophysiology trace viewer (canvas).
+ * Loads a recording exported to JSON (see src/data/assets.json → ephys._format).
+ * If no recording is configured, it shows a clearly labelled SYNTHETIC demo signal
+ * generated in the browser so the interaction can be reviewed — never presented as data.
+ */
+import Label from './Label.astro';
+import assets from '../data/assets.json';
+import { url } from '../lib/url';
+const e = assets.ephys as any;
+const src = e.src ? url(e.src) : '';
+---
+<div class="tv" data-tv data-src={src}>
+  <div class="tv__bar">
+    <div class="tv__btns" role="group" aria-label="Zoom">
+      <button class="btn btn--sm" data-zoom="in" aria-label="Zoom in">＋</button>
+      <button class="btn btn--sm" data-zoom="out" aria-label="Zoom out">－</button>
+      <button class="btn btn--sm" data-zoom="reset">Full trace</button>
+    </div>
+    <div class="tv__btns" role="group" aria-label="Explanation level">
+      <button class="btn btn--sm" aria-pressed="true" data-level="plain">Plain language</button>
+      <button class="btn btn--sm" aria-pressed="false" data-level="expert">Expert</button>
+    </div>
+    <span class="mono small tv__readout" data-readout aria-live="polite">Hover the trace</span>
+  </div>
+
+  <div class="tv__plot">
+    <canvas data-canvas tabindex="0" aria-label="Electrophysiology trace. Arrow keys pan, plus and minus zoom."></canvas>
+  </div>
+
+  <div class="tv__foot">
+    <span data-label>{src ? <Label kind="data" /> : <Label kind="placeholder" text="Synthetic demo signal — not a recording" />}</span>
+    <span class="small muted">{src ? e.caption : 'Generated in your browser to demonstrate the viewer. Replace via src/data/assets.json → ephys.src.'}</span>
+  </div>
+
+  <ol class="tv__notes" data-notes></ol>
+</div>
+
+<style>
+  .tv { display: grid; gap: var(--s2); }
+  .tv__bar { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; }
+  .tv__btns { display: flex; gap: 6px; }
+  .tv__readout { margin-left: auto; color: var(--text-2); min-width: 18ch; text-align: right; }
+  .tv__plot { position: relative; height: 380px; border: 1px solid var(--line); border-radius: var(--radius); background: #05070b; overflow: hidden; }
+  canvas { width: 100%; height: 100%; cursor: crosshair; touch-action: pan-y; }
+  .tv__foot { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+  .tv__notes { list-style: none; padding: 0; margin: var(--s2) 0 0; display: grid; gap: var(--s2); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .tv__notes :global(li) { border: 1px solid var(--line); border-radius: 10px; padding: var(--s2); background: var(--surface); }
+  .tv__notes :global(li.is-on) { border-color: var(--accent); }
+  .tv__notes :global(button) { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-family: var(--font-serif); font-size: 1.1rem; text-align: left; }
+  .tv__notes :global(p) { margin: 6px 0 0; font-size: .9rem; color: var(--text-2); }
+</style>
+
+<script>
+  type Ann = { t_ms: number; label: string; plain: string; expert: string };
+  type Trace = { dt_ms: number; unit: string; y: number[]; annotations: Ann[] };
+
+  /** Simple leaky integrate-and-fire with a stereotyped spike waveform. Demo only. */
+  function synthetic(): Trace {
+    const dt = 0.05, T = 1000, n = Math.round(T / dt), y = new Array<number>(n);
+    let v = -70, s = 11, refr = 0, spikeT = -1, firstSpike = -1;
+    const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647 - 0.5);
+    for (let i = 0; i < n; i++) {
+      const t = i * dt;
+      const I = t > 200 && t < 800 ? 2.6 : 0;
+      if (spikeT >= 0 && t - spikeT < 2.5) {
+        const k = t - spikeT; // spike shape: fast up, slower down, AHP handled by reset
+        y[i] = k < 0.4 ? -50 + (k / 0.4) * 85 : 35 - ((k - 0.4) / 2.1) * 95;
+        continue;
+      }
+      if (refr > 0) refr -= dt;
+      v += dt * ((-(v + 70) + I * 10) / 20) + rnd() * 0.12;
+      if (v > -50 && refr <= 0) { spikeT = t; refr = 6; v = -62; if (firstSpike < 0) firstSpike = t; y[i] = -50; continue; }
+      y[i] = v;
+    }
+    return {
+      dt_ms: dt, unit: 'mV', y,
+      annotations: [
+        { t_ms: 100, label: 'Resting potential', plain: 'Without input the neuron sits at a stable negative voltage, like a charged battery.', expert: 'Resting membrane potential ≈ −70 mV, set mainly by K⁺ leak conductances.' },
+        { t_ms: 200, label: 'Current step', plain: 'We inject a small, constant current and the voltage starts to rise.', expert: 'Depolarising current step; the passive rise follows the membrane time constant τ = R·C.' },
+        { t_ms: firstSpike, label: 'Action potential', plain: 'Once a threshold is crossed, the neuron fires a brief electrical pulse — a “spike”.', expert: 'Na⁺-channel driven spike; threshold here ≈ −50 mV, overshoot to ≈ +35 mV.' },
+        { t_ms: firstSpike + 3, label: 'After-hyperpolarisation', plain: 'After each spike the voltage dips briefly, a short recovery pause.', expert: 'AHP from K⁺ currents; together with refractoriness it limits firing frequency.' },
+      ],
+    };
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-tv]').forEach(async (root) => {
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-canvas]')!;
+    const ctx = canvas.getContext('2d')!;
+    const readout = root.querySelector<HTMLElement>('[data-readout]')!;
+    const notes = root.querySelector<HTMLOListElement>('[data-notes]')!;
+    let data: Trace;
+    try {
+      data = root.dataset.src ? await (await fetch(root.dataset.src)).json() : synthetic();
+    } catch {
+      data = synthetic();
+      root.querySelector('[data-label]')!.innerHTML = '<span class="label label--placeholder">Recording failed to load — showing synthetic demo</span>';
+    }
+    const n = data.y.length, T = n * data.dt_ms;
+    let yMin = Infinity, yMax = -Infinity;
+    for (const v of data.y) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }
+    const pad = (yMax - yMin) * 0.08; yMin -= pad; yMax += pad;
+
+    let t0 = 0, t1 = T, hoverX: number | null = null, active = -1, level: 'plain' | 'expert' = 'plain';
+    const css = (v: string) => getComputedStyle(root).getPropertyValue(v).trim();
+    const M = { l: 56, r: 16, t: 16, b: 34 };
+
+    const draw = () => {
+      const dpr = Math.min(devicePixelRatio, 2), W = canvas.clientWidth, H = canvas.clientHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      const pw = W - M.l - M.r, ph = H - M.t - M.b;
+      const X = (t: number) => M.l + ((t - t0) / (t1 - t0)) * pw;
+      const Y = (v: number) => M.t + (1 - (v - yMin) / (yMax - yMin)) * ph;
+
+      // grid + axes
+      ctx.font = '11px "JetBrains Mono Variable", monospace'; ctx.fillStyle = css('--text-3'); ctx.strokeStyle = css('--line'); ctx.lineWidth = 1;
+      const yStep = niceStep((yMax - yMin) / 5), tStep = niceStep((t1 - t0) / 8);
+      for (let v = Math.ceil(yMin / yStep) * yStep; v <= yMax; v += yStep) {
+        ctx.beginPath(); ctx.moveTo(M.l, Y(v)); ctx.lineTo(W - M.r, Y(v)); ctx.stroke();
+        ctx.textAlign = 'right'; ctx.fillText(`${+v.toFixed(1)}`, M.l - 8, Y(v) + 4);
+      }
+      for (let t = Math.ceil(t0 / tStep) * tStep; t <= t1; t += tStep) {
+        ctx.textAlign = 'center'; ctx.fillText(`${+t.toFixed(1)}`, X(t), H - 12);
+      }
+      ctx.save(); ctx.translate(14, M.t + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText(data.unit, 0, 0); ctx.restore();
+      ctx.textAlign = 'right'; ctx.fillText('time (ms)', W - M.r, H - 12 - 14);
+
+      // annotations
+      data.annotations.forEach((a, i) => {
+        if (a.t_ms < t0 || a.t_ms > t1) return;
+        const x = X(a.t_ms);
+        ctx.strokeStyle = i === active ? css('--accent') : css('--text-3'); ctx.setLineDash([3, 4]);
+        ctx.beginPath(); ctx.moveTo(x, M.t); ctx.lineTo(x, M.t + ph); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = i === active ? css('--accent') : css('--text-2'); ctx.textAlign = 'left';
+        ctx.fillText(`${i + 1}`, x + 4, M.t + 12);
+      });
+
+      // trace (min/max decimation per pixel column for speed)
+      ctx.save(); ctx.beginPath(); ctx.rect(M.l, M.t, pw, ph); ctx.clip();
+      ctx.strokeStyle = css('--red'); ctx.lineWidth = 1.3; ctx.shadowColor = css('--red'); ctx.shadowBlur = 6;
+      ctx.beginPath();
+      const i0 = Math.max(0, Math.floor(t0 / data.dt_ms)), i1 = Math.min(n - 1, Math.ceil(t1 / data.dt_ms));
+      const per = Math.max(1, Math.floor((i1 - i0) / pw));
+      for (let i = i0; i <= i1; i += per) {
+        let lo = data.y[i], hi = data.y[i];
+        for (let k = 1; k < per && i + k <= i1; k++) { const v = data.y[i + k]; if (v < lo) lo = v; if (v > hi) hi = v; }
+        const x = X(i * data.dt_ms);
+        if (i === i0) ctx.moveTo(x, Y(data.y[i]));
+        ctx.lineTo(x, Y(hi)); ctx.lineTo(x, Y(lo));
+      }
+      ctx.stroke(); ctx.restore();
+
+      // crosshair
+      if (hoverX !== null && hoverX >= M.l && hoverX <= W - M.r) {
+        const t = t0 + ((hoverX - M.l) / pw) * (t1 - t0), v = data.y[Math.round(t / data.dt_ms)];
+        ctx.strokeStyle = css('--text-2'); ctx.beginPath(); ctx.moveTo(hoverX, M.t); ctx.lineTo(hoverX, M.t + ph); ctx.stroke();
+        ctx.fillStyle = css('--text'); ctx.beginPath(); ctx.arc(hoverX, Y(v), 3.5, 0, Math.PI * 2); ctx.fill();
+        readout.textContent = `t = ${t.toFixed(2)} ms · V = ${v.toFixed(1)} ${data.unit}`;
+      }
+    };
+
+    const clamp = () => {
+      const w = Math.max(2, Math.min(T, t1 - t0));
+      t0 = Math.max(0, Math.min(t0, T - w)); t1 = t0 + w;
+    };
+    const zoom = (f: number, centerT = (t0 + t1) / 2) => {
+      t0 = centerT - (centerT - t0) * f; t1 = centerT + (t1 - centerT) * f; clamp(); draw();
+    };
+    const tAt = (x: number) => t0 + ((x - M.l) / (canvas.clientWidth - M.l - M.r)) * (t1 - t0);
+
+    root.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((b) => b.addEventListener('click', () => {
+      const z = b.dataset.zoom; if (z === 'reset') { t0 = 0; t1 = T; draw(); } else zoom(z === 'in' ? 0.5 : 2);
+    }));
+    canvas.addEventListener('wheel', (e) => { if (!e.ctrlKey && !e.metaKey && Math.abs(e.deltaY) < Math.abs(e.deltaX)) return; e.preventDefault(); zoom(e.deltaY > 0 ? 1.25 : 0.8, tAt(e.offsetX)); }, { passive: false });
+    let drag: number | null = null;
+    canvas.addEventListener('pointerdown', (e) => { drag = e.offsetX; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener('pointerup', () => (drag = null));
+    canvas.addEventListener('pointermove', (e) => {
+      hoverX = e.offsetX;
+      if (drag !== null) { const dt = tAt(drag) - tAt(e.offsetX); t0 += dt; t1 += dt; clamp(); drag = e.offsetX; }
+      draw();
+    });
+    canvas.addEventListener('pointerleave', () => { hoverX = null; readout.textContent = 'Hover the trace'; draw(); });
+    canvas.addEventListener('keydown', (e) => {
+      const w = t1 - t0;
+      if (e.key === 'ArrowLeft') { t0 -= w * 0.1; t1 -= w * 0.1; } else if (e.key === 'ArrowRight') { t0 += w * 0.1; t1 += w * 0.1; }
+      else if (e.key === '+' || e.key === '=') return zoom(0.5); else if (e.key === '-') return zoom(2); else return;
+      e.preventDefault(); clamp(); draw();
+    });
+
+    const renderNotes = () => {
+      notes.innerHTML = '';
+      data.annotations.forEach((a, i) => {
+        const li = document.createElement('li'); li.className = i === active ? 'is-on' : '';
+        const b = document.createElement('button'); b.textContent = `${i + 1}. ${a.label}`;
+        b.addEventListener('click', () => {
+          active = i; const w = Math.min(T, a.label.includes('Action') || a.label.includes('After') ? 20 : 300);
+          t0 = a.t_ms - w / 2; t1 = a.t_ms + w / 2; clamp(); renderNotes(); draw();
+        });
+        const p = document.createElement('p'); p.textContent = level === 'plain' ? a.plain : a.expert;
+        li.append(b, p); notes.append(li);
+      });
+    };
+    root.querySelectorAll<HTMLButtonElement>('[data-level]').forEach((b) => b.addEventListener('click', () => {
+      level = b.dataset.level as typeof level;
+      root.querySelectorAll('[data-level]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      renderNotes();
+    }));
+
+    new ResizeObserver(draw).observe(canvas);
+    addEventListener('agz:palette', draw);
+    renderNotes(); draw();
+  });
+
+  function niceStep(raw: number) {
+    const p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+    return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+  }
+</script>

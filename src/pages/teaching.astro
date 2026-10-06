@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import teaching from '../data/teaching.json';
+import { url } from '../lib/url';
+---
+<Base title="Teaching">
+  <PageHeader eyebrow="Teaching" title="Teaching &amp; theses" lead="Courses, materials and research projects for students." />
+  <section class="section section--tight">
+    <div class="container">
+      <h2>Courses</h2>
+      <div class="grid grid-2" style="margin-bottom:var(--s7)">
+        {teaching.courses.map((c) => (
+          <article class="card" data-reveal>
+            <p class="mono small" style="color:var(--accent)">{c.level} · <span class="ph">{c.semester}</span></p>
+            <h3 class="ph">{c.title}</h3>
+            <p class="muted ph">{c.description}</p>
+            {c.materials.length > 0
+              ? <ul>{c.materials.map((m: any) => <li><a href={url(m.href)}>{m.label}</a></li>)}</ul>
+              : <p class="small muted">Course materials will be linked here.</p>}
+          </article>
+        ))}
+      </div>
+      <h2>Thesis projects</h2>
+      <p class="muted">We offer BSc, MSc and doctoral projects combining imaging, histology and physiology.</p>
+      <ul class="theses" role="list">
+        {teaching.theses.map((t) => (
+          <li data-reveal><span class="tag">{t.level}</span><div><h3 class="ph">{t.title}</h3><p class="muted ph">{t.description}</p></div></li>
+        ))}
+      </ul>
+      <p><a class="btn btn--primary" href={url('/contact/')}>Ask about a project</a></p>
+    </div>
+  </section>
+</Base>
+<style>
+  .theses { list-style: none; padding: 0; margin: var(--s3) 0 var(--s4); }
+  .theses li { display: grid; grid-template-columns: 120px 1fr; gap: var(--s3); padding: var(--s3) 0; border-bottom: 1px solid var(--line); align-items: start; }
+  .theses .tag { justify-self: start; }
+  @media (max-width: 600px) { .theses li { grid-template-columns: 1fr; gap: 8px; } }
+</style>

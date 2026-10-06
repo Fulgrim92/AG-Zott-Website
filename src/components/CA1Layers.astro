@@ -1,0 +1,106 @@
+---
+import Label from './Label.astro';
+// General textbook anatomy of the CA1 laminae (schematic, not lab data).
+const layers = [
+  { id: 'so', name: 'Stratum oriens', y: 30, h: 70, color: 'var(--blue)',
+    text: 'Basal dendrites of pyramidal neurons, cell bodies of many inhibitory interneurons, and pyramidal-cell axons leaving towards the alveus.' },
+  { id: 'sp', name: 'Stratum pyramidale', y: 100, h: 40, color: 'var(--green)',
+    text: 'The densely packed cell bodies of CA1 pyramidal neurons — the principal output cells of the hippocampus and the layer most often imaged at cellular resolution.' },
+  { id: 'sr', name: 'Stratum radiatum', y: 140, h: 120, color: 'var(--red)',
+    text: 'Apical dendrites of pyramidal neurons receiving Schaffer-collateral input from CA3.' },
+  { id: 'slm', name: 'Stratum lacunosum-moleculare', y: 260, h: 60, color: 'var(--magenta)',
+    text: 'Distal apical tufts receiving direct input from entorhinal cortex (temporoammonic pathway).' },
+];
+// deterministic pseudo-random neuron positions
+let s = 3; const r = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
+const cells = Array.from({ length: 26 }, (_, i) => ({ x: 40 + i * 21 + (r() - 0.5) * 8, y: 112 + (r() - 0.5) * 18 }));
+---
+<div class="ca1" data-ca1>
+  <figure class="figure ca1__fig">
+    <svg viewBox="0 0 620 330" role="img" aria-labelledby="ca1-title ca1-desc">
+      <title id="ca1-title">Schematic of the CA1 layers</title>
+      <desc id="ca1-desc">Four horizontal layers from top to bottom: stratum oriens, stratum pyramidale with pyramidal cell bodies, stratum radiatum with apical dendrites, and stratum lacunosum-moleculare.</desc>
+      <defs>
+        <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+      </defs>
+      <text x="8" y="20" class="ca1__alv">alveus</text>
+      {layers.map((l) => (
+        <g class="ca1__layer" data-layer={l.id} style={`--c:${l.color}`}>
+          <rect x="0" y={l.y} width="620" height={l.h} />
+          <text x="612" y={l.y + l.h / 2 + 4} text-anchor="end">{l.name.replace('Stratum ', 's. ')}</text>
+        </g>
+      ))}
+      <g class="ca1__cells" filter="url(#glow)">
+        {cells.map((c, i) => (
+          <g>
+            <path d={`M${c.x} ${c.y} C ${c.x + 3} ${c.y + 60}, ${c.x - 4} ${c.y + 120}, ${c.x + (i % 2 ? 6 : -6)} ${c.y + 170}`} class="ca1__apical" />
+            <path d={`M${c.x} ${c.y} l -9 -34 M${c.x} ${c.y} l 8 -30`} class="ca1__basal" />
+            <path d={`M${c.x} ${c.y - 7} l 6 10 h -12 z`} class="ca1__soma" />
+          </g>
+        ))}
+      </g>
+    </svg>
+    <figcaption><Label kind="schematic" /> <span>Laminar organisation of CA1 (textbook anatomy, not to scale).</span></figcaption>
+  </figure>
+  <div class="ca1__panel">
+    <div role="tablist" aria-label="CA1 layers" class="ca1__tabs">
+      {layers.map((l, i) => (
+        <button role="tab" id={`tab-${l.id}`} aria-controls={`panel-${l.id}`} aria-selected={i === 1 ? 'true' : 'false'} tabindex={i === 1 ? 0 : -1} data-tab={l.id} style={`--c:${l.color}`}>
+          {l.name}
+        </button>
+      ))}
+    </div>
+    {layers.map((l, i) => (
+      <div role="tabpanel" id={`panel-${l.id}`} aria-labelledby={`tab-${l.id}`} hidden={i !== 1} class="ca1__text">
+        <p>{l.text}</p>
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .ca1 { display: grid; gap: var(--s4); grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; }
+  @media (max-width: 960px) { .ca1 { grid-template-columns: 1fr; } }
+  svg { width: 100%; height: auto; }
+  .ca1__alv { fill: var(--text-3); font: 11px var(--font-mono); }
+  .ca1__layer rect { fill: color-mix(in srgb, var(--c) 5%, transparent); stroke: color-mix(in srgb, var(--c) 25%, transparent); stroke-width: .6; transition: fill .4s; cursor: pointer; }
+  .ca1__layer text { fill: var(--text-3); font: 11px var(--font-mono); transition: fill .3s; pointer-events: none; }
+  .ca1__layer.is-on rect { fill: color-mix(in srgb, var(--c) 18%, transparent); }
+  .ca1__layer.is-on text { fill: var(--c); }
+  .ca1__cells { pointer-events: none; }
+  .ca1__apical, .ca1__basal { fill: none; stroke: var(--green); stroke-width: .9; opacity: .45; }
+  .ca1__soma { fill: var(--green); }
+  .ca1__tabs { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--s3); }
+  .ca1__tabs button { text-align: left; background: transparent; border: 0; border-left: 2px solid var(--line); padding: 8px 14px; cursor: pointer; color: var(--text-2); font-family: var(--font-serif); font-size: 1.15rem; transition: color .2s, border-color .2s; }
+  .ca1__tabs button[aria-selected='true'] { color: var(--c); border-color: var(--c); }
+  .ca1__tabs button:hover { color: var(--text); }
+  .ca1__text p { color: var(--text-2); }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-ca1]').forEach((root) => {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role=tab]')];
+    const select = (id: string, focus = false) => {
+      tabs.forEach((t) => {
+        const on = t.dataset.tab === id;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        if (on && focus) t.focus();
+        root.querySelector<HTMLElement>(`#${t.getAttribute('aria-controls')}`)!.hidden = !on;
+      });
+      root.querySelectorAll('[data-layer]').forEach((g) => g.classList.toggle('is-on', (g as HTMLElement).dataset.layer === id));
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t.dataset.tab!));
+      t.addEventListener('keydown', (e) => {
+        const d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
+        if (d) { e.preventDefault(); select(tabs[(i + d + tabs.length) % tabs.length].dataset.tab!, true); }
+      });
+    });
+    root.querySelectorAll<SVGGElement>('[data-layer]').forEach((g) => {
+      g.addEventListener('mouseenter', () => select(g.dataset.layer!));
+      g.addEventListener('click', () => select(g.dataset.layer!));
+    });
+    select('sp');
+  });
+</script>

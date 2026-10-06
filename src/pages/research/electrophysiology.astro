@@ -1,0 +1,28 @@
+---
+import Research from '../../layouts/Research.astro';
+import TraceViewer from '../../components/TraceViewer.astro';
+---
+<Research theme="electrophysiology" color="var(--red)" eyebrow="Research · 03" title="Electrophysiology"
+  lead="Listening to neurons at the speed they talk: millisecond-precise electrical recordings.">
+  <Fragment slot="question">
+    <h2 class="ph">[PLACEHOLDER] The lab’s question for this theme.</h2>
+    <p class="muted">Replace with the lab’s own description, e.g. intrinsic excitability, synaptic plasticity or network oscillations in CA1.</p>
+  </Fragment>
+
+  <Fragment slot="method">
+    <h2>Recording voltage and current</h2>
+    <p>Electrophysiology measures the electrical signals neurons use to communicate. In patch-clamp recordings, a fine glass pipette forms a tight seal with a single cell to record its membrane potential or currents. Extracellular electrodes capture spikes and local field potentials from many cells.</p>
+    <p class="muted">These recordings complement imaging: they are slower to scale but resolve each action potential and synaptic event precisely.</p>
+  </Fragment>
+
+  <Fragment slot="data">
+    <h2 data-reveal>Read a trace</h2>
+    <p class="muted" data-reveal>Hover to read exact values, drag to pan, use the buttons, <kbd>Ctrl</kbd> + scroll or the keyboard to zoom. Select an annotation to jump to it, and switch between plain-language and expert explanations.</p>
+    <div style="margin-top:var(--s4)"><TraceViewer /></div>
+  </Fragment>
+
+  <Fragment slot="findings">
+    <h2 class="ph">[PLACEHOLDER] Key findings</h2>
+    <ul class="muted"><li>[Finding 1 — link to paper]</li><li>[Finding 2 — link to paper]</li></ul>
+  </Fragment>
+</Research>

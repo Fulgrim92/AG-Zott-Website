@@ -1,0 +1,102 @@
+---
+import Base from './Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import papers from '../data/papers.json';
+import grants from '../data/grants.json';
+import { url, themeLabel } from '../lib/url';
+
+interface Props { theme: string; color: string; eyebrow: string; title: string; lead: string }
+const { theme, color, eyebrow, title, lead } = Astro.props;
+const related = papers.filter((p) => p.themes.includes(theme)).sort((a, b) => b.year - a.year);
+const funders = grants.filter((g) => g.themes.includes(theme));
+const steps = ['Question', 'Method', 'Explore the data', 'What we found', 'Papers', 'Funding'];
+---
+<Base title={themeLabel[theme]} accent={color}>
+  <PageHeader eyebrow={eyebrow} title={title} lead={lead} color={color}>
+    <nav aria-label="On this page" class="toc">
+      {steps.map((s, i) => <a href={`#s${i + 1}`}><span class="mono">0{i + 1}</span> {s}</a>)}
+    </nav>
+  </PageHeader>
+
+  <section id="s1" class="section section--tight rs">
+    <div class="container rs__row">
+      <p class="eyebrow">01 — Question</p>
+      <div data-reveal><slot name="question" /></div>
+    </div>
+  </section>
+
+  <section id="s2" class="section section--tight rs">
+    <div class="container rs__row">
+      <p class="eyebrow">02 — Method</p>
+      <div data-reveal><slot name="method" /></div>
+    </div>
+  </section>
+
+  <section id="s3" class="section section--tight rs rs--data">
+    <div class="container">
+      <p class="eyebrow">03 — Explore the data</p>
+      <slot name="data" />
+    </div>
+  </section>
+
+  <section id="s4" class="section section--tight rs">
+    <div class="container rs__row">
+      <p class="eyebrow">04 — What we found</p>
+      <div data-reveal><slot name="findings" /></div>
+    </div>
+  </section>
+
+  <section id="s5" class="section section--tight rs">
+    <div class="container rs__row">
+      <p class="eyebrow">05 — Papers</p>
+      <div>
+        {related.length ? (
+          <ul class="plist" role="list">
+            {related.map((p) => (
+              <li data-reveal>
+                <span class="mono muted">{p.year} · {p.journal}</span>
+                <span class:list={[{ ph: p.placeholder }]}>{p.doi ? <a href={`https://doi.org/${p.doi}`}>{p.title}</a> : p.title}</span>
+                <span class="muted small">{p.authors}</span>
+              </li>
+            ))}
+          </ul>
+        ) : <p class="muted">No papers tagged with this theme yet.</p>}
+        <a href={url(`/papers/?theme=${theme}`)}>All {themeLabel[theme]} papers →</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="s6" class="section section--tight rs">
+    <div class="container rs__row">
+      <p class="eyebrow">06 — Funding</p>
+      <div>
+        {funders.length ? funders.map((g) => (
+          <a class="card fund" href={url(`/funding/#${g.id}`)} style="--card-c:var(--accent)">
+            <span class="tag">{g.funder}</span>
+            <strong class:list={[{ ph: !g.verified }]}>{g.title}</strong>
+            <span class="muted small">{g.programme}</span>
+          </a>
+        )) : <p class="muted">No grant linked to this theme yet.</p>}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container"><slot name="after" /></div>
+  </section>
+</Base>
+
+<style>
+  .toc { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: var(--s4); font-size: .9rem; }
+  .toc a { text-decoration: none; color: var(--text-2); } .toc a:hover { color: var(--accent); }
+  .toc .mono { color: var(--accent); margin-right: 4px; }
+  .rs { border-bottom: 1px solid var(--line); }
+  .rs__row { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--s4); align-items: start; }
+  @media (max-width: 960px) { .rs__row { grid-template-columns: 1fr; gap: 0; } }
+  .rs--data { background: var(--bg-2); }
+  .plist { list-style: none; padding: 0; margin: 0 0 var(--s3); }
+  .plist li { display: grid; gap: 2px; padding: var(--s2) 0; border-bottom: 1px solid var(--line); }
+  .plist .mono { font-size: .75rem; }
+  .fund { display: grid; gap: 6px; margin-bottom: var(--s2); max-width: 640px; }
+  .fund .tag { justify-self: start; }
+</style>

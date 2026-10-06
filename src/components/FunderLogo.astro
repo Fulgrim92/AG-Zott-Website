@@ -1,0 +1,25 @@
+---
+/**
+ * Official funder logos must be downloaded from the funders and placed in public/assets/logos/:
+ *  - ERC: erc.europa.eu (ERC logo) + EU emblem (required for Horizon Europe)
+ *  - DFG: dfg.de → logo download
+ * Until a file is present, a labelled text placeholder is shown (never a redrawn logo).
+ */
+import { existsSync } from 'node:fs';
+import { url } from '../lib/url';
+interface Props { funder: 'ERC' | 'DFG' | 'EU'; height?: number }
+const { funder, height = 56 } = Astro.props;
+const file = { ERC: 'erc.svg', DFG: 'dfg.svg', EU: 'eu-emblem.svg' }[funder];
+const present = existsSync(new URL(`../../public/assets/logos/${file}`, import.meta.url));
+const names = { ERC: 'European Research Council', DFG: 'Deutsche Forschungsgemeinschaft', EU: 'European Union' };
+---
+{present
+  ? <img src={url(`/assets/logos/${file}`)} alt={`${names[funder]} logo`} height={height} style={`height:${height}px;width:auto`} />
+  : <span class="logo-ph" style={`height:${height}px`} title={`Place official logo at public/assets/logos/${file}`}>
+      <b>{funder}</b><small>official logo — placeholder</small>
+    </span>}
+<style>
+  .logo-ph { display: inline-grid; place-content: center; padding: 0 14px; border: 1px dashed color-mix(in srgb, var(--amber) 55%, transparent); border-radius: 8px; line-height: 1.1; text-align: center; }
+  .logo-ph b { font-family: var(--font-mono); letter-spacing: .1em; }
+  .logo-ph small { font-size: .6rem; color: var(--amber); text-transform: uppercase; letter-spacing: .08em; }
+</style>

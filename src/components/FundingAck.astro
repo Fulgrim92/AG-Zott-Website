@@ -1,0 +1,26 @@
+---
+/**
+ * Official acknowledgment wording. Unverified values render as visible placeholders.
+ * Verify against current ERC / DFG guidelines before launch.
+ */
+import grants from '../data/grants.json';
+interface Props { grantId?: string; lang?: 'en' | 'de' }
+const { grantId, lang = 'en' } = Astro.props;
+const list = grantId ? grants.filter((g) => g.id === grantId) : grants;
+const ph = (v: string | null | undefined, label: string) => v && !v.startsWith('[') ? v : `[${label} — TO VERIFY]`;
+---
+{list.map((g) => (
+  <p class="ack">
+    {g.funder === 'ERC' && g.framework === 'horizon-europe' && (
+      <>Funded by the European Union (ERC, <span class:list={[{ ph: !g.verified }]}>{ph(g.acronym, 'ACRONYM')}</span>, <span class:list={[{ ph: !g.identifier }]}>{ph(g.identifier, 'PROJECT NO.')}</span>). Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or the European Research Council Executive Agency. Neither the European Union nor the granting authority can be held responsible for them.</>
+    )}
+    {g.funder === 'ERC' && g.framework === 'h2020' && (
+      <>This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No <span class:list={[{ ph: !g.identifier }]}>{ph(g.identifier, 'GRANT NO.')}</span>).</>
+    )}
+    {g.funder === 'DFG' && (lang === 'de'
+      ? <>Gefördert durch die Deutsche Forschungsgemeinschaft (DFG) – Projektnummer <span class:list={[{ ph: !g.identifier }]}>{ph(g.identifier, 'PROJEKTNUMMER')}</span>.</>
+      : <>Funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) – Project number <span class:list={[{ ph: !g.identifier }]}>{ph(g.identifier, 'PROJECT NO.')}</span>.</>
+    )}
+  </p>
+))}
+<style>.ack { font-size: .9rem; color: var(--text-2); }</style>

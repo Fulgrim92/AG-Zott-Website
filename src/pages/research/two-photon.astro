@@ -1,0 +1,50 @@
+---
+import Research from '../../layouts/Research.astro';
+import ImagingPlayer from '../../components/ImagingPlayer.astro';
+import CA1Layers from '../../components/CA1Layers.astro';
+import Label from '../../components/Label.astro';
+---
+<Research theme="two-photon" color="var(--green)" eyebrow="Research · 01" title="Two-photon imaging in hippocampal CA1"
+  lead="Watching identified neurons in the living hippocampus — cell by cell, day after day.">
+  <Fragment slot="question">
+    <h2 class="ph">[PLACEHOLDER] The lab’s central question for this theme.</h2>
+    <p class="muted">Replace with 2–3 sentences in the lab’s own words, e.g. what CA1 activity patterns the group studies and why they matter.</p>
+  </Fragment>
+
+  <Fragment slot="method">
+    <div class="grid grid-2" style="align-items:center">
+      <div>
+        <h2>Why two photons?</h2>
+        <p>A two-photon microscope uses pulsed infrared light. Fluorescence is only excited where two photons arrive at the same time — practically only in the tiny focal spot. This gives sharp optical sections deep in scattering tissue with less photodamage.</p>
+        <p class="muted">With genetically encoded calcium indicators such as GCaMP, neurons light up when they are active, so the activity of hundreds of cells can be followed simultaneously.</p>
+      </div>
+      <figure class="figure">
+        <svg viewBox="0 0 400 260" role="img" aria-labelledby="tp-t">
+          <title id="tp-t">One-photon excitation produces fluorescence along the whole light cone; two-photon excitation only at the focal point.</title>
+          <g font-family="JetBrains Mono Variable, monospace" font-size="11" fill="var(--text-3)">
+            <text x="100" y="20" text-anchor="middle">one-photon</text><text x="300" y="20" text-anchor="middle">two-photon</text>
+          </g>
+          <path d="M60 40 L140 40 L100 150 Z M100 150 L60 250 L140 250 Z" fill="var(--blue)" opacity=".18" />
+          <path d="M60 40 L140 40 L100 150 Z M100 150 L60 250 L140 250 Z" fill="var(--green)" opacity=".35" />
+          <path d="M260 40 L340 40 L300 150 Z M300 150 L260 250 L340 250 Z" fill="#c0392b" opacity=".18" />
+          <circle cx="300" cy="150" r="7" fill="var(--green)" />
+          <circle cx="300" cy="150" r="16" fill="var(--green)" opacity=".25" />
+        </svg>
+        <figcaption><Label kind="schematic" /> <span>Excitation volume (green): one- vs two-photon.</span></figcaption>
+      </figure>
+    </div>
+  </Fragment>
+
+  <Fragment slot="data">
+    <h2 data-reveal>Explore imaging channels</h2>
+    <p class="muted" data-reveal>Toggle channels, adjust their intensity and scrub through time. Indicator, depth, frame rate and scale are shown with every recording.</p>
+    <div style="margin-top:var(--s4)"><ImagingPlayer /></div>
+    <h3 style="margin-top:var(--s6)">Where we image</h3>
+    <CA1Layers />
+  </Fragment>
+
+  <Fragment slot="findings">
+    <h2 class="ph">[PLACEHOLDER] Key findings</h2>
+    <ul class="muted"><li>[Finding 1 — link to paper]</li><li>[Finding 2 — link to paper]</li><li>[Finding 3 — link to paper]</li></ul>
+  </Fragment>
+</Research>

@@ -1,0 +1,8 @@
+[
+  { "name": "[PLACEHOLDER] Principal Investigator", "role": "PI", "focus": "[Research focus — to be supplied]", "email": "", "orcid": "", "photo": "", "placeholder": true },
+  { "name": "[PLACEHOLDER] Postdoctoral Researcher", "role": "Postdoc", "focus": "[Research focus — to be supplied]", "email": "", "orcid": "", "photo": "", "placeholder": true },
+  { "name": "[PLACEHOLDER] Doctoral Researcher", "role": "PhD student", "focus": "[Research focus — to be supplied]", "email": "", "orcid": "", "photo": "", "placeholder": true },
+  { "name": "[PLACEHOLDER] Doctoral Researcher", "role": "PhD student", "focus": "[Research focus — to be supplied]", "email": "", "orcid": "", "photo": "", "placeholder": true },
+  { "name": "[PLACEHOLDER] Technician", "role": "Staff", "focus": "[Role description — to be supplied]", "email": "", "orcid": "", "photo": "", "placeholder": true },
+  { "name": "[PLACEHOLDER] Master's Student", "role": "Student", "focus": "[Thesis topic — to be supplied]", "email": "", "orcid": "", "photo": "", "placeholder": true }
+]

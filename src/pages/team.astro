@@ -1,0 +1,59 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import team from '../data/team.json';
+import { url } from '../lib/url';
+const roles = [...new Set(team.map((m) => m.role))];
+const initials = (n: string) => n.replace(/\[.*?\]/g, '').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('');
+---
+<Base title="Team">
+  <PageHeader eyebrow="Team" title="The people behind the data" lead="Scientists, students and staff working together on hippocampal circuits." />
+  <section class="section section--tight">
+    <div class="container">
+      <div class="filters" role="group" aria-label="Filter by role">
+        <button class="btn btn--sm" aria-pressed="true" data-role="all">All</button>
+        {roles.map((r) => <button class="btn btn--sm" aria-pressed="false" data-role={r}>{r}</button>)}
+      </div>
+      <ul class="people" role="list">
+        {team.map((m) => (
+          <li data-person data-role={m.role} data-reveal>
+            <article class="person card">
+              {m.photo
+                ? <img src={url(m.photo)} alt={`Portrait of ${m.name}`} loading="lazy" width="320" height="320" />
+                : <div class="avatar" aria-hidden="true"><span>{initials(m.name) || '—'}</span><small>photo placeholder</small></div>}
+              <p class="mono small role">{m.role}</p>
+              <h2 class:list={[{ ph: m.placeholder }]}>{m.name}</h2>
+              <p class:list={['muted small', { ph: m.placeholder }]}>{m.focus}</p>
+              <p class="links small">
+                {m.email && <a href={`mailto:${m.email}`}>Email</a>}
+                {m.orcid && <a href={m.orcid}>ORCID</a>}
+              </p>
+            </article>
+          </li>
+        ))}
+      </ul>
+      <p class="muted small" style="margin-top:var(--s5)">Former members are listed under <a href={url('/alumni/')}>Alumni</a>. Interested in joining? See <a href={url('/contact/')}>open positions</a>.</p>
+    </div>
+  </section>
+</Base>
+<style>
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--s5); }
+  .people { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+  .person { height: 100%; padding: var(--s3); }
+  .person img, .avatar { width: 100%; aspect-ratio: 1; border-radius: 10px; object-fit: cover; margin-bottom: var(--s2); }
+  .avatar { display: grid; place-content: center; text-align: center; border: 1px dashed color-mix(in srgb, var(--amber) 50%, transparent);
+    background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%); }
+  .avatar span { font-family: var(--font-serif); font-size: 2.4rem; color: var(--text-3); }
+  .avatar small { font-size: .65rem; color: var(--amber); text-transform: uppercase; letter-spacing: .1em; }
+  .role { color: var(--accent); margin: 0 0 4px; text-transform: uppercase; letter-spacing: .1em; }
+  .person h2 { font-size: 1.25rem; margin-bottom: 6px; }
+  .links { display: flex; gap: 12px; margin: 0; }
+  [data-person][hidden] { display: none; }
+</style>
+<script>
+  const btns = document.querySelectorAll<HTMLButtonElement>('[data-role]:is(button)');
+  btns.forEach((b) => b.addEventListener('click', () => {
+    btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    document.querySelectorAll<HTMLElement>('[data-person]').forEach((p) => (p.hidden = b.dataset.role !== 'all' && p.dataset.role !== b.dataset.role));
+  }));
+</script>

@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import site from '../data/site.json';
+---
+<Base title="Accessibility">
+  <PageHeader eyebrow="Accessibility" title="Accessibility statement" lead="We aim to meet WCAG 2.2 level AA." />
+  <section class="section section--tight"><div class="container">
+    <ul class="muted">
+      <li>The whole site can be operated with a keyboard; a “Skip to content” link is provided.</li>
+      <li>Animations respect your system’s reduced-motion setting and can be switched off with the “Motion” toggle in the navigation.</li>
+      <li>A colour-blind-safe palette is available via the “CB-safe” toggle; colour is never the only carrier of meaning.</li>
+      <li>Interactive figures provide text descriptions and keyboard controls.</li>
+      <li>Every visual is labelled as lab data, illustrative schematic, or placeholder.</li>
+    </ul>
+    <p>Found a barrier? Please contact us at <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+  </div></section>
+</Base>

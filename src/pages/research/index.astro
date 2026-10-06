@@ -1,0 +1,46 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import site from '../../data/site.json';
+import { url } from '../../lib/url';
+const themes = [
+  { href: '/research/two-photon/', n: '01', title: 'Two-photon imaging in CA1', color: 'var(--green)', q: 'How do populations of CA1 neurons represent experience over time?', m: 'In vivo two-photon calcium imaging' },
+  { href: '/research/immunohistochemistry/', n: '02', title: 'Immunohistochemistry', color: 'var(--blue)', q: 'Which cell types and molecules make up the circuits we image?', m: 'Multiplexed fluorescent labelling of tissue sections' },
+  { href: '/research/electrophysiology/', n: '03', title: 'Electrophysiology', color: 'var(--red)', q: 'What are the millisecond-scale dynamics of single cells and networks?', m: 'Patch-clamp and extracellular recordings' },
+  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', n: '04', title: 'Glymphatic system', color: 'var(--magenta)', q: 'How does fluid flow through the brain support clearance and function?', m: 'Tracer imaging & modelling' }] : []),
+];
+---
+<Base title="Research">
+  <PageHeader eyebrow="Research" title="One circuit, several windows" lead="We combine complementary methods to connect the activity, structure and physiology of hippocampal circuits. Each research page follows the same path: question → method → data → findings → papers → funding." />
+  <section class="section section--tight">
+    <div class="container">
+      <p class="banner" style="margin-bottom:var(--s5)"><strong class="ph">Placeholder questions.</strong> The research questions below are generic descriptions of each method’s scope; replace them with the lab’s own wording.</p>
+      <ol class="themes" role="list">
+        {themes.map((t) => (
+          <li data-reveal>
+            <a class="card theme" href={url(t.href)} style={`--card-c:${t.color}`}>
+              <span class="card__glow" aria-hidden="true"></span>
+              <span class="mono theme__n">{t.n}</span>
+              <div>
+                <h2>{t.title}</h2>
+                <p class="lead">{t.q}</p>
+                <p class="mono small muted">{t.m}</p>
+              </div>
+              <span class="theme__go" aria-hidden="true">→</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+</Base>
+<style>
+  .themes { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s3); }
+  .theme { display: grid; grid-template-columns: 60px 1fr 40px; gap: var(--s3); align-items: center; padding: var(--s5) var(--s4); }
+  .theme__n { color: var(--card-c); font-size: 1rem; align-self: start; padding-top: 10px; }
+  .theme h2 { font-size: clamp(1.6rem, 2.6vw, 2.2rem); }
+  .theme .lead { margin-bottom: 6px; }
+  .theme__go { font-size: 1.8rem; color: var(--card-c); transition: transform .3s var(--ease); }
+  .theme:hover .theme__go { transform: translateX(6px); }
+  @media (max-width: 640px) { .theme { grid-template-columns: 1fr; } .theme__go { display: none; } }
+</style>

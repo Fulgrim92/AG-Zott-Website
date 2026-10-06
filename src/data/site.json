@@ -1,0 +1,21 @@
+{
+  "name": "AG Zott",
+  "tagline": "Hippocampal circuits, imaged and recorded",
+  "affiliation": "[PLACEHOLDER: Institute / University — to verify]",
+  "mission": "[PLACEHOLDER: One-sentence mission statement supplied by the lab.]",
+  "summary": "[PLACEHOLDER: Two to three plain-language sentences describing the lab's central research question. Replace with text approved by the PI.]",
+  "email": "[placeholder]@example.org",
+  "phone": "[PLACEHOLDER: phone]",
+  "address": ["[PLACEHOLDER: Institute name]", "[Street and number]", "[Postcode] [City], Germany"],
+  "room": "[PLACEHOLDER: building / room]",
+  "links": {
+    "institute": "",
+    "orcid": "",
+    "scholar": ""
+  },
+  "features": {
+    "glymphatic": true,
+    "glymphaticVerified": false
+  },
+  "lastUpdated": "2026-10-06"
+}

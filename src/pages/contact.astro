@@ -1,0 +1,35 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Placeholder from '../components/Placeholder.astro';
+import site from '../data/site.json';
+---
+<Base title="Contact">
+  <PageHeader eyebrow="Contact" title="Get in touch" lead="Questions about our research, collaborations, or joining the lab — we’re happy to hear from you." />
+  <section class="section section--tight">
+    <div class="container grid grid-2" style="gap:var(--s6)">
+      <div data-reveal>
+        <dl class="contact">
+          <div><dt>Email</dt><dd><a href={`mailto:${site.email}`} class="ph">{site.email}</a></dd></div>
+          <div><dt>Phone</dt><dd class="ph">{site.phone}</dd></div>
+          <div><dt>Address</dt><dd><address class="ph">{site.address.map((l) => <>{l}<br /></>)}</address></dd></div>
+          <div><dt>Room</dt><dd class="ph">{site.room}</dd></div>
+        </dl>
+        <h2 style="margin-top:var(--s6)">Open positions</h2>
+        <p class="muted">We regularly look for motivated PhD students, postdocs and MSc students. Please send a short motivation letter, CV and the names of two references.</p>
+        <p class="ph small">[PLACEHOLDER: list current openings or link to the institute job portal.]</p>
+      </div>
+      <div data-reveal>
+        <Placeholder title="Map & directions" hint="Privacy-friendly: use a static map image, or a click-to-load embed so no third-party request happens before consent." minHeight="380px" />
+        <h3 style="margin-top:var(--s4)">How to reach us</h3>
+        <p class="muted ph">[PLACEHOLDER: public transport, parking, building entrance.]</p>
+      </div>
+    </div>
+  </section>
+</Base>
+<style>
+  .contact { display: grid; gap: var(--s3); margin: 0; }
+  .contact dt { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
+  .contact dd { margin: 4px 0 0; font-size: 1.15rem; }
+  address { font-style: normal; }
+</style>

@@ -1,0 +1,10 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { url } from '../lib/url';
+---
+<Base title="Not found" noindex>
+  <PageHeader eyebrow="404" title="Out of the focal plane" lead="This page doesn’t exist (any more). Use the navigation, or go back to the start.">
+    <p style="margin-top:var(--s4)"><a class="btn btn--primary" href={url('/')}>Home</a></p>
+  </PageHeader>
+</Base>

@@ -1,0 +1,86 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import papers from '../data/papers.json';
+import grants from '../data/grants.json';
+import { themeLabel, themeColor } from '../lib/url';
+const sorted = [...papers].sort((a, b) => b.year - a.year);
+const years = [...new Set(sorted.map((p) => p.year))];
+const types = [...new Set(sorted.map((p) => p.type))];
+const themes = Object.keys(themeLabel);
+---
+<Base title="Papers">
+  <PageHeader eyebrow="Papers" title="Publications" lead="Search and filter our papers by year, topic, method and funder." />
+  <section class="section section--tight">
+    <div class="container">
+      <p class="banner" style="margin-bottom:var(--s4)"><strong class="ph">Placeholder list.</strong> Import the real publication list from BibTeX / ORCID / PubMed into <code>src/data/papers.json</code>.</p>
+      <form class="search" role="search" onsubmit="return false">
+        <label class="visually-hidden" for="q">Search publications</label>
+        <input id="q" type="search" placeholder="Search title, author, journal…" autocomplete="off" />
+        <select id="f-year" aria-label="Year"><option value="">All years</option>{years.map((y) => <option>{y}</option>)}</select>
+        <select id="f-theme" aria-label="Topic"><option value="">All topics</option>{themes.map((t) => <option value={t}>{themeLabel[t]}</option>)}</select>
+        <select id="f-type" aria-label="Type"><option value="">All types</option>{types.map((t) => <option>{t}</option>)}</select>
+        <select id="f-grant" aria-label="Funder"><option value="">All funders</option>{grants.map((g) => <option value={g.id}>{g.funder}</option>)}</select>
+      </form>
+      <p class="muted small" aria-live="polite" id="count"></p>
+      <ol class="pubs" role="list" reversed>
+        {sorted.map((p) => (
+          <li class="pub" data-pub data-year={p.year} data-type={p.type} data-themes={p.themes.join(' ')} data-grants={p.grants.join(' ')}
+              data-text={`${p.title} ${p.authors} ${p.journal}`.toLowerCase()}>
+            <span class="pub__year mono">{p.year}</span>
+            <div>
+              <h2 class:list={['pub__title', { ph: p.placeholder }]}>{p.doi ? <a href={`https://doi.org/${p.doi}`}>{p.title}</a> : p.title}</h2>
+              <p class="pub__authors">{p.authors}</p>
+              <p class="pub__meta">
+                <i>{p.journal}</i> · <span class="tag">{p.type}</span>
+                {p.themes.map((t) => <span class="tag" style={`color:${themeColor[t]}`}>{themeLabel[t]}</span>)}
+                {p.grants.map((g) => <span class="tag">{grants.find((x) => x.id === g)?.funder}</span>)}
+                {p.doi && <a class="small" href={`https://doi.org/${p.doi}`}>DOI</a>}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+</Base>
+<style>
+  .search { display: grid; grid-template-columns: 2fr repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: var(--s2); }
+  @media (max-width: 900px) { .search { grid-template-columns: 1fr 1fr; } .search input { grid-column: 1 / -1; } }
+  .search input, .search select { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: .75em 1em; font: inherit; font-size: .95rem; min-width: 0; }
+  .search input:focus, .search select:focus { border-color: var(--accent); outline: none; }
+  .pubs { list-style: none; padding: 0; margin: var(--s3) 0 0; }
+  .pub { display: grid; grid-template-columns: 70px 1fr; gap: var(--s3); padding: var(--s3) 0; border-bottom: 1px solid var(--line); }
+  .pub[hidden] { display: none; }
+  .pub__year { color: var(--accent); padding-top: 4px; }
+  .pub__title { font-size: 1.25rem; margin-bottom: 6px; }
+  .pub__title a { text-decoration: none; }
+  .pub__authors { color: var(--text-2); font-size: .92rem; margin-bottom: 6px; }
+  .pub__meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: .85rem; color: var(--text-2); margin: 0; }
+  @media (max-width: 600px) { .pub { grid-template-columns: 1fr; gap: 4px; } }
+</style>
+<script>
+  const $ = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const q = $<HTMLInputElement>('#q'), fy = $<HTMLSelectElement>('#f-year'), ft = $<HTMLSelectElement>('#f-theme'),
+        fty = $<HTMLSelectElement>('#f-type'), fg = $<HTMLSelectElement>('#f-grant'), count = $('#count');
+  const items = [...document.querySelectorAll<HTMLElement>('[data-pub]')];
+  // Deep links: /papers/?theme=two-photon&q=ca1
+  const params = new URLSearchParams(location.search);
+  q.value = params.get('q') ?? ''; ft.value = params.get('theme') ?? ''; fy.value = params.get('year') ?? ''; fg.value = params.get('funder') ?? '';
+  const apply = () => {
+    const terms = q.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let n = 0;
+    for (const el of items) {
+      const d = el.dataset;
+      const ok = terms.every((t) => d.text!.includes(t)) && (!fy.value || d.year === fy.value) && (!fty.value || d.type === fty.value)
+        && (!ft.value || d.themes!.split(' ').includes(ft.value)) && (!fg.value || d.grants!.split(' ').includes(fg.value));
+      el.hidden = !ok; if (ok) n++;
+    }
+    count.textContent = `${n} of ${items.length} publications`;
+    const p = new URLSearchParams();
+    if (q.value) p.set('q', q.value); if (ft.value) p.set('theme', ft.value); if (fy.value) p.set('year', fy.value); if (fg.value) p.set('funder', fg.value);
+    history.replaceState(null, '', p.toString() ? `?${p}` : location.pathname);
+  };
+  [q, fy, ft, fty, fg].forEach((el) => el.addEventListener('input', apply));
+  apply();
+</script>
