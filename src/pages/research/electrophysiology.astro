@@ -1,6 +1,7 @@
 ---
 import Research from '../../layouts/Research.astro';
 import SignalExplorer from '../../components/SignalExplorer.astro';
+import EphysProcedure from '../../components/EphysProcedure.astro';
 ---
 <Research theme="electrophysiology" color="var(--red)" eyebrow="Research · 03" title="Electrophysiology"
   lead="EEG, synaptic plasticity and network oscillations — from the whole brain to a single synapse.">
@@ -18,9 +19,15 @@ import SignalExplorer from '../../components/SignalExplorer.astro';
   </Fragment>
 
   <Fragment slot="data">
-    <h2 data-reveal>Read the signals</h2>
-    <p class="muted" data-reveal>Choose EEG, LTP or LFP. Hover to read values, drag to pan, use the buttons, <kbd>Ctrl</kbd> + scroll or the keyboard to zoom from hours down to milliseconds. Select a numbered note to jump to it, and switch between plain-language and expert explanations.</p>
-    <div style="margin-top:var(--s4)"><SignalExplorer /></div>
+    <h2 data-reveal>How we record</h2>
+    <p class="muted" data-reveal>Zoom from the whole set-up down to the electrode tips. Step through the procedure, or press “Walk through”, for brain-slice recordings of synaptic plasticity (LTP) and for continuous video-EEG in freely moving mice.</p>
+    <div style="margin-top:var(--s4)"><EphysProcedure /></div>
+
+    <details class="signals">
+      <summary><span>Example signals</span> <span class="small muted">EEG, LTP and LFP traces · illustrative simulations</span></summary>
+      <p class="muted small" style="margin-top:var(--s2)">Hover to read values, drag to pan and zoom from hours to milliseconds. Numbered notes explain each feature in plain or expert language.</p>
+      <SignalExplorer />
+    </details>
   </Fragment>
 
   <Fragment slot="findings">
@@ -28,4 +35,4 @@ import SignalExplorer from '../../components/SignalExplorer.astro';
     <ul class="muted"><li>[Finding 1 — link to paper]</li><li>[Finding 2 — link to paper]</li></ul>
   </Fragment>
 </Research>
-<style>.methods3 { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); } .methods3 h3 { color: var(--accent); }</style>
+<style>.signals { margin-top: var(--s6); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); background: var(--surface); } .signals summary { cursor: pointer; display: flex; gap: var(--s2); align-items: baseline; flex-wrap: wrap; font-family: var(--font-serif); font-size: 1.2rem; } .signals[open] summary { margin-bottom: var(--s2); } .methods3 { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); } .methods3 h3 { color: var(--accent); }</style>

@@ -176,7 +176,7 @@ a.card:hover .card__glow { opacity: 1; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
-:root[data-motion='off'] *, :root[data-motion='off'] *::before { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+:root[data-motion='off'] *, :root[data-motion='off'] *::before, :root[data-motion='off'] *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 
 /* =====================================================================
    Motion layer

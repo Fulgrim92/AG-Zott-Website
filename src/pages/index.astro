@@ -15,6 +15,7 @@ const confocal = assets.ihc.sections[assets.ihc.sections.length - 1];
 const latestNews = [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
 const selected = [...papers].filter((p) => !p.placeholder).sort((a, b) => b.year - a.year).slice(0, 5);
 const pi = site.pi;
+const latestPaper = [...news].filter((n) => n.category === 'Paper' && !n.placeholder).sort((a, b) => b.date.localeCompare(a.date))[0];
 
 // Build-time SVG path of the illustrative LFP (min/max decimation)
 const lfp = datasets.lfp().series[0];
@@ -48,20 +49,28 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numer
   <!-- ======== Intro ======== -->
   <section class="intro" aria-labelledby="intro-h">
     <div class="intro__text">
-      <p class="eyebrow" data-intro>Research group · TUM</p>
+      {latestPaper && (
+        <a class="intro__news" href={url(`/news/${latestPaper.slug}/`)} data-intro>
+          <span class="intro__new">New</span><span>{latestPaper.title}</span><span aria-hidden="true">→</span>
+        </a>
+      )}
+      <p class="eyebrow" data-intro>Research group · {site.affiliation.replace(' (TUM)', '')}</p>
       <h1 id="intro-h"><span class="intro__name" data-hero-name>{site.name}</span></h1>
       <p class="intro__tag" data-intro>{site.tagline}</p>
-      <p class="lead" data-intro>Long before memory loss and amyloid plaques, neurons in the hippocampus become abnormally active. We combine in vivo two-photon imaging, histology and electrophysiology to understand why this happens — and whether it can be prevented or reversed.</p>
-      <p class="intro__pi" data-intro>
-        <span class="mono">Group leader</span>
-        <a href={url('/team/')}>{pi.name}</a>
-      </p>
+      <p class="lead" data-intro>We study why neurons in the hippocampus become hyperactive long before memory loss in Alzheimer’s disease — and how this early dysfunction can be prevented or reversed.</p>
+      <dl class="glance">
+        <div data-glance><dt>Group leader</dt><dd><a href={url('/team/')}>{pi.name}</a></dd></div>
+        <div data-glance><dt>Institution</dt><dd>{site.affiliation.replace(' (TUM)', '')}<span class="ph small"> · {site.department}</span></dd></div>
+        <div data-glance><dt>Focus</dt><dd>Early hippocampal circuit dysfunction in Alzheimer’s disease</dd></div>
+        <div data-glance><dt>Methods</dt><dd>In vivo two-photon imaging · Histology · Electrophysiology</dd></div>
+        <div data-glance><dt>Funding</dt><dd><a href={url('/funding/')}>European Research Council · DFG</a></dd></div>
+        <div data-glance><dt>Contact</dt><dd><a href={`mailto:${site.email}`} class:list={[{ ph: site.email.includes('placeholder') }]}>{site.email}</a> · <a href={url('/contact/')}>Open positions</a></dd></div>
+      </dl>
       <div class="intro__cta" data-intro>
         <a class="btn btn--primary" href={url('/research/')}>Our research</a>
         <a class="btn" href={url('/papers/')}>Publications</a>
         <a class="btn" href={url('/contact/')}>Join the lab</a>
       </div>
-      <p class="intro__fund small" data-intro>Supported by the <a href={url('/funding/')}>European Research Council (ERC)</a> and the <a href={url('/funding/')}>Deutsche Forschungsgemeinschaft (DFG)</a>.</p>
     </div>
 
     <figure class="viz" data-hero data-atlas={url('/assets/atlas/')} aria-labelledby="viz-cap">
@@ -69,8 +78,9 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numer
         <canvas class="viz__canvas" data-hero-canvas aria-hidden="true"></canvas>
         <div class="viz__fallback" aria-hidden="true"></div>
         <div class="viz__real" data-hero-real>
-          <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="none" aria-label={rec.alt}></video>
+          <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="metadata" aria-label={rec.alt}></video>
         </div>
+        <div class="viz__fov" data-hero-fov aria-hidden="true"><span>Imaging field · CA1</span></div>
         <div class="viz__label"><Label kind="schematic" text="Anatomy: Allen Mouse Brain Atlas" /></div>
         <p class="viz__loading mono small" aria-hidden="true">Loading Allen atlas…</p>
       </div>
@@ -203,31 +213,44 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numer
 <style>
   /* ---------- Intro ---------- */
   .intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s6); align-items: center;
-    padding: var(--s7) clamp(var(--s3), 6vw, var(--s7)) var(--s6); max-width: 1400px; margin: 0 auto;
+    padding: var(--s5) clamp(var(--s3), 5vw, var(--s6)) var(--s5); max-width: 1440px; margin: 0 auto; min-height: min(100svh, 980px);
     background: radial-gradient(700px 400px at 80% 30%, color-mix(in srgb, var(--green) 6%, transparent), transparent 70%); }
   .intro h1 { margin: 0; }
   .intro__name { display: inline-block; }
-  .intro__tag { font-family: var(--font-serif); font-style: italic; font-size: clamp(1.25rem, 2vw, 1.6rem); color: var(--text-2); margin: var(--s1) 0 var(--s3); }
+  .intro__tag { font-family: var(--font-serif); font-style: italic; font-size: clamp(1.2rem, 1.8vw, 1.5rem); color: var(--text-2); margin: var(--s1) 0 var(--s2); }
+  .intro .lead { font-size: clamp(1.05rem, 1.35vw, 1.2rem); max-width: 54ch; }
+  .intro__news { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 5px 14px 5px 5px; margin-bottom: var(--s3); border: 1px solid var(--line); border-radius: 999px; background: var(--surface); text-decoration: none; font-size: .85rem; color: var(--text-2); background-image: none !important; transition: border-color .3s, color .3s; }
+  .intro__news:hover { border-color: var(--accent); color: var(--text); }
+  .intro__news span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .intro__new { flex: none; font: 600 .66rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; background: var(--accent); color: #04140b; border-radius: 999px; padding: 3px 9px; }
+  .glance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--s4); margin: var(--s3) 0 var(--s4); }
+  .glance div { position: relative; padding: 10px 0; display: grid; gap: 2px; align-content: start; }
+  .glance div::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--line); transform-origin: 0 50%; transform: scaleX(var(--line-x, 1)); }
+  .glance dt { font: .68rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
+  .glance dd { margin: 0; font-size: .95rem; line-height: 1.45; }
+  @media (max-width: 560px) { .glance { grid-template-columns: 1fr; } }
   .intro__pi { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin: var(--s3) 0; }
   .intro__pi .mono { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
   .intro__pi a { font-family: var(--font-serif); font-size: 1.2rem; }
   .intro__cta { display: flex; gap: var(--s1); flex-wrap: wrap; }
-  .intro__fund { color: var(--text-3); margin-top: var(--s3); }
   @media (max-width: 1100px) { .intro { grid-template-columns: 1fr; padding-top: var(--s6); } }
   @media (max-width: 767px) { .intro { padding: var(--s5) var(--s2) var(--s4); gap: var(--s4); } }
 
   .viz { margin: 0; border: 1px solid var(--line); border-radius: calc(var(--radius) + 4px); background: #05070b; overflow: hidden; }
-  .viz__stage { position: relative; aspect-ratio: 5 / 4; }
+  .viz__stage { position: relative; aspect-ratio: 5 / 4; overflow: hidden; }
+  .viz__stage::after { content: ''; position: absolute; left: 0; right: 0; top: -12%; height: 12%; pointer-events: none;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--green) 14%, transparent) 70%, color-mix(in srgb, var(--green) 55%, transparent) 98%, transparent);
+    animation: scan 2.2s cubic-bezier(.6, .1, .3, 1) .5s 1 both; }
+  @keyframes scan { 0% { transform: translateY(0); opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(950%); opacity: 0; } }
   .viz__canvas, .viz__fallback { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .viz__canvas { transition: filter 1s var(--ease); }
-  .viz__canvas.is-dim { filter: brightness(.3) blur(3px); }
   .viz__fallback { display: none; background:
     radial-gradient(40% 35% at 55% 45%, color-mix(in srgb, var(--magenta) 18%, transparent), transparent 70%),
     radial-gradient(25% 20% at 60% 48%, color-mix(in srgb, var(--green) 28%, transparent), transparent 70%); }
   :global(.no-webgl) .viz__canvas { display: none; }
   :global(.no-webgl) .viz__fallback { display: block; }
-  .viz__real { position: absolute; inset: 6%; display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(.94); transition: opacity .8s var(--ease), transform 1s var(--ease); pointer-events: none; }
-  .viz__real.is-on { opacity: 1; transform: none; }
+  .viz__real { position: absolute; inset: 6%; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; }
+  .viz__fov { position: absolute; border: 1.5px solid var(--green); box-shadow: 0 0 18px color-mix(in srgb, var(--green) 60%, transparent), inset 0 0 18px color-mix(in srgb, var(--green) 30%, transparent); opacity: 0; pointer-events: none; }
+  .viz__fov span { position: absolute; left: 0; top: -1.6em; font: .62rem var(--font-mono); letter-spacing: .1em; color: var(--green); white-space: nowrap; }
   .viz__real video { height: 100%; width: auto; max-width: 100%; object-fit: contain; aspect-ratio: 502 / 458; border-radius: 10px;
     box-shadow: 0 20px 60px -20px rgba(255,255,255,.12); border: 1px solid var(--line); }
   .viz__label { position: absolute; left: 12px; top: 12px; transition: opacity .4s; }
@@ -322,6 +345,9 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numer
       tl.from(split.chars, { yPercent: 120, duration: 1.2, ease: 'expo.out', stagger: 0.05 });
     }
     tl.from('[data-intro]', { y: 18, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08 }, 0.25);
+    tl.fromTo('[data-glance]', { '--line-x': 0 }, { '--line-x': 1, duration: 0.9, ease: 'power3.inOut', stagger: 0.07 }, 0.55);
+    tl.from('[data-glance] > *', { y: 8, opacity: 0, duration: 0.7, ease: 'power2.out', stagger: 0.035 }, 0.75);
+    tl.from('.viz', { opacity: 0, y: 24, duration: 1.1, ease: 'power3.out' }, 0.2);
   }
 
   // Muted autoplay of preview videos when visible (skipped with reduced motion)

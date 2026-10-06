@@ -142,7 +142,7 @@ async function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
     { target: brainTarget, pos: new THREE.Vector3(-4.1, 3.2, -5.7) },                                  // whole brain, from front-left above
     { target: hipCenter, pos: hipCenter.clone().add(new THREE.Vector3(-2.5, 2.3, -2.9)) },               // hippocampal formation
     { target: ca1Target, pos: ca1Target.clone().add(new THREE.Vector3(1.1, 2.1, -1.7)) },                // dorsal CA1
-    { target: ca1Target, pos: ca1Target.clone().add(new THREE.Vector3(1.1, 2.1, -1.7)) },              // recording (same view, dimmed)
+    { target: ca1Target, pos: ca1Target.clone().add(new THREE.Vector3(0.1, 0.2, -0.16)) },             // dive into CA1 → recording
   ];
   const state = { p: 0, intro: motionOK() ? 0 : 1, yaw: 0 };
   const drag = { on: false, x: 0, yaw: 0, vel: 0 };
@@ -180,7 +180,44 @@ async function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
     cellMat.opacity = ca1Focus;
     if (ca1Focus > 0 && motionOK()) fire();
     renderer.render(scene, camera);
+    reveal(p);
   };
+
+  /* ---- Dive into CA1: an imaging field of view opens on the tissue and becomes the recording ---- */
+  const real = hero.querySelector<HTMLElement>('[data-hero-real]');
+  const fov = hero.querySelector<HTMLElement>('[data-hero-fov]');
+  const realVideo = real?.querySelector('video');
+  const proj = new THREE.Vector3();
+  let videoBox = { l: 0.06, t: 0, w: 0.88, h: 1 };
+  const measure = () => {
+    if (!real || !realVideo) return;
+    const a = real.getBoundingClientRect(), b = realVideo.getBoundingClientRect();
+    if (a.width && b.width) videoBox = { l: (b.left - a.left) / a.width, t: (b.top - a.top) / a.height, w: b.width / a.width, h: b.height / a.height };
+  };
+  new ResizeObserver(measure).observe(hero);
+  realVideo?.addEventListener('loadedmetadata', measure);
+  const pct = (v: number) => `${(v * 100).toFixed(2)}%`;
+  function reveal(p: number) {
+    if (!real) return;
+    const r = Math.max(0, Math.min(1, (p - 2.55) / 0.45)), e = smooth(r);
+    real.classList.toggle('is-on', r > 0.5);
+    real.style.pointerEvents = r > 0.95 ? 'auto' : 'none';
+    canvas.style.filter = r > 0 ? `brightness(${(1 - 0.8 * e).toFixed(3)}) blur(${(4 * e).toFixed(2)}px)` : '';
+    if (r <= 0) { real.style.opacity = '0'; if (fov) fov.style.opacity = '0'; return; }
+    // where dorsal CA1 sits on screen, in the reveal container's coordinates (container = stage inset 6%)
+    proj.copy(ca1Target).project(camera);
+    const cx = ((proj.x + 1) / 2 - 0.06) / 0.88, cy = ((1 - proj.y) / 2 - 0.06) / 0.88;
+    const hs = 0.035, box = {
+      l: cx - hs + (videoBox.l - (cx - hs)) * e, t: cy - hs + (videoBox.t - (cy - hs)) * e,
+      w: 2 * hs + (videoBox.w - 2 * hs) * e, h: 2 * hs + (videoBox.h - 2 * hs) * e,
+    };
+    real.style.opacity = String(Math.min(1, r * 6));
+    real.style.clipPath = `inset(${pct(box.t)} ${pct(1 - box.l - box.w)} ${pct(1 - box.t - box.h)} ${pct(box.l)} round ${(10 * e).toFixed(1)}px)`;
+    if (fov) {
+      const st = (v: number) => pct(0.06 + 0.88 * v); // reveal-container → stage coordinates
+      Object.assign(fov.style, { left: st(box.l), top: st(box.t), width: pct(0.88 * box.w), height: pct(0.88 * box.h), opacity: String(Math.min(1, r * 8) * (1 - e * e)) });
+    }
+  }
 
   let raf = 0, visible = true;
   const loop = (t: number) => { render(t); raf = requestAnimationFrame(loop); };
@@ -197,19 +234,24 @@ async function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
   /* ---- Steps ---- */
   const tabs = [...hero.querySelectorAll<HTMLButtonElement>('[data-viz-step]')];
   const captions = [...hero.querySelectorAll<HTMLElement>('[data-viz-caption]')];
-  const real = hero.querySelector<HTMLElement>('[data-hero-real]');
-  const realVideo = real?.querySelector('video');
   let tourTimer = 0, toured = false, touched = false;
 
   const go = (i: number) => {
     tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
     captions.forEach((c, k) => (c.hidden = k !== i));
     const showReal = i === 3;
-    real?.classList.toggle('is-on', showReal);
-    canvas.classList.toggle('is-dim', showReal);
     if (realVideo) showReal && motionOK() ? realVideo.play().catch(() => {}) : realVideo.pause();
     gsap.killTweensOf(state, 'p');
-    if (motionOK()) { start(); gsap.to(state, { p: i, duration: 2.4, ease: 'power2.inOut' }); }
+    // the dive into the recording is slower and eases in, like focusing down through tissue
+    if (motionOK()) {
+      start();
+      if (showReal && state.p < 2.55) {
+        // two phases: descend into dorsal CA1, then the imaging field opens into the recording
+        gsap.timeline()
+          .to(state, { p: 2.55, duration: state.p < 2 ? 2.6 : 1.5, ease: 'power2.inOut' })
+          .to(state, { p: 3, duration: 1.7, ease: 'power2.inOut' });
+      } else gsap.to(state, { p: i, duration: 2.4, ease: 'power2.inOut' });
+    }
     else { state.p = i; render(); }
   };
   tabs.forEach((t, i) => {

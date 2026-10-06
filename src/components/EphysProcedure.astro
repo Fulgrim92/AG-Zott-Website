@@ -1,0 +1,374 @@
+---
+/**
+ * "How we record": zoomable, step-by-step schematics of the two electrophysiology procedures
+ * (acute-slice field recordings / LTP, and chronic video-EEG). GSAP tweens the SVG viewBox
+ * between steps so the visitor zooms from the whole rig down to the electrode tips.
+ * Illustrative schematics — typical parameters, not lab data.
+ */
+import Label from './Label.astro';
+
+// --- tiny deterministic helpers for illustrative traces (build time) ---
+let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const fepsp = (x0: number, y0: number, w: number, depth: number) => {
+  const pts: string[] = [];
+  for (let i = 0; i <= 120; i++) {
+    const t = i / 120, x = x0 + t * w;
+    let y = 0;
+    if (t > 0.08 && t < 0.11) y = -26 * Math.sin(((t - 0.08) / 0.03) * Math.PI);         // stimulus artefact
+    else if (t > 0.13 && t < 0.19) y = 5 * Math.sin(((t - 0.13) / 0.06) * Math.PI);      // fibre volley
+    else if (t > 0.2) { const u = (t - 0.2) / 0.16; y = depth * u * Math.exp(1 - u); }  // fEPSP (downward)
+    pts.push(`${x.toFixed(1)},${(y0 + y).toFixed(1)}`);
+  }
+  return `M${pts.join(' L')}`;
+};
+const ltpPts = Array.from({ length: 60 }, (_, i) => {
+  const m = i - 15, base = 100, v = m < 0 ? base : 150 + 70 * Math.exp(-m / 3);
+  return { x: 842 + i * 5.1, y: 452 - (v + (rnd() - 0.5) * 10 - 80) * 0.55 };
+});
+let eeg = 'M840 300';
+for (let i = 1; i <= 300; i++) {
+  const x = 840 + i, t = i / 300;
+  const seizure = t > 0.55 && t < 0.78 ? 1 : 0;
+  const spike = t > 0.3 && rnd() < 0.04 + 0.08 * (t > 0.45 ? 1 : 0) ? -(10 + rnd() * 18) : 0;
+  const amp = 2.5 + seizure * 16 * Math.sin(Math.PI * (t - 0.55) / 0.23);
+  eeg += ` L${x} ${(300 + (rnd() - 0.5) * amp * 2 + spike).toFixed(1)}`;
+}
+const ticks = Array.from({ length: 70 }, () => 840 + 90 + rnd() * 210).sort((a, b) => a - b);
+
+const slice = [
+  { box: '0 0 1200 700', title: 'The rig', plain: 'A living brain slice sits in a recording chamber, continuously bathed in oxygenated artificial cerebrospinal fluid (ACSF). Micromanipulators position two electrodes; an amplifier and stimulator connect them to the computer.', expert: 'Submerged or interface chamber, perfusion with carbogenated ACSF (typically 2–3 ml/min, 30–32 °C).' },
+  { box: '180 130 500 292', title: 'Acute hippocampal slice', plain: 'The brain is cut into 300–400 µm thick slices with a vibratome. A transverse slice keeps the hippocampal circuit intact: dentate gyrus → CA3 → CA1. A small grid holds it in place.', expert: 'Slices recover ≥ 1 h before recording; the CA3→CA1 Schaffer-collateral pathway is preserved within the slice plane.' },
+  { box: '300 262 300 175', title: 'Electrodes in CA1', plain: 'A stimulating electrode activates the Schaffer collaterals — axons coming from CA3. A fine glass electrode in CA1 stratum radiatum picks up the combined synaptic response of many neurons.', expert: 'Bipolar stimulation electrode in s. radiatum near CA2; ACSF-filled glass pipette (1–3 MΩ) in CA1 s. radiatum.' },
+  { box: '815 196 370 216', title: 'Stimulate & record', plain: 'Each brief electrical pulse produces a field EPSP. Its initial slope is a measure of synaptic strength; the small fibre volley before it shows how many axons were activated.', expert: 'Test pulses every 15–30 s at ~30–50 % of maximal response; fEPSP slope measured over the initial 10–90 % of the rising phase.' },
+  { box: '815 330 370 216', title: 'Induce LTP', plain: 'After a stable baseline, a short theta-burst stimulus is given. If the synapses strengthen, the response stays larger for an hour or more — long-term potentiation, a cellular model of memory.', expert: 'Theta-burst stimulation (bursts of 4 pulses at 100 Hz, every 200 ms); potentiation quantified 50–60 min after induction relative to baseline.' },
+];
+const vivo = [
+  { box: '0 0 1200 700', title: 'Video-EEG setup', plain: 'The mouse moves freely in its home cage. A light cable and a rotating commutator connect the implanted electrodes to the amplifier, while a camera films behaviour in synchrony with the EEG.', expert: 'Tethered recording through a low-torque commutator; synchronised video for seizure scoring and sleep/wake staging.' },
+  { box: '376 414 128 75', title: 'Electrode implantation', plain: 'Under anaesthesia, small screw electrodes are placed on the skull over the cortex, a reference over the cerebellum, and fine wires in the neck muscles record muscle tone (EMG). Mice recover for about a week before recording.', expert: 'Epidural screw electrodes, cerebellar reference/ground, bilateral nuchal EMG; stereotaxic coordinates relative to bregma.' },
+  { box: '815 196 370 216', title: 'Recording', plain: 'Hours of continuous EEG are recorded. In an acute seizure model, injections (arrows) make the network over-excitable: epileptic spikes and seizures appear.', expert: 'Continuous acquisition over hours; baseline period followed by systemic injections, e.g. kainic acid.' },
+  { box: '815 250 370 216', title: 'Analysis', plain: 'Spikes are detected automatically and seizures are identified from changes in signal power, then compared between groups of animals.', expert: 'Spike detection e.g. by thresholding the Teager–Kaiser energy; seizures from 20–60 Hz power; cumulative counts compared between genotypes.' },
+];
+---
+<div class="ep" data-ep>
+  <div class="ep__top">
+    <div class="seg" role="tablist" aria-label="Procedure">
+      <button role="tab" aria-selected="true" data-proc="slice">Brain slice · LTP</button>
+      <button role="tab" aria-selected="false" data-proc="vivo">In vivo · video-EEG</button>
+    </div>
+    <div class="ep__ctl">
+      <button class="btn btn--sm" data-prev aria-label="Previous step">←</button>
+      <button class="btn btn--sm" data-play aria-pressed="false">▶ Walk through</button>
+      <button class="btn btn--sm" data-next aria-label="Next step">→</button>
+    </div>
+  </div>
+
+  {[['slice', slice], ['vivo', vivo]].map(([id, steps]) => (
+    <div class="ep__proc" data-panel={id} hidden={id !== 'slice'} data-steps={JSON.stringify((steps as typeof slice).map((s) => s.box))}>
+      <div class="ep__stage">
+        <svg viewBox="0 0 1200 700" data-svg data-step="0" role="img" aria-label={id === 'slice' ? 'Schematic of an acute-slice field recording setup: perfused recording chamber with a hippocampal slice, stimulating and recording electrodes in CA1, amplifier and screen.' : 'Schematic of a video-EEG setup: mouse in a cage with an implanted headstage and cable to a commutator, camera, amplifier and screen.'}>
+          <defs>
+            <radialGradient id={`acsf-${id}`} cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#12324a" /><stop offset="1" stop-color="#0a1824" /></radialGradient>
+            <linearGradient id={`glass-${id}`} x1="0" x2="1"><stop offset="0" stop-color="#bfe9ff" stop-opacity=".55" /><stop offset="1" stop-color="#7fb7d6" stop-opacity=".25" /></linearGradient>
+          </defs>
+          <rect width="1200" height="700" fill="#070a10" />
+
+          {/* ---------------- shared: amplifier + screen ---------------- */}
+          <g class="hw">
+            <rect x="820" y="80" width="350" height="86" rx="10" class="box" />
+            <text x="840" y="112" class="t-md">Amplifier &amp; stimulator</text>
+            {[0, 1, 2, 3, 4].map((i) => <circle cx={850 + i * 26} cy="140" r="7" class="knob" />)}
+            <rect x="1020" y="128" width="130" height="22" rx="4" class="lcd" />
+            <rect x="820" y="196" width="350" height="350" rx="12" class="box" />
+            <rect x="832" y="208" width="326" height="326" rx="6" fill="#03060a" />
+            <text x="842" y="226" class="t-xs dim">{id === 'slice' ? 'fEPSP (mV) · 10 ms' : 'EEG (µV) · hours'}</text>
+            <text x="842" y="364" class="t-xs dim">{id === 'slice' ? 'fEPSP slope (% of baseline) · min' : 'Detected events'}</text>
+            <line x1="842" x2="1150" y1="350" y2="350" class="grid" />
+          </g>
+
+          {id === 'slice' ? (
+            <>
+              {/* perfusion */}
+              <path d="M40 395 H190" class="tube" /><path d="M40 395 H190" class="flow" />
+              <path d="M670 395 H760 V650" class="tube" /><path d="M670 395 H760 V650" class="flow" />
+              <text x="44" y="380" class="t-sm acsf">ACSF in (O₂/CO₂)</text>
+              <text x="690" y="380" class="t-sm acsf">out</text>
+              {/* chamber */}
+              <circle cx="430" cy="395" r="240" class="chamber" />
+              <circle cx="430" cy="395" r="226" fill={`url(#acsf-${id})`} />
+              {/* slice */}
+              <path d="M268 380 C 268 300, 360 268, 440 272 C 545 276, 600 330, 598 392 C 596 470, 520 505, 430 505 C 330 505, 268 460, 268 380 Z" class="slice" />
+              {/* hippocampus: CA pyramidal layer + dentate gyrus */}
+              <path d="M300 360 C 330 315, 420 300, 480 312 C 545 325, 575 370, 555 410 C 540 440, 500 432, 482 408" class="ca" />
+              <path d="M505 372 C 465 352, 418 368, 418 400 C 418 432, 465 448, 505 430" class="dg" />
+              {/* Schaffer collaterals in stratum radiatum */}
+              <path d="M548 378 C 525 352, 470 338, 395 343 C 360 345, 330 352, 312 365" class="sc" />
+              {/* harp */}
+              <g class="harp"><path d="M262 300 C 300 520, 560 520, 600 300" />{[0, 1, 2, 3, 4, 5, 6].map((i) => <line x1={300 + i * 42} x2={300 + i * 42} y1="275" y2="505" />)}</g>
+              {/* electrodes + manipulators */}
+              <rect x="640" y="70" width="90" height="46" rx="6" class="manip" /><text x="648" y="62" class="t-sm dim">Manipulator</text>
+              <path d="M685 116 L 503 342 L 500 341 L 676 112 Z" class="stim" />
+              <rect x="150" y="70" width="90" height="46" rx="6" class="manip" />
+              <path d="M195 116 L 394 344 L 398 343 L 210 112 Z" fill={`url(#glass-${id})`} class="pipette" />
+              <path d="M398 343 L 220 110" class="pipette-wire" />
+              {/* cables to amplifier */}
+              <path d="M730 92 C 780 92, 790 110, 820 110" class="cable" />
+              <path d="M240 92 C 420 20, 760 30, 820 100" class="cable" />
+              {/* signal travelling along the Schaffer collaterals */}
+              <circle r="3.2" class="pulse"><animateMotion dur="1.2s" repeatCount="indefinite" path="M500 342 C 470 337, 440 338, 397 344" /></circle>
+              <circle r="3.2" class="pulse"><animateMotion dur="1.2s" begin="0.4s" repeatCount="indefinite" path="M500 342 C 470 337, 440 338, 397 344" /></circle>
+              {/* screen content */}
+              <path d={fepsp(842, 262, 300, 52)} class="trace base" />
+              <path d={fepsp(842, 262, 300, 78)} class="trace post" />
+              <g class="annot">
+                <text x="925" y="240" class="t-xs">artefact</text>
+                <text x="878" y="296" class="t-xs">fibre volley</text>
+                <line x1="902" y1="270" x2="940" y2="318" class="slope" /><text x="948" y="322" class="t-xs">slope</text>
+              </g>
+              <g class="ltp">
+                {ltpPts.map((p, i) => <circle cx={p.x} cy={p.y} r="2.4" class:list={['pt', { after: i >= 15 }]} />)}
+                <line x1="918" x2="918" y1="372" y2="460" class="tbs" /><text x="922" y="384" class="t-xs">TBS</text>
+                <line x1="842" x2="1150" y1="452" y2="452" class="grid" /><text x="1096" y="446" class="t-xs dim">100 %</text>
+              </g>
+              {/* labels per step (font sizes follow the zoom level) */}
+              <g class="lbl" data-for="0">
+                <text x="430" y="660" text-anchor="middle" class="t-lg">Recording chamber</text>
+                <text x="995" y="580" text-anchor="middle" class="t-lg">Acquisition</text>
+              </g>
+              <g class="lbl" data-for="1">
+                <text x="470" y="300" class="t-sm">CA1</text><text x="560" y="440" class="t-sm">CA3</text><text x="395" y="445" class="t-sm">DG</text>
+                <text x="276" y="268" class="t-xs dim">slice anchor ("harp")</text>
+              </g>
+              <g class="lbl" data-for="2">
+                <text x="505" y="334" class="t-xxs stimc">stimulation</text>
+                <text x="352" y="333" class="t-xxs recc">recording (CA1 s. radiatum)</text>
+                <text x="430" y="358" class="t-xxs">Schaffer collaterals</text>
+                <text x="330" y="305" class="t-xxs dim">CA1 pyramidal layer</text>
+              </g>
+            </>
+          ) : (
+            <>
+              {/* cage */}
+              <rect x="130" y="250" width="500" height="380" rx="16" class="cage" />
+              {Array.from({ length: 140 }, () => <circle cx={150 + rnd() * 460} cy={270 + rnd() * 340} r={1 + rnd() * 1.6} class="bedding" />)}
+              {/* camera */}
+              <g class="cam"><rect x="40" y="150" width="70" height="44" rx="8" /><rect x="110" y="160" width="22" height="24" rx="4" /><circle cx="64" cy="172" r="12" class="lens" /></g>
+              <path d="M132 172 L 300 300 M132 172 L 420 280" class="fovline" />
+              {/* commutator + tether */}
+              <rect x="420" y="60" width="54" height="44" rx="8" class="manip" /><text x="482" y="88" class="t-sm dim">Commutator</text>
+              <path d="M447 104 C 440 220, 470 330, 452 448" class="tether" />
+              <path d="M474 82 C 640 70, 760 80, 820 110" class="cable" />
+              {/* mouse (top view) */}
+              <path d="M285 482 C 230 500, 200 540, 170 560" class="tail" />
+              <ellipse cx="360" cy="470" rx="78" ry="44" class="mouse" transform="rotate(-8 360 470)" />
+              <ellipse cx="445" cy="455" rx="36" ry="27" class="mouse" />
+              <circle cx="424" cy="433" r="11" class="ear" /><circle cx="424" cy="478" r="11" class="ear" />
+              <circle cx="481" cy="455" r="3" class="nose" />
+              {/* skull detail (visible when zoomed) */}
+              <g class="skull">
+                <path d="M412 455 C 412 440, 432 432, 452 434 C 470 436, 478 446, 478 455 C 478 464, 470 474, 452 476 C 432 478, 412 470, 412 455 Z" class="bone" />
+                <line x1="414" y1="455" x2="477" y2="455" class="suture" />
+                <line x1="448" y1="436" x2="448" y2="474" class="suture" /><line x1="428" y1="438" x2="428" y2="472" class="suture" />
+                <text x="449.5" y="440" class="t-micro dim">bregma</text><text x="429.5" y="440" class="t-micro dim">lambda</text>
+                {[[460, 447], [460, 463], [438, 447], [438, 463]].map(([x, y]) => <circle cx={x} cy={y} r="2" class="screw" />)}
+                <circle cx="419" cy="455" r="1.8" class="ref" />
+                <path d="M413 451 L 398 447 M413 459 L 398 463" class="emg" />
+                <rect x="452" y="452" width="4" height="6" class="headstage" />
+              </g>
+              <g class="lbl" data-for="1">
+                <text x="460" y="430" class="t-micro" text-anchor="middle">EEG screw electrodes</text>
+                <path d="M455 431 L 459 445 M462 431 L 460 445" class="leader" />
+                <text x="408" y="441" class="t-micro" text-anchor="end">reference (cerebellum)</text>
+                <path d="M409 441.5 L 418 454" class="leader" />
+                <text x="396" y="470" class="t-micro" text-anchor="end">EMG (neck)</text>
+                <text x="453" y="482" class="t-micro" text-anchor="middle">headstage connector</text>
+                <path d="M453 479.5 L 454 459" class="leader" />
+              </g>
+              {/* screen content */}
+              <path d={eeg} class="trace eeg" />
+              <g class="annot"><path d="M1002 236 l -5 -8 h 10 z M1022 236 l -5 -8 h 10 z" class="ka" /><text x="1030" y="234" class="t-xs">injections</text></g>
+              <g class="ltp">
+                <rect x={840 + 300 * 0.55} y="372" width={300 * 0.23} height="40" class="seizure" />
+                {ticks.map((x) => <line x1={x} x2={x} y1="420" y2="438" class="tick" />)}
+                <text x="842" y="452" class="t-xs dim">spikes</text><text x={845 + 300 * 0.55} y="404" class="t-xs">seizure</text>
+              </g>
+              <g class="lbl" data-for="0">
+                <text x="380" y="660" text-anchor="middle" class="t-lg">Home cage</text>
+                <text x="74" y="222" text-anchor="middle" class="t-sm dim">Camera</text>
+                <text x="995" y="580" text-anchor="middle" class="t-lg">Acquisition</text>
+              </g>
+            </>
+          )}
+        </svg>
+      </div>
+
+      <ol class="ep__steps" role="list">
+        {(steps as typeof slice).map((s, i) => (
+          <li>
+            <button class:list={['ep__step', { 'is-on': i === 0 }]} data-goto={i} aria-current={i === 0 ? 'step' : undefined}>
+              <span class="mono">{String(i + 1).padStart(2, '0')}</span> {s.title}
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div class="ep__text" aria-live="polite">
+        {(steps as typeof slice).map((s, i) => (
+          <div data-text={i} hidden={i !== 0}>
+            <h4>{s.title}</h4>
+            <p>{s.plain}</p>
+            <p class="small muted"><span class="mono">Detail · </span>{s.expert}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  ))}
+
+  <p class="ep__note small"><Label kind="schematic" /> <span class="muted">Schematic of the general procedures with typical parameters; not to scale and not lab data.</span></p>
+</div>
+
+<style>
+  .ep { display: grid; gap: var(--s2); }
+  .ep__top { display: flex; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; align-items: center; }
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); flex-wrap: wrap; }
+  .seg button { border: 0; background: transparent; padding: .45em 1.1em; border-radius: 999px; cursor: pointer; font-size: .88rem; color: var(--text-2); }
+  .seg button[aria-selected='true'] { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+  .ep__ctl { display: flex; gap: 6px; }
+  .ep__proc { display: grid; grid-template-columns: minmax(0, 1fr) 260px; grid-template-areas: 'stage steps' 'text text'; gap: var(--s2) var(--s3); }
+  .ep__proc[hidden] { display: none; }
+  @media (max-width: 960px) { .ep__proc { grid-template-columns: 1fr; grid-template-areas: 'stage' 'steps' 'text'; } }
+  .ep__stage { grid-area: stage; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #070a10; aspect-ratio: 12 / 7; }
+  .ep__stage svg { width: 100%; height: 100%; display: block; }
+  .ep__steps { grid-area: steps; list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; align-content: start; counter-reset: s; }
+  @media (max-width: 960px) { .ep__steps { display: flex; flex-wrap: wrap; } }
+  .ep__step { width: 100%; text-align: left; background: transparent; border: 0; border-left: 2px solid var(--line); padding: 10px 14px; cursor: pointer; color: var(--text-2); font-family: var(--font-serif); font-size: 1.05rem; transition: color .2s, border-color .2s, background .2s; }
+  .ep__step .mono { font-size: .72rem; color: var(--text-3); margin-right: 6px; }
+  .ep__step:hover { color: var(--text); background: var(--surface); }
+  .ep__step.is-on { color: var(--accent); border-color: var(--accent); }
+  .ep__step.is-on .mono { color: var(--accent); }
+  .ep__text { grid-area: text; min-height: 7.5em; }
+  .ep__text h4 { font-family: var(--font-serif); font-size: 1.3rem; font-weight: 400; margin: 0 0 6px; }
+  .ep__text p { margin: 0 0 6px; }
+  .ep__note { display: flex; gap: var(--s2); align-items: center; margin: 0; }
+
+  /* --- SVG styling --- */
+  svg :global(.box) { fill: #0e1522; stroke: #26324a; }
+  svg :global(.knob) { fill: #1c2638; stroke: #3a4a66; }
+  svg :global(.lcd) { fill: #0b2a1b; stroke: #1e5a3a; }
+  svg :global(.grid) { stroke: #1b2434; stroke-dasharray: 2 4; }
+  svg :global(text) { fill: var(--text); font-family: var(--font-sans); }
+  svg :global(.t-lg) { font-size: 22px; font-family: var(--font-serif); }
+  svg :global(.t-md) { font-size: 17px; }
+  svg :global(.t-sm) { font-size: 13px; }
+  svg :global(.t-xs) { font-size: 10px; font-family: var(--font-mono); }
+  svg :global(.t-xxs) { font-size: 6px; font-family: var(--font-mono); }
+  svg :global(.t-micro) { font-size: 2.4px; font-family: var(--font-mono); }
+  svg :global(.leader) { stroke: var(--text-2); stroke-width: .18; fill: none; }
+  svg :global(.dim) { fill: var(--text-3); }
+  svg :global(.acsf) { fill: var(--blue); }
+  svg :global(.tube) { stroke: #1a3a55; stroke-width: 16; fill: none; stroke-linecap: round; }
+  svg :global(.flow) { stroke: var(--blue); stroke-width: 3; fill: none; stroke-dasharray: 6 14; animation: ep-flow 1.4s linear infinite; }
+  svg :global(.chamber) { fill: #0c1520; stroke: #2a3b4f; stroke-width: 3; }
+  svg :global(.slice) { fill: rgba(232, 220, 200, .12); stroke: rgba(232, 220, 200, .35); stroke-width: 1.5; }
+  svg :global(.ca) { fill: none; stroke: var(--green); stroke-width: 7; stroke-linecap: round; opacity: .85; }
+  svg :global(.dg) { fill: none; stroke: var(--blue); stroke-width: 6; stroke-linecap: round; opacity: .85; }
+  svg :global(.sc) { fill: none; stroke: var(--magenta); stroke-width: 1.2; stroke-dasharray: 3 3; opacity: .7; }
+  svg :global(.harp path), svg :global(.harp line) { fill: none; stroke: rgba(255,255,255,.18); stroke-width: 1; }
+  svg :global(.manip) { fill: #182132; stroke: #34425c; }
+  svg :global(.stim) { fill: #c9c9d1; stroke: #e2e2ea; stroke-width: .6; }
+  svg :global(.pipette) { stroke: rgba(191,233,255,.6); stroke-width: .6; }
+  svg :global(.pipette-wire) { stroke: #d4b45a; stroke-width: .5; }
+  svg :global(.cable) { fill: none; stroke: #2a3550; stroke-width: 3; }
+  svg :global(.pulse) { fill: #fff; filter: drop-shadow(0 0 3px var(--magenta)); opacity: 0; transition: opacity .4s; }
+  svg :global(.trace) { fill: none; stroke-width: 1.6; stroke-dasharray: 1600; stroke-dashoffset: 1600; transition: stroke-dashoffset 1.8s ease; }
+  svg :global(.trace.base) { stroke: var(--text-3); }
+  svg :global(.trace.post) { stroke: var(--green); transition-delay: .9s; }
+  svg :global(.trace.eeg) { stroke: var(--red); stroke-width: 1; }
+  svg :global(.annot), svg :global(.ltp), svg :global(.lbl) { opacity: 0; transition: opacity .6s; }
+  svg :global(.slope) { stroke: var(--amber); stroke-width: 1.2; }
+  svg :global(.annot text), svg :global(.ltp text) { fill: var(--text-2); }
+  svg :global(.pt) { fill: var(--text-3); opacity: 0; transition: opacity .3s; }
+  svg :global(.pt.after) { fill: var(--green); }
+  svg :global(.tbs) { stroke: var(--amber); stroke-dasharray: 3 3; }
+  svg :global(.stimc) { fill: #e2e2ea; } svg :global(.recc) { fill: #bfe9ff; }
+  svg :global(.cage) { fill: #0d1219; stroke: #2a3346; stroke-width: 3; }
+  svg :global(.bedding) { fill: #2a2418; }
+  svg :global(.cam rect) { fill: #1a2233; stroke: #3a4763; } svg :global(.lens) { fill: #0a0f18; stroke: var(--blue); stroke-width: 2; }
+  svg :global(.fovline) { stroke: rgba(90,169,255,.25); stroke-dasharray: 4 6; fill: none; }
+  svg :global(.tether) { fill: none; stroke: #8a95a8; stroke-width: 1.4; }
+  svg :global(.mouse) { fill: #c9c2b8; } svg :global(.ear) { fill: #d8b8b0; } svg :global(.nose) { fill: #e09a9a; }
+  svg :global(.tail) { fill: none; stroke: #d8b8b0; stroke-width: 5; stroke-linecap: round; }
+  svg :global(.bone) { fill: #efe6d6; stroke: #bdb2a0; stroke-width: .4; }
+  svg :global(.suture) { stroke: #a99d88; stroke-width: .25; }
+  svg :global(.screw) { fill: #9aa3ad; stroke: #59616b; stroke-width: .3; }
+  svg :global(.ref) { fill: var(--amber); }
+  svg :global(.emg) { stroke: var(--red); stroke-width: .4; fill: none; }
+  svg :global(.headstage) { fill: #2b3a55; }
+  svg :global(.skull) { opacity: 0; transition: opacity .8s; }
+  svg :global(.ka) { fill: var(--amber); }
+  svg :global(.seizure) { fill: color-mix(in srgb, var(--red) 18%, transparent); }
+  svg :global(.tick) { stroke: var(--amber); stroke-width: 1; }
+
+  /* step-dependent visibility */
+  svg[data-step='0'] :global(.lbl[data-for='0']), svg[data-step='1'] :global(.lbl[data-for='1']), svg[data-step='2'] :global(.lbl[data-for='2']) { opacity: 1; }
+  [data-panel='slice'] svg:is([data-step='2'], [data-step='3'], [data-step='4']) :global(.pulse) { opacity: 1; }
+  [data-panel='slice'] svg:is([data-step='3'], [data-step='4']) :global(.trace.base),
+  [data-panel='slice'] svg:is([data-step='3'], [data-step='4']) :global(.trace.post) { stroke-dashoffset: 0; }
+  [data-panel='slice'] svg[data-step='3'] :global(.annot) { opacity: 1; }
+  [data-panel='slice'] svg[data-step='4'] :global(.ltp), [data-panel='slice'] svg[data-step='4'] :global(.pt) { opacity: 1; }
+  [data-panel='vivo'] svg:not([data-step='0']) :global(.skull) { opacity: 1; }
+  [data-panel='vivo'] svg:is([data-step='2'], [data-step='3']) :global(.trace.eeg) { stroke-dashoffset: 0; }
+  [data-panel='vivo'] svg:is([data-step='2'], [data-step='3']) :global(.annot) { opacity: 1; }
+  [data-panel='vivo'] svg[data-step='3'] :global(.ltp) { opacity: 1; }
+  @keyframes ep-flow { to { stroke-dashoffset: -40; } }
+  :global(:root[data-motion='off']) svg :global(.flow) { animation: none; }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+  const motionOK = () => document.documentElement.dataset.motion !== 'off';
+
+  document.querySelectorAll<HTMLElement>('[data-ep]').forEach((root) => {
+    const panels = [...root.querySelectorAll<HTMLElement>('[data-panel]')];
+    let panel = panels[0], step = 0, timer = 0;
+    const playBtn = root.querySelector<HTMLButtonElement>('[data-play]')!;
+
+    const go = (i: number, instant = false) => {
+      const boxes: string[] = JSON.parse(panel.dataset.steps!);
+      step = (i + boxes.length) % boxes.length;
+      const svg = panel.querySelector<SVGSVGElement>('[data-svg]')!;
+      svg.dataset.step = String(step);
+      panel.querySelectorAll<HTMLElement>('[data-goto]').forEach((b) => {
+        const on = +b.dataset.goto! === step;
+        b.classList.toggle('is-on', on); on ? b.setAttribute('aria-current', 'step') : b.removeAttribute('aria-current');
+      });
+      panel.querySelectorAll<HTMLElement>('[data-text]').forEach((t) => (t.hidden = +t.dataset.text! !== step));
+      // stagger the LTP time-course points in as the experiment "runs"
+      panel.querySelectorAll<SVGCircleElement>('.pt').forEach((pt, k) => (pt.style.transitionDelay = `${k * 25}ms`));
+      gsap.killTweensOf(svg);
+      if (motionOK() && !instant) gsap.to(svg, { attr: { viewBox: boxes[step] }, duration: 1.6, ease: 'power3.inOut' });
+      else svg.setAttribute('viewBox', boxes[step]);
+    };
+    const stopPlay = () => { clearInterval(timer); timer = 0; playBtn.setAttribute('aria-pressed', 'false'); playBtn.textContent = '▶ Walk through'; };
+
+    root.querySelectorAll<HTMLButtonElement>('[data-goto]').forEach((b) => b.addEventListener('click', () => { stopPlay(); go(+b.dataset.goto!); }));
+    root.querySelector('[data-prev]')!.addEventListener('click', () => { stopPlay(); go(step - 1); });
+    root.querySelector('[data-next]')!.addEventListener('click', () => { stopPlay(); go(step + 1); });
+    playBtn.addEventListener('click', () => {
+      if (timer) return stopPlay();
+      playBtn.setAttribute('aria-pressed', 'true'); playBtn.textContent = '❚❚ Pause';
+      go(step + 1);
+      timer = window.setInterval(() => go(step + 1), 5200);
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-proc]').forEach((t, _, all) => t.addEventListener('click', () => {
+      stopPlay();
+      all.forEach((x) => x.setAttribute('aria-selected', String(x === t)));
+      panels.forEach((p) => (p.hidden = p.dataset.panel !== t.dataset.proc));
+      panel = panels.find((p) => p.dataset.panel === t.dataset.proc)!;
+      go(0, true);
+    }));
+    // keyboard: arrow keys move through steps when the explorer has focus
+    root.addEventListener('keydown', (e) => {
+      if ((e.target as HTMLElement).closest('input, select')) return;
+      if (e.key === 'ArrowRight') { stopPlay(); go(step + 1); } else if (e.key === 'ArrowLeft') { stopPlay(); go(step - 1); }
+    });
+  });
+</script>
