@@ -1,0 +1,104 @@
+{
+ "source": "Allen Mouse Brain Common Coordinate Framework v3 (2017), \u00a9 Allen Institute for Brain Science. Meshes via MeshView for Brain Atlases (University of Oslo, MIT licence).",
+ "citation": "Wang Q. et al. (2020) The Allen Mouse Brain Common Coordinate Framework: A 3D Reference Atlas. Cell 181:936\u2013953.",
+ "units": "CCFv3 voxels (25 \u00b5m); x = medio-lateral, y = antero-posterior, z = dorso-ventral",
+ "origin": [
+  21.0,
+  1.0,
+  18.0238
+ ],
+ "scale": 0.008026245517662317,
+ "structures": [
+  {
+   "id": 997,
+   "name": "Whole brain",
+   "color": "#5aa9ff",
+   "positions": [
+    0,
+    20492
+   ],
+   "indices": [
+    122952,
+    130212
+   ]
+  },
+  {
+   "id": 382,
+   "name": "Field CA1",
+   "color": "#4dff9a",
+   "positions": [
+    383376,
+    10544
+   ],
+   "indices": [
+    446640,
+    63411
+   ]
+  },
+  {
+   "id": 423,
+   "name": "Field CA2",
+   "color": "#ffc857",
+   "positions": [
+    573464,
+    4800
+   ],
+   "indices": [
+    602264,
+    31911
+   ]
+  },
+  {
+   "id": 463,
+   "name": "Field CA3",
+   "color": "#ff4fd8",
+   "positions": [
+    666088,
+    8476
+   ],
+   "indices": [
+    716944,
+    50991
+   ]
+  },
+  {
+   "id": 632,
+   "name": "Dentate gyrus, granule cell layer",
+   "color": "#7aa7ff",
+   "positions": [
+    818928,
+    8449
+   ],
+   "indices": [
+    869624,
+    51321
+   ]
+  },
+  {
+   "id": 10703,
+   "name": "Dentate gyrus, molecular layer",
+   "color": "#5a7fd6",
+   "positions": [
+    972268,
+    10001
+   ],
+   "indices": [
+    1032276,
+    60810
+   ]
+  },
+  {
+   "id": 10704,
+   "name": "Dentate gyrus, polymorph layer",
+   "color": "#5a7fd6",
+   "positions": [
+    1153896,
+    3041
+   ],
+   "indices": [
+    1172144,
+    18540
+   ]
+  }
+ ]
+}

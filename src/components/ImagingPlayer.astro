@@ -34,13 +34,13 @@ const meta = Object.entries(a.meta).filter(([, v]) => v);
     </div>
     <div class="seg" role="group" aria-label="Display colour table">
       <span class="seg__lbl">LUT</span>
-      <button aria-pressed="false" data-lut="none">Grey</button>
-      <button aria-pressed="true" data-lut="green">Green</button>
+      <button aria-pressed="true" data-lut="none">Original</button>
+      <button aria-pressed="false" data-lut="green">Green</button>
       <button aria-pressed="false" data-lut="fire">Fire</button>
     </div>
   </div>
 
-  <div class="player__stage" data-wipe data-stage data-mode="single" data-lut="green">
+  <div class="player__stage" data-wipe data-stage data-mode="single" data-lut="none">
     {recs.map((r, i) => (
       <figure class="clip" data-clip={r.id} hidden={i !== 0}>
         <video src={url(r.src)} poster={url(r.poster)} muted loop playsinline preload={i === 0 ? 'auto' : 'metadata'} aria-label={r.alt}></video>
@@ -66,7 +66,7 @@ const meta = Object.entries(a.meta).filter(([, v]) => v);
     <Label kind="data" />
     <span class="small muted">{a.source}. The time stamp in each movie shows recording time; the clip plays at {a.playback}.</span>
     <dl class="meta">{meta.map(([k, v]) => <><dt>{k}</dt><dd class:list={[{ ph: String(v).startsWith('[') }]}>{v}</dd></>)}</dl>
-    <span class="small muted">LUTs change only the display colours — the underlying greyscale data are unchanged.</span>
+    <span class="small muted">Shown in the original greyscale. Optional colour tables (Green, Fire) change only the display colours, not the data.</span>
   </div>
 </div>
 )}

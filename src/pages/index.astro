@@ -34,16 +34,15 @@ const themes = [
   ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', key: 'glymphatic', color: 'var(--magenta)', text: 'How cerebrospinal fluid flows through brain tissue and clears waste such as β-amyloid.', media: 'flow' }] : []),
 ];
 const steps = [
-  { label: 'Brain', caption: 'The mouse brain. Our work focuses on the hippocampus, a structure essential for forming new memories.' },
-  { label: 'Hippocampus', caption: 'The hippocampus (magenta), with region CA1 highlighted in green.' },
-  { label: 'CA1', caption: 'CA1 pyramidal neurons. Each flash mimics a calcium transient — a neuron firing.' },
+  { label: 'Brain', caption: 'The adult mouse brain (Allen CCFv3). Drag to rotate. The hippocampus lies beneath the cortex at the back of the brain.' },
+  { label: 'Hippocampus', caption: 'Hippocampal fields: CA1 (green), CA2 (amber), CA3 (magenta) and the dentate gyrus (blue).' },
+  { label: 'CA1', caption: 'Dorsal CA1, where we image. The flashes illustrate neurons firing (calcium transients); they are not data.' },
   { label: 'Recording', caption: `A real in vivo two-photon recording of CA1 neurons (${rec.label}), shown at 4× real time.` },
 ];
 const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 ---
 <Base>
   <svg width="0" height="0" aria-hidden="true" style="position:absolute">
-    <filter id="home-lut" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.15 0.15 0.15 0 0  0.5 0.5 0.5 0 0.02  0.25 0.25 0.25 0 0  0 0 0 1 0" /></filter>
   </svg>
 
   <!-- ======== Intro ======== -->
@@ -65,14 +64,15 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numer
       <p class="intro__fund small" data-intro>Supported by the <a href={url('/funding/')}>European Research Council (ERC)</a> and the <a href={url('/funding/')}>Deutsche Forschungsgemeinschaft (DFG)</a>.</p>
     </div>
 
-    <figure class="viz" data-hero aria-labelledby="viz-cap">
+    <figure class="viz" data-hero data-atlas={url('/assets/atlas/')} aria-labelledby="viz-cap">
       <div class="viz__stage">
         <canvas class="viz__canvas" data-hero-canvas aria-hidden="true"></canvas>
         <div class="viz__fallback" aria-hidden="true"></div>
         <div class="viz__real" data-hero-real>
           <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="none" aria-label={rec.alt}></video>
         </div>
-        <div class="viz__label"><Label kind="schematic" text="3D model: illustrative schematic" /></div>
+        <div class="viz__label"><Label kind="schematic" text="Anatomy: Allen Mouse Brain Atlas" /></div>
+        <p class="viz__loading mono small" aria-hidden="true">Loading Allen atlas…</p>
       </div>
       <div class="viz__bar">
         <div role="tablist" aria-label="Zoom level" class="viz__tabs">
@@ -81,6 +81,7 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numer
         <figcaption id="viz-cap" class="viz__cap" aria-live="polite">
           {steps.map((s, i) => <span data-viz-caption hidden={i !== 0}>{s.caption}{i === 3 && <> <Label kind="data" /></>}</span>)}
         </figcaption>
+        <p class="viz__credit">3D anatomy: <a href="https://atlas.brain-map.org/" rel="noopener">Allen Mouse Brain Atlas</a>, Common Coordinate Framework v3 (Wang et al., 2020, <i>Cell</i>) © Allen Institute for Brain Science.</p>
       </div>
     </figure>
   </section>
@@ -98,7 +99,7 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numer
             <a class="card theme" href={url(t.href)} style={`--card-c:${t.color}`}>
               <span class="card__glow" aria-hidden="true"></span>
               <div class="theme__media">
-                {t.media === 'video' && <video src={url(rec2.src)} poster={url(rec2.poster)} muted loop playsinline preload="none" data-autoplay style="filter:url(#home-lut)" aria-label={rec2.alt}></video>}
+                {t.media === 'video' && <video src={url(rec2.src)} poster={url(rec2.poster)} muted loop playsinline preload="none" data-autoplay aria-label={rec2.alt}></video>}
                 {t.media === 'image' && <img src={url(confocal.src)} alt={confocal.alt} loading="lazy" />}
                 {t.media === 'trace' && <svg viewBox="0 0 1000 300" preserveAspectRatio="none" role="img" aria-label="Illustrative local field potential trace."><path d={lfpPath} class="theme__trace" /></svg>}
                 {t.media === 'flow' && (
@@ -227,9 +228,12 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numer
   :global(.no-webgl) .viz__fallback { display: block; }
   .viz__real { position: absolute; inset: 6%; display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(.94); transition: opacity .8s var(--ease), transform 1s var(--ease); pointer-events: none; }
   .viz__real.is-on { opacity: 1; transform: none; }
-  .viz__real video { height: 100%; width: auto; max-width: 100%; object-fit: contain; aspect-ratio: 502 / 458; border-radius: 10px; filter: url(#home-lut);
-    box-shadow: 0 20px 60px -20px color-mix(in srgb, var(--green) 40%, transparent); border: 1px solid color-mix(in srgb, var(--green) 35%, var(--line)); }
+  .viz__real video { height: 100%; width: auto; max-width: 100%; object-fit: contain; aspect-ratio: 502 / 458; border-radius: 10px;
+    box-shadow: 0 20px 60px -20px rgba(255,255,255,.12); border: 1px solid var(--line); }
   .viz__label { position: absolute; left: 12px; top: 12px; transition: opacity .4s; }
+  .viz__loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--text-3); transition: opacity .6s; pointer-events: none; }
+  :global(.is-ready) .viz__loading, :global(.no-webgl) .viz__loading { opacity: 0; }
+  .viz__credit { margin: 0; font-size: .75rem; color: var(--text-3); }
   .viz__real.is-on ~ .viz__label { opacity: 0; }
   .viz__bar { display: grid; gap: 10px; padding: 14px 16px 16px; border-top: 1px solid var(--line); background: var(--bg-2); }
   .viz__tabs { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); justify-self: start; flex-wrap: wrap; }

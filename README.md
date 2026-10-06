@@ -82,3 +82,15 @@ displays a “to verify” banner. Turn it off entirely if it is not part of the
 `.github/workflows/deploy.yml` builds and deploys to GitHub Pages on pushes to `main`
 (enable *Settings → Pages → Source: GitHub Actions*). For other hosts, run
 `SITE=https://your.domain BASE=/ npm run build` and upload `dist/`.
+
+## Allen Mouse Brain Atlas data
+
+- **3D homepage figure** — Allen CCFv3 (2017) structure meshes (whole brain, CA1, CA2, CA3, dentate gyrus),
+  taken from the MIT-licensed [MeshView for Brain Atlases](https://github.com/Neural-Systems-at-UIO/MeshView-for-Brain-Atlases)
+  packaging and simplified by `python3 scripts/build-atlas.py <MeshView checkout>` → `public/assets/atlas/ccf.{bin,json}`.
+- **Reference sections (Immunohistochemistry page)** — 25 µm CCFv3 average template + annotation from the
+  [Allen Brain Cell Atlas](https://allen-brain-cell-atlas.s3.us-west-2.amazonaws.com/index.html) bucket, cut into coronal
+  sections through the hippocampus by `python3 scripts/build-atlas-sections.py <download folder>` →
+  `public/assets/atlas/sections/`. The source URLs are listed at the top of the script.
+- Attribution: Allen Mouse Brain Common Coordinate Framework v3, © Allen Institute for Brain Science;
+  Wang Q. et al. (2020) *Cell* 181:936–953.
