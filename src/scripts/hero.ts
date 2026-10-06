@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { gsap } from 'gsap';
 
 type Manifest = {
-  origin: number[]; scale: number;
+  binary?: string; origin: number[]; scale: number;
   structures: { id: number; name: string; color: string; positions: [number, number]; indices: [number, number] }[];
 };
 
@@ -50,10 +50,8 @@ const solidMaterial = (color: string) => new THREE.ShaderMaterial({
 
 async function init(hero: HTMLElement, canvas: HTMLCanvasElement) {
   const base = hero.dataset.atlas!;
-  const [manifest, buf] = await Promise.all([
-    fetch(`${base}ccf.json`).then((r) => r.json() as Promise<Manifest>),
-    fetch(`${base}ccf.bin`).then((r) => r.arrayBuffer()),
-  ]);
+  const manifest: Manifest = await fetch(`${base}ccf.json`).then((r) => r.json());
+  const buf = await fetch(`${base}${manifest.binary ?? 'ccf.bin'}`).then((r) => r.arrayBuffer());
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));

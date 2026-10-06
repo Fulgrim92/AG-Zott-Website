@@ -94,7 +94,7 @@ def main():
                   'Meshes via MeshView for Brain Atlases (University of Oslo, MIT licence).',
         'citation': 'Wang Q. et al. (2020) The Allen Mouse Brain Common Coordinate Framework: A 3D Reference Atlas. Cell 181:936–953.',
         'units': 'CCFv3 voxels (25 µm); x = medio-lateral, y = antero-posterior, z = dorso-ventral',
-        'origin': lo.round(4).tolist(), 'scale': 1.0 / scale, 'structures': manifest,
+        'binary': 'ccf.bin', 'origin': lo.round(4).tolist(), 'scale': 1.0 / scale, 'structures': manifest,
     }, indent=1))
     print(f'wrote {len(blob) / 1e6:.2f} MB')
 
