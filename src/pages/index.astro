@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Label from '../components/Label.astro';
-import Placeholder from '../components/Placeholder.astro';
+import assets from '../data/assets.json';
 import CA1Layers from '../components/CA1Layers.astro';
 import FunderLogo from '../components/FunderLogo.astro';
 import site from '../data/site.json';
@@ -10,15 +10,17 @@ import papers from '../data/papers.json';
 import { url } from '../lib/url';
 
 const methods = [
-  { href: '/research/two-photon/', title: 'Two-photon imaging', sub: 'Hippocampal CA1', color: 'var(--green)', text: 'Watching the activity of identified neurons in the living hippocampus at cellular resolution.' },
-  { href: '/research/immunohistochemistry/', title: 'Immunohistochemistry', sub: 'Molecular anatomy', color: 'var(--blue)', text: 'Labelling proteins and cell types in tissue sections to map structure behind function.' },
-  { href: '/research/electrophysiology/', title: 'Electrophysiology', sub: 'Millisecond dynamics', color: 'var(--red)', text: 'Recording electrical signals of single cells and networks with millisecond precision.' },
+  { href: '/research/two-photon/', title: 'Two-photon imaging', sub: 'Hippocampal CA1', color: 'var(--green)', text: 'Watching hundreds of neurons in the living hippocampus — and catching the earliest, Alzheimer’s-related hyperactivity.' },
+  { href: '/research/immunohistochemistry/', title: 'Immunohistochemistry', sub: 'Plaques & cells', color: 'var(--blue)', text: 'Staining brain sections to map amyloid plaques and the cells around them.' },
+  { href: '/research/electrophysiology/', title: 'Electrophysiology', sub: 'EEG · LTP · LFP', color: 'var(--red)', text: 'From seizures in the whole brain to plasticity at single synapses.' },
   ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', title: 'Glymphatic system', sub: 'Brain clearance', color: 'var(--magenta)', text: 'How cerebrospinal fluid moves through brain tissue and clears waste.' }] : []),
 ];
+const rec = assets.twoPhoton.recordings[0];
 const latestNews = [...news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
 ---
 <Base>
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute"><filter id="home-lut" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.15 0.15 0.15 0 0  0.5 0.5 0.5 0 0.02  0.25 0.25 0.25 0 0  0 0 0 1 0" /></filter></svg>
   <!-- ======== HERO: brain → hippocampus → CA1 ======== -->
   <section class="hero" data-hero aria-labelledby="hero-title">
     <canvas class="hero__canvas" data-hero-canvas aria-hidden="true"></canvas>
@@ -29,7 +31,7 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
       <div class="hero__step is-current" data-step>
         <p class="eyebrow">Neuroscience research group</p>
         <h1 id="hero-title">{site.name}<span class="hero__tag">{site.tagline}.</span></h1>
-        <p class="lead">Two-photon imaging, immunohistochemistry and electrophysiology — to understand how hippocampal circuits store and use memory.</p>
+        <p class="lead">Two-photon imaging, immunohistochemistry and electrophysiology — to understand how hippocampal circuits fail early in Alzheimer’s disease — and how to protect them.</p>
         <div class="hero__cta">
           <a class="btn btn--primary" href="#ca1" data-enter-ca1>Enter CA1 ↓</a>
           <a class="btn" href={url('/research/')}>Our research</a>
@@ -57,7 +59,10 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
       <div data-reveal style="margin-top:var(--s5)"><CA1Layers /></div>
 
       <div class="grid grid-2" style="margin-top:var(--s6)" data-reveal>
-        <Placeholder title="Two-photon sequence from CA1" hint="Drop a real lab recording here (public/assets/lab/, registered in src/data/assets.json). This is where the zoom journey ends." minHeight="320px" />
+        <figure class="figure home-2p">
+          <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="metadata" data-autoplay aria-label={rec.alt}></video>
+          <figcaption><Label kind="data" /> <span>In vivo two-photon imaging of CA1 pyramidal neurons ({rec.label}). Cells flash when active · 4× real time. <a href={url('/research/two-photon/')}>Explore recordings →</a></span></figcaption>
+        </figure>
         <div>
           <p class="eyebrow">Mission</p>
           <p class="lead ph">{site.mission}</p>
@@ -71,7 +76,7 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
   <section class="section section--tight" aria-labelledby="methods-h">
     <div class="container">
       <p class="eyebrow" data-reveal>Research</p>
-      <h2 id="methods-h" data-reveal>Three complementary windows on the same circuit</h2>
+      <h2 id="methods-h" data-reveal>Complementary windows on the same circuit</h2>
       <div class="grid grid-3 methods" style="margin-top:var(--s5)">
         {methods.map((m, i) => (
           <a href={url(m.href)} class="card method" style={`--card-c:${m.color}`} data-reveal>
@@ -188,9 +193,16 @@ const latestPapers = [...papers].sort((a, b) => b.year - a.year).slice(0, 3);
   .funding-strip__logos { display: flex; gap: var(--s3); align-items: center; flex-wrap: wrap; }
 
   .join { text-align: center; } .join p { margin-inline: auto; } .join .hero__cta { justify-content: center; }
+  .home-2p video { width: 100%; aspect-ratio: 502 / 458; border-radius: var(--radius); border: 1px solid var(--line); background: #000; filter: url(#home-lut); }
 </style>
 
 <script>
   // Three.js is loaded only on the homepage, after first paint
   if (document.querySelector('[data-hero]')) import('../scripts/hero');
+  // Muted autoplay of the CA1 recording when visible (skipped with reduced motion)
+  document.querySelectorAll<HTMLVideoElement>('video[data-autoplay]').forEach((v) => {
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && document.documentElement.dataset.motion !== 'off') v.play().catch(() => {}); else v.pause();
+    }, { threshold: 0.3 }).observe(v);
+  });
 </script>

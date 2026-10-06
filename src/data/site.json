@@ -1,9 +1,9 @@
 {
   "name": "AG Zott",
-  "tagline": "Hippocampal circuits, imaged and recorded",
+  "tagline": "Hippocampal circuits in health and Alzheimer’s disease",
   "affiliation": "[PLACEHOLDER: Institute / University — to verify]",
-  "mission": "[PLACEHOLDER: One-sentence mission statement supplied by the lab.]",
-  "summary": "[PLACEHOLDER: Two to three plain-language sentences describing the lab's central research question. Replace with text approved by the PI.]",
+  "mission": "[DRAFT] Understanding how hippocampal circuits fail early in Alzheimer’s disease — and how to repair them.",
+  "summary": "[DRAFT — please review] Long before memory loss and amyloid plaques, neurons in the hippocampus become abnormally active. We combine in vivo two-photon imaging, histology and electrophysiology to find out why this happens and whether it can be reversed.",
   "email": "[placeholder]@example.org",
   "phone": "[PLACEHOLDER: phone]",
   "address": ["[PLACEHOLDER: Institute name]", "[Street and number]", "[Postcode] [City], Germany"],

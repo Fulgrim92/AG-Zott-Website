@@ -17,9 +17,10 @@ npm run build     # static output in dist/
 - **Pages**: `src/pages/` — Home, Research (+ 4 topic pages), Team, Papers, News, Funding, Teaching, Alumni,
   Contact, plus Impressum, Datenschutz, Accessibility.
 - **Interactive components** (`src/components/`):
-  - `ImagingPlayer` — multi-channel two-photon player (channel toggles, intensity, scrubbing, speed)
-  - `DeepZoom` — zoomable IHC viewer (channels, minimap, scale bar, hotspots)
-  - `TraceViewer` — electrophysiology traces (zoom, pan, hover read-out, plain/expert annotations)
+  - `ImagingPlayer` — two-photon recordings (genotype tabs, synced side-by-side compare, frame stepping, display LUTs)
+  - `RoiFigure` — ROI → ΔF/F trace movie
+  - `DeepZoom` — zoomable confocal/IHC viewer (sections, minimap, numbered hotspots)
+  - `SignalExplorer` — EEG / LTP / LFP explorer (zoom hours → ms, plain/expert notes); **illustrative simulations** from `src/scripts/signals.ts`
   - `GlymphaticFlow` — animated schematic of CSF/ISF flow with awake/asleep toggle
   - `CA1Layers` — interactive CA1 laminar schematic
   - Homepage hero (`src/scripts/hero.ts`) — scroll-driven brain → hippocampus → CA1 journey
@@ -45,21 +46,20 @@ Text in `[PLACEHOLDER …]` / `[… TO VERIFY]` brackets is rendered in amber so
 real content. Nothing on the site is invented lab data:
 
 - The hero brain/hippocampus is a procedural **schematic** (replace with an atlas mesh, e.g. Allen CCF, if desired).
-- The electrophysiology viewer shows a clearly labelled **synthetic demo signal** until a recording is configured.
-- Two-photon and IHC viewers show placeholders until real files are added.
+- The EEG / LTP / LFP signals are clearly labelled **illustrative simulations** modelled on the lab's paradigms.
+- Two-photon movies are real lab recordings (`public/assets/lab/2p/`); confocal images are from
+  Zott et al. 2024, *Nat Commun*, Suppl. Fig. S13A (CC BY 4.0), extracted at low resolution — replace with originals.
 
 ### Adding real data
 
 Put files in `public/assets/lab/` and register them in `src/data/assets.json`:
 
-- **Two-photon** (`twoPhoton.channels`): one greyscale video (`.mp4`/`.webm`) or image per channel,
-  e.g. `{ "name": "GCaMP", "color": "green", "type": "video", "src": "assets/lab/ca1_gcamp.mp4" }`.
-  Fill `meta` (indicator, species, depth, frameRate, scaleBar).
-- **IHC** (`ihc.channels`): one image or Deep Zoom `.dzi` per channel (create tiles with
-  `vips dzsave section.tif section`). Set `scaleBarMicronsPerPixel` for a live scale bar and add `hotspots`
-  (`x`/`y` as fractions of image width/height).
-- **Electrophysiology** (`ephys.src`): JSON `{ "dt_ms": 0.05, "unit": "mV", "y": [...], "annotations": [...] }`
-  exported from ABF/NWB (e.g. with `pyabf` or `pynwb`).
+- **Two-photon** (`twoPhoton.recordings`): greyscale `.mp4` + poster `.jpg` per recording. Encode with
+  `ffmpeg -i in.mp4 -an -c:v libx264 -crf 28 -tune grain -movflags +faststart out.mp4`. Fill `meta`.
+- **Confocal / IHC** (`ihc.sections`): one image or Deep Zoom `.dzi` per section (create tiles with
+  `vips dzsave section.tif section`), with `hotspots` (`x`/`y` as fractions of image width/height).
+- **Electrophysiology**: currently illustrative (`src/scripts/signals.ts`). Real traces can be added later as
+  additional datasets in the same format.
 - **Funder logos**: download the official files and save as `public/assets/logos/erc.svg`, `dfg.svg`,
   `eu-emblem.svg` — they replace the placeholders automatically.
 

@@ -3,12 +3,14 @@ import Research from '../../layouts/Research.astro';
 import ImagingPlayer from '../../components/ImagingPlayer.astro';
 import CA1Layers from '../../components/CA1Layers.astro';
 import Label from '../../components/Label.astro';
+import RoiFigure from '../../components/RoiFigure.astro';
 ---
 <Research theme="two-photon" color="var(--green)" eyebrow="Research · 01" title="Two-photon imaging in hippocampal CA1"
   lead="Watching identified neurons in the living hippocampus — cell by cell, day after day.">
   <Fragment slot="question">
-    <h2 class="ph">[PLACEHOLDER] The lab’s central question for this theme.</h2>
-    <p class="muted">Replace with 2–3 sentences in the lab’s own words, e.g. what CA1 activity patterns the group studies and why they matter.</p>
+    <h2>How does β-amyloid make hippocampal neurons hyperactive — and can it be stopped early?</h2>
+    <p>Neuronal hyperactivity is one of the earliest signs of circuit dysfunction in Alzheimer’s disease, appearing before amyloid plaques. We image hundreds of CA1 neurons simultaneously to see which cells become hyperactive, why, and whether interventions can restore normal activity.</p>
+    <p class="small muted">Draft based on Zott et al. (2019, 2024) — please review wording.</p>
   </Fragment>
 
   <Fragment slot="method">
@@ -36,15 +38,22 @@ import Label from '../../components/Label.astro';
   </Fragment>
 
   <Fragment slot="data">
-    <h2 data-reveal>Explore imaging channels</h2>
-    <p class="muted" data-reveal>Toggle channels, adjust their intensity and scrub through time. Indicator, depth, frame rate and scale are shown with every recording.</p>
+    <h2 data-reveal>Watch neurons fire</h2>
+    <p class="muted" data-reveal>In vivo recordings of CA1 pyramidal neurons from three mouse lines. Switch between recordings or compare them side by side, step through frames, and change the display colour table. Neurons flash briefly when they are active.</p>
     <div style="margin-top:var(--s4)"><ImagingPlayer /></div>
+    <h3 style="margin-top:var(--s6)">From pixels to activity traces</h3>
+    <p class="muted">To analyse a recording, each neuron is outlined as a region of interest (ROI). Its brightness over time becomes a ΔF/F trace — every peak marks a calcium transient.</p>
+    <RoiFigure />
     <h3 style="margin-top:var(--s6)">Where we image</h3>
     <CA1Layers />
   </Fragment>
 
   <Fragment slot="findings">
-    <h2 class="ph">[PLACEHOLDER] Key findings</h2>
-    <ul class="muted"><li>[Finding 1 — link to paper]</li><li>[Finding 2 — link to paper]</li><li>[Finding 3 — link to paper]</li></ul>
+    <ul class="findings">
+      <li><strong>Hyperactivity feeds itself.</strong> β-amyloid suppresses glutamate reuptake, so glutamate accumulates at synapses and drives neurons that are already active into hyperactivity — a vicious cycle that can start before plaques form. <a href="https://doi.org/10.1126/science.aay0198">Zott et al., Science 2019</a></li>
+      <li><strong>Scavenging Aβ monomers prevents it.</strong> An anticalin protein that binds β-amyloid monomers suppressed early neuronal hyperactivity and synaptic glutamate accumulation in young APP23xPS45 mice. <a href="https://doi.org/10.1038/s41467-024-50153-y">Zott et al., Nat Commun 2024</a></li>
+      <li><strong>Timing matters.</strong> In old, plaque-bearing APP23xPS45 mice (19 % of 237 CA1 neurons hyperactive), the anticalin and the γ-secretase inhibitor Ly-411575 no longer reduced hyperactivity — pointing to an early therapeutic window. <span class="muted">(Nat Commun 2024, Suppl. Fig. S13)</span></li>
+    </ul>
   </Fragment>
 </Research>
+<style>.findings { display: grid; gap: var(--s3); padding-left: 1.1em; } .findings li { max-width: var(--measure); } .findings a { white-space: nowrap; }</style>

@@ -1,42 +1,66 @@
 {
-  "_readme": "Asset manifest. Put files in public/assets/lab/ and reference them here (paths relative to public/). Every entry needs source + caption + alt. Empty 'channels'/'src' renders a labelled placeholder.",
+  "_readme": "Asset manifest. Files live in public/ and are referenced here by path relative to public/. Every entry needs source + caption + alt. Fields in [brackets] are placeholders to verify.",
+
   "twoPhoton": {
-    "title": "Two-photon imaging in CA1",
-    "source": "",
-    "caption": "",
-    "alt": "",
-    "meta": { "indicator": "", "species": "", "depth": "", "frameRate": "", "scaleBar": "" },
-    "channels": []
-  },
-  "twoPhotonExample": {
-    "_example": "Channel entries look like this (type 'video' or 'image'):",
-    "channels": [
-      { "name": "GCaMP", "color": "green", "type": "video", "src": "assets/lab/ca1_gcamp.mp4" },
-      { "name": "tdTomato", "color": "red", "type": "video", "src": "assets/lab/ca1_tdtomato.mp4" }
+    "title": "In vivo two-photon calcium imaging, hippocampal CA1",
+    "source": "AG Zott — lab recordings",
+    "playback": "4× real time (60 s of recording in a 15 s clip)",
+    "meta": {
+      "region": "CA1, stratum pyramidale",
+      "indicator": "[Ca²⁺ indicator — to verify]",
+      "species": "Mouse",
+      "scaleBar": "[length — to verify]",
+      "playback": "4× real time"
+    },
+    "recordings": [
+      { "id": "bl6", "label": "BL6", "description": "[Genotype description — to verify, e.g. wild-type C57BL/6]", "src": "assets/lab/2p/bl6.mp4", "poster": "assets/lab/2p/bl6.jpg", "alt": "Greyscale two-photon movie of densely packed CA1 pyramidal neurons; individual cells brighten briefly when active. Timestamp top left, scale bar bottom left." },
+      { "id": "h157y", "label": "H157Y", "description": "[Genotype description — to verify, e.g. TREM2 H157Y]", "src": "assets/lab/2p/h157y.mp4", "poster": "assets/lab/2p/h157y.jpg", "alt": "Greyscale two-photon movie of CA1 pyramidal neurons from an H157Y mouse." },
+      { "id": "t2ko", "label": "T2KO", "description": "[Genotype description — to verify, e.g. TREM2 knockout]", "src": "assets/lab/2p/t2ko.mp4", "poster": "assets/lab/2p/t2ko.jpg", "alt": "Greyscale two-photon movie of CA1 pyramidal neurons from a T2KO mouse." }
     ]
   },
+
+  "twoPhotonRois": {
+    "title": "From pixels to activity traces",
+    "src": "assets/lab/2p/bl6-roi.mp4",
+    "poster": "assets/lab/2p/bl6-roi.jpg",
+    "source": "AG Zott — lab recording (BL6, ROIs 7, 13, 18, 19, 24)",
+    "caption": "Five regions of interest (coloured circles) mark individual neurons. Their fluorescence changes (ΔF/F) are plotted on the right as the movie plays: each peak is a calcium transient reflecting a burst of activity.",
+    "alt": "Two-photon movie with five coloured circles around neurons next to a plot of five ΔF/F traces over time that builds up as the movie plays."
+  },
+
   "ihc": {
-    "title": "Immunohistochemistry",
-    "source": "",
-    "caption": "",
-    "alt": "",
-    "scaleBarMicronsPerPixel": null,
-    "channels": [],
-    "hotspots": []
-  },
-  "ihcExample": {
-    "_example": "Channels can be plain images or Deep Zoom (.dzi) tile sources:",
-    "channels": [
-      { "name": "DAPI", "color": "blue", "src": "assets/lab/ihc_dapi.dzi" },
-      { "name": "NeuN", "color": "green", "src": "assets/lab/ihc_neun.dzi" }
+    "title": "Amyloid plaques and CA1 in APP23xPS45 mice",
+    "source": "Zott et al. (2024) Nat Commun, Supplementary Fig. S13A — reproduced under CC BY 4.0",
+    "doi": "10.1038/s41467-024-50153-y",
+    "note": "Extracted from the supplementary PDF (≈ 900 px wide). Replace with original high-resolution confocal files or .dzi tiles for full deep zoom.",
+    "stains": [
+      { "name": "Methoxy-X04", "target": "β-amyloid plaques", "color": "cyan" },
+      { "name": "NeuroTrace", "target": "Neurons (Nissl counterstain)", "color": "grey" }
     ],
-    "hotspots": [ { "x": 0.42, "y": 0.31, "label": "CA1 stratum pyramidale", "text": "Explanation." } ]
+    "sections": [
+      {
+        "id": "young", "label": "2.5 months", "src": "assets/lab/ihc/app23xps45-2.5mo.jpg",
+        "alt": "Confocal image of a coronal brain slice from a 2.5-month-old APP23xPS45 mouse in grey, with an enlarged inset of the CA1 pyramidal layer. Almost no cyan plaques.",
+        "caption": "Young APP23xPS45 mouse (2.5 months): no plaques yet. Scale bars 1000 µm (slice) and 100 µm (inset).",
+        "hotspots": [
+          { "x": 0.63, "y": 0.23, "label": "Hippocampus, CA1", "text": "The boxed region marks the CA1 area enlarged in the inset." },
+          { "x": 0.63, "y": 0.72, "label": "Stratum pyramidale", "text": "The bright band is the densely packed layer of CA1 pyramidal cell bodies — the cells we image in vivo." }
+        ]
+      },
+      {
+        "id": "old", "label": "8.0 months", "src": "assets/lab/ihc/app23xps45-8.0mo.jpg",
+        "alt": "Confocal image of a coronal brain slice from an 8-month-old APP23xPS45 mouse with numerous cyan amyloid plaques throughout cortex and hippocampus; inset shows plaques around the CA1 pyramidal layer.",
+        "caption": "Old APP23xPS45 mouse (8.0 months): numerous Methoxy-X04-positive plaques (cyan). Scale bars 1000 µm (slice) and 100 µm (inset).",
+        "hotspots": [
+          { "x": 0.1, "y": 0.41, "label": "Cortical plaques", "text": "Each cyan dot is a β-amyloid plaque labelled with Methoxy-X04." },
+          { "x": 0.76, "y": 0.2, "label": "Hippocampus, CA1", "text": "The boxed region marks the CA1 area enlarged in the inset." },
+          { "x": 0.66, "y": 0.67, "label": "Plaques around CA1", "text": "In the inset, plaques surround the CA1 pyramidal layer — the plaque stage, when anticalin treatment no longer reduced hyperactivity (Zott et al., 2024)." }
+        ]
+      }
+    ]
   },
+
   "ephys": {
-    "title": "Electrophysiology",
-    "source": "",
-    "caption": "",
-    "src": "",
-    "_format": "JSON: { \"dt_ms\": 0.05, \"unit\": \"mV\", \"y\": [..], \"annotations\": [{ \"t_ms\": 120, \"label\": \"Action potential\", \"expert\": \"...\", \"plain\": \"...\" }] }"
+    "_note": "Electrophysiology viewer currently shows ILLUSTRATIVE SIMULATIONS (EEG, LTP, LFP) generated in the browser — not recorded data."
   }
 }

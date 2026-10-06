@@ -1,0 +1,21 @@
+---
+import Label from './Label.astro';
+import assets from '../data/assets.json';
+import { url } from '../lib/url';
+const r = assets.twoPhotonRois;
+---
+<figure class="figure roi">
+  <div class="roi__frame">
+    <video src={url(r.src)} poster={url(r.poster)} muted loop playsinline controls preload="metadata" aria-label={r.alt}></video>
+  </div>
+  <figcaption>
+    <Label kind="data" />
+    <span>{r.caption} <span class="muted">Source: {r.source}. Plays at 4× real time.</span></span>
+  </figcaption>
+</figure>
+<style>
+  .roi__frame { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: #fff; }
+  video { width: 100%; aspect-ratio: 1706 / 744; }
+  figcaption { justify-content: flex-start !important; }
+  figcaption > span { flex: 1; min-width: 260px; }
+</style>

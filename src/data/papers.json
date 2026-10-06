@@ -1,7 +1,26 @@
 [
-  { "title": "[PLACEHOLDER] Publication title — import from BibTeX / ORCID", "authors": "Author A, Author B, Zott [initials]", "journal": "[Journal]", "year": 2026, "type": "article", "doi": "", "themes": ["two-photon"], "grants": ["erc"], "placeholder": true },
-  { "title": "[PLACEHOLDER] Publication title — import from BibTeX / ORCID", "authors": "Author C, Zott [initials]", "journal": "[Journal]", "year": 2025, "type": "article", "doi": "", "themes": ["electrophysiology"], "grants": ["erc"], "placeholder": true },
-  { "title": "[PLACEHOLDER] Publication title — import from BibTeX / ORCID", "authors": "Author D, Author E, Zott [initials]", "journal": "[Journal]", "year": 2025, "type": "article", "doi": "", "themes": ["immunohistochemistry", "glymphatic"], "grants": ["dfg"], "placeholder": true },
-  { "title": "[PLACEHOLDER] Preprint title", "authors": "Author F, Zott [initials]", "journal": "bioRxiv", "year": 2026, "type": "preprint", "doi": "", "themes": ["two-photon", "immunohistochemistry"], "grants": [], "placeholder": true },
-  { "title": "[PLACEHOLDER] Review title", "authors": "Zott [initials]", "journal": "[Journal]", "year": 2024, "type": "review", "doi": "", "themes": ["glymphatic"], "grants": [], "placeholder": true }
+  {
+    "title": "β-amyloid monomer scavenging by an anticalin protein prevents neuronal hyperactivity in mouse models of Alzheimer's Disease",
+    "authors": "Zott B, Nästle L, Grienberger C, Unger F, Knauer MM, Wolf C, Keskin-Dargin A, Feuerbach A, Busche MA, Skerra A, Konnerth A",
+    "journal": "Nature Communications 15",
+    "year": 2024,
+    "type": "article",
+    "doi": "10.1038/s41467-024-50153-y",
+    "themes": ["two-photon", "immunohistochemistry"],
+    "grants": [],
+    "placeholder": false
+  },
+  {
+    "title": "A vicious cycle of β amyloid-dependent neuronal hyperactivation",
+    "authors": "Zott B, Simon MM, Hong W, et al.",
+    "journal": "Science 365(6453):559–565",
+    "year": 2019,
+    "type": "article",
+    "doi": "10.1126/science.aay0198",
+    "themes": ["two-photon"],
+    "grants": [],
+    "placeholder": false
+  },
+  { "title": "[PLACEHOLDER] Further publications — import the full list from BibTeX / ORCID / PubMed", "authors": "[Authors]", "journal": "[Journal]", "year": 2025, "type": "article", "doi": "", "themes": ["electrophysiology"], "grants": ["erc"], "placeholder": true },
+  { "title": "[PLACEHOLDER] Publication on the glymphatic system — only if part of the lab's work", "authors": "[Authors]", "journal": "[Journal]", "year": 2025, "type": "article", "doi": "", "themes": ["glymphatic"], "grants": ["dfg"], "placeholder": true }
 ]

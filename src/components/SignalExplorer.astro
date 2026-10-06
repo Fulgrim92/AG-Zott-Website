@@ -1,0 +1,286 @@
+---
+/**
+ * Electrophysiology explorer: EEG, LTP and LFP.
+ * ALL SIGNALS ARE ILLUSTRATIVE SIMULATIONS generated in the browser from simple models of the
+ * lab's experimental paradigms. They are not recorded data and are labelled as such.
+ */
+import Label from './Label.astro';
+const tabs = [
+  { id: 'eeg', label: 'EEG · seizures', blurb: 'Chronic video-EEG in a freely moving mouse. Two kainate (KA) injections trigger epileptic spikes and seizures over several hours; spikes are counted automatically (cumulative count, right axis).' },
+  { id: 'ltp', label: 'LTP · plasticity', blurb: 'Field recordings in a hippocampal slice: Schaffer collaterals are stimulated and the CA1 field EPSP slope is measured every 30 s. A theta-burst stimulus (TBS) at time 0 induces long-term potentiation.' },
+  { id: 'lfp', label: 'LFP · oscillations', blurb: 'Local field potential in CA1. During exploration, theta oscillations with nested gamma dominate; during rest, sharp-wave ripples appear — brief high-frequency events linked to memory consolidation.' },
+];
+---
+<div class="sx" data-sx>
+  <div role="tablist" aria-label="Signal type" class="seg">
+    {tabs.map((t, i) => <button role="tab" aria-selected={i === 0 ? 'true' : 'false'} data-tab={t.id} data-blurb={t.blurb}>{t.label}</button>)}
+  </div>
+  <p class="sx__blurb" data-blurb-out>{tabs[0].blurb}</p>
+
+  <div class="sx__bar">
+    <div class="sx__btns" role="group" aria-label="Zoom">
+      <button class="btn btn--sm" data-zoom="in" aria-label="Zoom in">＋</button>
+      <button class="btn btn--sm" data-zoom="out" aria-label="Zoom out">－</button>
+      <button class="btn btn--sm" data-zoom="reset">Full view</button>
+    </div>
+    <div class="sx__legend" data-legend role="group" aria-label="Show or hide traces"></div>
+    <div class="sx__btns" role="group" aria-label="Explanation level">
+      <button class="btn btn--sm" aria-pressed="true" data-level="plain">Plain language</button>
+      <button class="btn btn--sm" aria-pressed="false" data-level="expert">Expert</button>
+    </div>
+  </div>
+
+  <div class="sx__plot">
+    <canvas data-canvas tabindex="0" aria-label="Signal plot. Arrow keys pan, plus and minus zoom; drag to pan; Ctrl + scroll to zoom."></canvas>
+    <span class="mono small sx__readout" data-readout aria-live="polite"></span>
+  </div>
+
+  <div class="sx__foot">
+    <Label kind="schematic" text="Illustrative simulation — not recorded data" />
+    <span class="small muted">Signals are generated in your browser from simple models of the lab’s experimental paradigms, to explain what such recordings look like.</span>
+  </div>
+  <ol class="sx__notes" data-notes></ol>
+</div>
+
+<style>
+  .sx { display: grid; gap: var(--s2); }
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); justify-self: start; flex-wrap: wrap; }
+  .seg button { border: 0; background: transparent; padding: .45em 1.1em; border-radius: 999px; cursor: pointer; font-size: .88rem; color: var(--text-2); }
+  .seg button[aria-selected='true'] { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+  .sx__blurb { color: var(--text-2); margin: 0; }
+  .sx__bar { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; justify-content: space-between; }
+  .sx__btns { display: flex; gap: 6px; }
+  .sx__legend { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sx__legend :global(button) { --c: var(--accent); }
+  .sx__legend :global(button i) { display: inline-block; width: 10px; height: 3px; border-radius: 2px; background: var(--c); margin-right: 6px; vertical-align: middle; }
+  .sx__legend :global(button[aria-pressed='false']) { opacity: .5; }
+  .sx__plot { position: relative; height: 420px; border: 1px solid var(--line); border-radius: var(--radius); background: #05070b; overflow: hidden; }
+  canvas { width: 100%; height: 100%; cursor: crosshair; touch-action: pan-y; }
+  .sx__readout { position: absolute; right: 12px; top: 8px; color: var(--text-2); pointer-events: none; }
+  .sx__foot { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+  .sx__notes { list-style: none; padding: 0; margin: var(--s2) 0 0; display: grid; gap: var(--s2); grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .sx__notes :global(li) { border: 1px solid var(--line); border-radius: 10px; padding: var(--s2); background: var(--surface); }
+  .sx__notes :global(li.is-on) { border-color: var(--accent); }
+  .sx__notes :global(button) { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-family: var(--font-serif); font-size: 1.08rem; text-align: left; }
+  .sx__notes :global(p) { margin: 6px 0 0; font-size: .9rem; color: var(--text-2); }
+  @media (max-width: 767px) { .sx__plot { height: 340px; } }
+</style>
+
+<script>
+  import { datasets, type Dataset } from '../scripts/signals';
+
+  const root = document.querySelector<HTMLElement>('[data-sx]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-canvas]')!;
+    const ctx = canvas.getContext('2d')!;
+    const readout = root.querySelector<HTMLElement>('[data-readout]')!;
+    const notes = root.querySelector<HTMLOListElement>('[data-notes]')!;
+    const legend = root.querySelector<HTMLElement>('[data-legend]')!;
+    const blurbOut = root.querySelector<HTMLElement>('[data-blurb-out]')!;
+    const css = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || v;
+    const color = (c: string) => (c.startsWith('--') ? css(c) : c);
+    const cache = new Map<string, Dataset>();
+    let ds: Dataset, t0 = 0, t1 = 1, hoverX: number | null = null, active = -1, level: 'plain' | 'expert' = 'plain';
+    const hidden = new Set<string>();
+    const M = { l: 62, r: 62, t: 30, b: 34 };
+
+    const unitFor = (span: number) => span >= 7200 ? { u: 'h', k: 3600 } : span >= 180 ? { u: 'min', k: 60 } : span >= 2 ? { u: 's', k: 1 } : { u: 'ms', k: 0.001 };
+    const mmss = (t: number) => { const a = Math.abs(t), m = Math.floor(a / 60), sec = a - m * 60; return `${t < 0 ? '−' : ''}${m}:${sec.toFixed(sec % 1 ? 1 : 0).padStart(2, '0')}`; };
+    const useMmss = (u: string) => u === 's' && Math.max(Math.abs(t0), Math.abs(t1)) >= 60;
+    const fmtT = (t: number, span = t1 - t0) => { const { u, k } = unitFor(span); return useMmss(u) ? `${mmss(t)} min` : `${+(t / k).toFixed(u === 'ms' ? 0 : 2)} ${u}`; };
+
+    function load(id: string) {
+      if (!cache.has(id)) cache.set(id, datasets[id]());
+      ds = cache.get(id)!; hidden.clear(); active = -1;
+      ds.series.forEach((s) => s.hidden && hidden.add(s.id));
+      t0 = ds.view?.[0] ?? ds.tMin; t1 = ds.view?.[1] ?? ds.tMax;
+      legend.innerHTML = '';
+      ds.series.filter((s) => !s.fixed).forEach((s) => {
+        const b = document.createElement('button');
+        b.className = 'btn btn--sm'; b.style.setProperty('--c', color(s.color));
+        b.setAttribute('aria-pressed', String(!hidden.has(s.id)));
+        b.innerHTML = `<i></i>${s.label}`;
+        b.addEventListener('click', () => { hidden.has(s.id) ? hidden.delete(s.id) : hidden.add(s.id); b.setAttribute('aria-pressed', String(!hidden.has(s.id))); draw(); });
+        legend.append(b);
+      });
+      renderNotes(); draw();
+    }
+
+    function yRange(axis: 'left' | 'right') {
+      if (axis === 'left' && ds.yFixed) return ds.yFixed;
+      let lo = Infinity, hi = -Infinity;
+      for (const s of ds.series) {
+        if ((s.axis ?? 'left') !== axis || hidden.has(s.id)) continue;
+        const i0 = Math.max(0, Math.floor((t0 - s.t0) / s.dt)), i1 = Math.min(s.y.length - 1, Math.ceil((t1 - s.t0) / s.dt));
+        const step = axis === 'left' ? 1 : Math.max(1, Math.floor((i1 - i0) / 4000));
+        for (let i = i0; i <= i1; i += step) { const v = s.y[i] + (s.offset ?? 0); if (v < lo) lo = v; if (v > hi) hi = v; }
+      }
+      if (!isFinite(lo)) return [0, 1] as [number, number];
+      if (axis === 'right') lo = Math.min(lo, 0);
+      const pad = (hi - lo || 1) * 0.08; return [lo - pad, hi + pad] as [number, number];
+    }
+
+    function draw() {
+      const dpr = Math.min(devicePixelRatio, 2), W = canvas.clientWidth, H = canvas.clientHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      const pw = W - M.l - M.r, ph = H - M.t - M.b;
+      const X = (t: number) => M.l + ((t - t0) / (t1 - t0)) * pw;
+      const [yl0, yl1] = yRange('left');
+      const hasRight = ds.series.some((s) => s.axis === 'right' && !hidden.has(s.id));
+      const [yr0, yr1] = hasRight ? yRange('right') : [0, 1];
+      const YL = (v: number) => M.t + (1 - (v - yl0) / (yl1 - yl0)) * ph;
+      const YR = (v: number) => M.t + (1 - (v - yr0) / (yr1 - yr0)) * ph;
+      ctx.font = '11px "JetBrains Mono Variable", monospace'; ctx.lineWidth = 1;
+
+      // shaded regions
+      for (const r of ds.regions ?? []) {
+        if (r.t1 < t0 || r.t0 > t1) continue;
+        const a = Math.max(X(r.t0), M.l), b = Math.min(X(r.t1), W - M.r);
+        ctx.fillStyle = color(r.color ?? '--text-3'); ctx.globalAlpha = .13; ctx.fillRect(a, M.t, b - a, ph); ctx.globalAlpha = 1;
+        if (r.label && b - a > 60) { ctx.fillStyle = color('--text-3'); ctx.textAlign = 'left'; ctx.fillText(r.label, a + 4, M.t + ph - 6); }
+      }
+      // grid + axes
+      ctx.strokeStyle = color('--line'); ctx.fillStyle = color('--text-3');
+      const ys = niceStep((yl1 - yl0) / 5);
+      for (let v = Math.ceil(yl0 / ys) * ys; v <= yl1; v += ys) {
+        ctx.beginPath(); ctx.moveTo(M.l, YL(v)); ctx.lineTo(W - M.r, YL(v)); ctx.stroke();
+        ctx.textAlign = 'right'; ctx.fillText(`${+v.toFixed(2)}`, M.l - 8, YL(v) + 4);
+      }
+      if (hasRight) {
+        const rs = niceStep((yr1 - yr0) / 5);
+        for (let v = Math.ceil(yr0 / rs) * rs; v <= yr1; v += rs) { ctx.textAlign = 'left'; ctx.fillText(`${+v.toFixed(0)}`, W - M.r + 8, YR(v) + 4); }
+        ctx.save(); ctx.translate(W - 12, M.t + ph / 2); ctx.rotate(Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText(ds.yRightLabel ?? '', 0, 0); ctx.restore();
+      }
+      const span = t1 - t0, { u, k } = unitFor(span), ts = niceStep(span / k / 8) * k;
+      for (let t = Math.ceil(t0 / ts) * ts; t <= t1; t += ts) { ctx.textAlign = 'center'; ctx.fillText(useMmss(u) ? mmss(t) : `${+(t / k).toFixed(3)}`, X(t), H - 12); }
+      ctx.textAlign = 'right'; ctx.fillText(`time (${useMmss(u) ? 'min:s' : u})`, W - M.r, H - 26);
+      ctx.save(); ctx.translate(14, M.t + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText(ds.yLabel, 0, 0); ctx.restore();
+
+      // markers (e.g. injections, stimulation)
+      for (const m of ds.markers ?? []) {
+        if (m.t < t0 || m.t > t1) continue;
+        const x = X(m.t);
+        ctx.fillStyle = color('--text'); ctx.beginPath(); ctx.moveTo(x - 6, M.t - 16); ctx.lineTo(x + 6, M.t - 16); ctx.lineTo(x, M.t - 6); ctx.fill();
+        ctx.textAlign = 'left'; ctx.fillText(m.label, x + 9, M.t - 8);
+      }
+      // annotations
+      ds.annotations.forEach((a, i) => {
+        if (a.t < t0 || a.t > t1) return;
+        const x = X(a.t);
+        ctx.strokeStyle = color(i === active ? '--accent' : '--text-3'); ctx.setLineDash([3, 4]);
+        ctx.beginPath(); ctx.moveTo(x, M.t); ctx.lineTo(x, M.t + ph); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = color(i === active ? '--accent' : '--text-2'); ctx.textAlign = 'left'; ctx.fillText(`${i + 1}`, x + 4, M.t + 12);
+      });
+
+      // series
+      ctx.save(); ctx.beginPath(); ctx.rect(M.l, M.t, pw, ph); ctx.clip();
+      for (const s of ds.series) {
+        if (hidden.has(s.id)) continue;
+        const Y = s.axis === 'right' ? YR : YL, off = s.offset ?? 0, c = color(s.color);
+        const i0 = Math.max(0, Math.floor((t0 - s.t0) / s.dt)), i1 = Math.min(s.y.length - 1, Math.ceil((t1 - s.t0) / s.dt));
+        ctx.strokeStyle = c; ctx.fillStyle = c;
+        if (s.style === 'points') {
+          for (let i = i0; i <= i1; i++) { ctx.beginPath(); ctx.arc(X(s.t0 + i * s.dt), Y(s.y[i] + off), 3, 0, Math.PI * 2); ctx.fill(); }
+          continue;
+        }
+        ctx.lineWidth = s.width ?? 1.1; ctx.shadowColor = c; ctx.shadowBlur = s.glow ? 6 : 0;
+        ctx.beginPath();
+        const per = Math.max(1, Math.floor((i1 - i0) / pw));
+        for (let i = i0; i <= i1; i += per) {
+          let lo = s.y[i], hi = s.y[i];
+          for (let j = 1; j < per && i + j <= i1; j++) { const v = s.y[i + j]; if (v < lo) lo = v; if (v > hi) hi = v; }
+          const x = X(s.t0 + i * s.dt);
+          if (i === i0) ctx.moveTo(x, Y(s.y[i] + off));
+          if (per > 1) { ctx.lineTo(x, Y(hi + off)); ctx.lineTo(x, Y(lo + off)); } else ctx.lineTo(x, Y(s.y[i] + off));
+        }
+        ctx.stroke(); ctx.shadowBlur = 0;
+      }
+      ctx.restore();
+
+      // inset (e.g. example fEPSPs)
+      if (ds.inset) { const iw = Math.min(220, pw * 0.32); drawInset(ds.inset, W - M.r - iw - 14, M.t + 10, iw, Math.min(130, ph * 0.38)); }
+
+      // crosshair
+      if (hoverX !== null && hoverX >= M.l && hoverX <= W - M.r) {
+        const t = t0 + ((hoverX - M.l) / pw) * (t1 - t0);
+        ctx.strokeStyle = color('--text-2'); ctx.beginPath(); ctx.moveTo(hoverX, M.t); ctx.lineTo(hoverX, M.t + ph); ctx.stroke();
+        const main = ds.series.find((s) => !hidden.has(s.id) && s.axis !== 'right');
+        if (main) {
+          const i = Math.round((t - main.t0) / main.dt), v = main.y[Math.max(0, Math.min(main.y.length - 1, i))];
+          readout.textContent = `t = ${fmtT(t)} · ${+v.toFixed(3)} ${ds.yUnit}`;
+        }
+      } else readout.textContent = '';
+    }
+
+    function drawInset(inset: NonNullable<Dataset['inset']>, x: number, y: number, w: number, h: number) {
+      ctx.fillStyle = 'rgba(5,7,11,.85)'; ctx.strokeStyle = color('--line'); ctx.fillRect(x, y, w, h); ctx.strokeRect(x, y, w, h);
+      ctx.fillStyle = color('--text-3'); ctx.textAlign = 'left'; ctx.fillText(inset.title, x + 8, y + 14);
+      let lo = Infinity, hi = -Infinity; inset.traces.forEach((tr) => tr.y.forEach((v) => { lo = Math.min(lo, v); hi = Math.max(hi, v); }));
+      const px = x + 8, py = y + 22, pw = w - 16, ph = h - 44;
+      inset.traces.forEach((tr) => {
+        if (tr.series && hidden.has(tr.series)) return;
+        ctx.strokeStyle = color(tr.color); ctx.lineWidth = 1.4; ctx.beginPath();
+        tr.y.forEach((v, i) => { const xx = px + (i / (tr.y.length - 1)) * pw, yy = py + (1 - (v - lo) / (hi - lo)) * ph; i ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); });
+        ctx.stroke();
+      });
+      ctx.fillStyle = color('--text-3'); ctx.fillText(inset.note, x + 8, y + h - 8);
+    }
+
+    const clamp = () => { const w = Math.max(ds.minSpan, Math.min(ds.tMax - ds.tMin, t1 - t0)); t0 = Math.max(ds.tMin, Math.min(t0, ds.tMax - w)); t1 = t0 + w; };
+    const zoom = (f: number, c = (t0 + t1) / 2) => { t0 = c - (c - t0) * f; t1 = c + (t1 - c) * f; clamp(); draw(); };
+    const tAt = (x: number) => t0 + ((x - M.l) / (canvas.clientWidth - M.l - M.r)) * (t1 - t0);
+
+    function renderNotes() {
+      notes.innerHTML = '';
+      ds.annotations.forEach((a, i) => {
+        const li = document.createElement('li'); li.className = i === active ? 'is-on' : '';
+        const b = document.createElement('button'); b.textContent = `${i + 1}. ${a.label}`;
+        b.addEventListener('click', () => { active = i; t0 = a.t - a.window / 2; t1 = a.t + a.window / 2; clamp(); renderNotes(); draw(); });
+        const p = document.createElement('p'); p.textContent = level === 'plain' ? a.plain : a.expert;
+        li.append(b, p); notes.append(li);
+      });
+    }
+
+    root.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.zoom === 'reset') { t0 = ds.tMin; t1 = ds.tMax; active = -1; renderNotes(); draw(); } else zoom(b.dataset.zoom === 'in' ? 0.5 : 2);
+    }));
+    canvas.addEventListener('wheel', (e) => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoom(e.deltaY > 0 ? 1.25 : 0.8, tAt(e.offsetX)); }, { passive: false });
+    let drag: number | null = null;
+    canvas.addEventListener('pointerdown', (e) => { drag = e.offsetX; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener('pointerup', () => (drag = null));
+    canvas.addEventListener('pointermove', (e) => {
+      hoverX = e.offsetX;
+      if (drag !== null) { const d = tAt(drag) - tAt(e.offsetX); t0 += d; t1 += d; clamp(); drag = e.offsetX; }
+      draw();
+    });
+    canvas.addEventListener('pointerleave', () => { hoverX = null; draw(); });
+    canvas.addEventListener('keydown', (e) => {
+      const w = t1 - t0;
+      if (e.key === 'ArrowLeft') { t0 -= w * 0.1; t1 -= w * 0.1; } else if (e.key === 'ArrowRight') { t0 += w * 0.1; t1 += w * 0.1; }
+      else if (e.key === '+' || e.key === '=') return zoom(0.5); else if (e.key === '-') return zoom(2); else return;
+      e.preventDefault(); clamp(); draw();
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-level]').forEach((b, _, all) => b.addEventListener('click', () => {
+      level = b.dataset.level as typeof level; all.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); renderNotes();
+    }));
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-tab]')];
+    tabs.forEach((tab) => tab.addEventListener('click', () => {
+      tabs.forEach((x) => x.setAttribute('aria-selected', String(x === tab)));
+      blurbOut.textContent = tab.dataset.blurb!;
+      load(tab.dataset.tab!);
+    }));
+
+    new ResizeObserver(() => ds && draw()).observe(canvas);
+    addEventListener('agz:palette', () => ds && draw());
+    load('eeg');
+  }
+
+  function niceStep(raw: number) {
+    if (!(raw > 0)) return 1;
+    const p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+    return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+  }
+</script>

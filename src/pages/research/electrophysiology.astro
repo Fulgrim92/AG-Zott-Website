@@ -1,24 +1,26 @@
 ---
 import Research from '../../layouts/Research.astro';
-import TraceViewer from '../../components/TraceViewer.astro';
+import SignalExplorer from '../../components/SignalExplorer.astro';
 ---
 <Research theme="electrophysiology" color="var(--red)" eyebrow="Research · 03" title="Electrophysiology"
-  lead="Listening to neurons at the speed they talk: millisecond-precise electrical recordings.">
+  lead="EEG, synaptic plasticity and network oscillations — from the whole brain to a single synapse.">
   <Fragment slot="question">
     <h2 class="ph">[PLACEHOLDER] The lab’s question for this theme.</h2>
-    <p class="muted">Replace with the lab’s own description, e.g. intrinsic excitability, synaptic plasticity or network oscillations in CA1.</p>
+    <p class="muted">For example: how do genetic risk factors and β-amyloid change network excitability, synaptic plasticity and hippocampal oscillations? Replace with the lab’s own wording.</p>
   </Fragment>
 
   <Fragment slot="method">
-    <h2>Recording voltage and current</h2>
-    <p>Electrophysiology measures the electrical signals neurons use to communicate. In patch-clamp recordings, a fine glass pipette forms a tight seal with a single cell to record its membrane potential or currents. Extracellular electrodes capture spikes and local field potentials from many cells.</p>
-    <p class="muted">These recordings complement imaging: they are slower to scale but resolve each action potential and synaptic event precisely.</p>
+    <div class="methods3">
+      <div><h3>EEG</h3><p class="muted">Electrodes implanted over the brain record activity for hours in freely moving mice, together with muscle activity (EMG) and video. This reveals epileptic spikes and seizures — a readout of how excitable the whole network is.</p></div>
+      <div><h3>LTP</h3><p class="muted">In brain slices, we stimulate input fibres to CA1 and record the field response. A brief burst of strong stimulation makes synapses lastingly stronger — long-term potentiation, a cellular model of learning.</p></div>
+      <div><h3>LFP</h3><p class="muted">The local field potential sums the activity of many neurons near an electrode. In CA1 it shows characteristic rhythms — theta, gamma and sharp-wave ripples — that coordinate memory processing.</p></div>
+    </div>
   </Fragment>
 
   <Fragment slot="data">
-    <h2 data-reveal>Read a trace</h2>
-    <p class="muted" data-reveal>Hover to read exact values, drag to pan, use the buttons, <kbd>Ctrl</kbd> + scroll or the keyboard to zoom. Select an annotation to jump to it, and switch between plain-language and expert explanations.</p>
-    <div style="margin-top:var(--s4)"><TraceViewer /></div>
+    <h2 data-reveal>Read the signals</h2>
+    <p class="muted" data-reveal>Choose EEG, LTP or LFP. Hover to read values, drag to pan, use the buttons, <kbd>Ctrl</kbd> + scroll or the keyboard to zoom from hours down to milliseconds. Select a numbered note to jump to it, and switch between plain-language and expert explanations.</p>
+    <div style="margin-top:var(--s4)"><SignalExplorer /></div>
   </Fragment>
 
   <Fragment slot="findings">
@@ -26,3 +28,4 @@ import TraceViewer from '../../components/TraceViewer.astro';
     <ul class="muted"><li>[Finding 1 — link to paper]</li><li>[Finding 2 — link to paper]</li></ul>
   </Fragment>
 </Research>
+<style>.methods3 { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); } .methods3 h3 { color: var(--accent); }</style>

@@ -1,114 +1,112 @@
 ---
 /**
- * Zoomable microscopy viewer (OpenSeadragon). Each channel is a plain image or a Deep Zoom (.dzi)
- * tile source, composited additively so channels can be toggled. Data: src/data/assets.json → ihc.
- * Generate .dzi tiles with e.g. `vips dzsave input.tif output` for very large sections.
+ * Zoomable microscopy viewer (OpenSeadragon) for src/data/assets.json → ihc.
+ * Each "section" is one image (plain image or Deep Zoom .dzi tiles); visitors switch between
+ * sections, zoom/pan, and follow numbered hotspots with explanations.
+ * For very large originals create tiles with `vips dzsave input.tif output`.
  */
 import Label from './Label.astro';
 import Placeholder from './Placeholder.astro';
 import assets from '../data/assets.json';
 import { url } from '../lib/url';
 
-const a = assets.ihc as any;
-const channels: { name: string; color: string; src: string }[] = a.channels ?? [];
-const hasData = channels.length > 0 && channels.every((c) => c.src);
-const config = {
-  channels: channels.map((c) => ({ ...c, src: url(c.src) })),
-  hotspots: a.hotspots ?? [],
-  umPerPx: a.scaleBarMicronsPerPixel ?? null,
-};
+const a = assets.ihc;
+const sections = a.sections.filter((s) => s.src).map((s) => ({ ...s, src: url(s.src) }));
 ---
-<div class="dz" data-dz data-config={JSON.stringify(config)}>
-  {hasData ? (
-    <>
-      <div class="dz__viewer" data-dz-viewer role="application" aria-label={a.alt || 'Zoomable immunohistochemistry image. Use + and − to zoom, arrow keys to pan.'}></div>
-      <span class="dz__scale mono" data-dz-scale hidden></span>
-    </>
-  ) : (
-    <Placeholder title="High-resolution immunohistochemistry section" hint="Add one image or .dzi tile set per channel in src/data/assets.json → ihc.channels (e.g. DAPI, NeuN, GFAP). The deep-zoom viewer with channel toggles, minimap, scale bar and annotated hotspots activates automatically." minHeight="440px" />
-  )}
-  <div class="dz__controls" role="group" aria-label="Channels">
-    {(hasData ? channels : [{ name: 'DAPI', color: 'blue' }, { name: 'Marker 1', color: 'green' }, { name: 'Marker 2', color: 'red' }]).map((c, i) => (
-      <button class="btn btn--sm" aria-pressed="true" data-dz-ch={i} style={`--c:var(--${c.color})`} disabled={!hasData}>{c.name}</button>
-    ))}
-    <button class="btn btn--sm" data-dz-home disabled={!hasData}>Reset view</button>
-    <Label kind={hasData ? 'data' : 'placeholder'} />
-    {hasData && a.caption && <span class="small muted">{a.caption}</span>}
+{sections.length === 0 ? (
+  <Placeholder title="Immunohistochemistry / confocal images" hint="Add sections to src/data/assets.json → ihc.sections." />
+) : (
+<div class="dz" data-dz data-config={JSON.stringify(sections)}>
+  <div class="dz__top">
+    <div role="tablist" aria-label="Section" class="seg">
+      {sections.map((s, i) => <button role="tab" aria-selected={i === 0 ? 'true' : 'false'} data-sec={i}>{s.label}</button>)}
+    </div>
+    <div class="dz__btns">
+      <button class="btn btn--sm" data-zoom="in" aria-label="Zoom in">＋</button>
+      <button class="btn btn--sm" data-zoom="out" aria-label="Zoom out">－</button>
+      <button class="btn btn--sm" data-home>Reset view</button>
+    </div>
   </div>
-  {config.hotspots.length > 0 && (
-    <ol class="dz__notes" data-dz-notes>
-      {config.hotspots.map((h: any, i: number) => <li><button class="linklike" data-dz-goto={i}><b>{h.label}</b></button> — {h.text}</li>)}
-    </ol>
-  )}
+  <div class="dz__viewer" data-dz-viewer role="application" aria-label="Zoomable confocal image. Use the zoom buttons or scroll, drag to pan; numbered markers explain structures."></div>
+  <ul class="dz__legend small">
+    {a.stains.map((s) => <li><i style={`--c:${s.color === 'grey' ? '#bbb' : '#3fe0ff'}`}></i><b>{s.name}</b> — {s.target}</li>)}
+  </ul>
+  <p class="small" data-caption>{sections[0].caption}</p>
+  <ol class="dz__notes" data-notes></ol>
+  <p class="dz__src small">
+    <Label kind="data" text="Published lab data" />
+    <span class="muted">{a.source} · <a href={`https://doi.org/${a.doi}`}>doi:{a.doi}</a>. {a.note}</span>
+  </p>
 </div>
+)}
 
 <style>
-  .dz { display: grid; gap: var(--s2); position: relative; }
-  .dz__viewer { height: min(72vh, 680px); background: #000; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-  .dz__scale { position: absolute; left: 16px; top: calc(min(72vh, 680px) - 36px); color: #fff; border-bottom: 3px solid #fff; font-size: .7rem; pointer-events: none; }
-  .dz__controls { display: flex; flex-wrap: wrap; gap: var(--s1); align-items: center; }
-  .dz__notes { color: var(--text-2); font-size: .9rem; }
-  .linklike { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; }
-  :global(.dz-hotspot) { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; background: color-mix(in srgb, var(--accent) 60%, transparent); color: #000; font: 700 11px var(--font-mono); display: grid; place-items: center; cursor: pointer; }
+  .dz { display: grid; gap: var(--s2); }
+  .dz__top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--s2); }
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+  .seg button { border: 0; background: transparent; padding: .4em 1em; border-radius: 999px; cursor: pointer; font-size: .85rem; color: var(--text-2); }
+  .seg button[aria-selected='true'] { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+  .dz__btns { display: flex; gap: 6px; }
+  .dz__viewer { height: min(68vh, 620px); background: #000; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .dz__legend { list-style: none; display: flex; gap: var(--s3); flex-wrap: wrap; padding: 0; margin: 0; color: var(--text-2); }
+  .dz__legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); margin-right: 6px; box-shadow: 0 0 8px var(--c); }
+  [data-caption] { margin: 0; color: var(--text-2); }
+  .dz__notes { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s2); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .dz__notes :global(li) { border: 1px solid var(--line); border-radius: 10px; padding: var(--s2); background: var(--surface); font-size: .9rem; color: var(--text-2); }
+  .dz__notes :global(button) { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-family: var(--font-serif); font-size: 1.05rem; text-align: left; display: block; margin-bottom: 4px; }
+  .dz__src { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; margin: 0; }
+  :global(.dz-hotspot) { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: color-mix(in srgb, var(--accent) 75%, #000); color: #000; font: 700 11px var(--font-mono); display: grid; place-items: center; cursor: pointer; box-shadow: 0 0 0 4px rgba(0,0,0,.35); }
 </style>
 
 <script>
   document.querySelectorAll<HTMLElement>('[data-dz]').forEach(async (root) => {
-    const el = root.querySelector<HTMLElement>('[data-dz-viewer]');
-    if (!el) return;
-    const cfg = JSON.parse(root.dataset.config!);
+    const el = root.querySelector<HTMLElement>('[data-dz-viewer]')!;
+    const sections = JSON.parse(root.dataset.config!);
+    const caption = root.querySelector<HTMLElement>('[data-caption]')!;
+    const notes = root.querySelector<HTMLOListElement>('[data-notes]')!;
     const { default: OSD } = await import('openseadragon');
     const viewer = OSD({
       element: el,
       prefixUrl: '', // no third-party requests; custom controls replace OSD's icon buttons
       showNavigationControl: false,
-      showNavigator: true, navigatorPosition: 'TOP_RIGHT',
+      showNavigator: true, navigatorPosition: 'TOP_RIGHT', navigatorSizeRatio: 0.18,
+      maxZoomPixelRatio: 4, visibilityRatio: 0.8,
       animationTime: document.documentElement.dataset.motion === 'off' ? 0 : 0.9,
       gestureSettingsMouse: { clickToZoom: false },
-      tileSources: cfg.channels.map((c: any, i: number) => ({
-        tileSource: c.src.endsWith('.dzi') ? c.src : { type: 'image', url: c.src },
-        compositeOperation: i === 0 ? undefined : 'lighter',
-      })),
     });
-    const items = () => Array.from({ length: viewer.world.getItemCount() }, (_, i) => viewer.world.getItemAt(i));
+    let current = 0;
+    const src = (s: any) => (s.src.endsWith('.dzi') ? s.src : { type: 'image', url: s.src });
 
-    root.querySelectorAll<HTMLButtonElement>('[data-dz-ch]').forEach((b) => b.addEventListener('click', () => {
-      const on = b.getAttribute('aria-pressed') !== 'true';
-      b.setAttribute('aria-pressed', String(on));
-      items()[+b.dataset.dzCh!]?.setOpacity(on ? 1 : 0);
-    }));
-    root.querySelector('[data-dz-home]')?.addEventListener('click', () => viewer.viewport.goHome());
+    const zoomTo = (i: number) => {
+      const item = viewer.world.getItemAt(0); if (!item) return;
+      const h = sections[current].hotspots[i], size = item.getContentSize();
+      viewer.viewport.panTo(item.imageToViewportCoordinates(h.x * size.x, h.y * size.y));
+      viewer.viewport.zoomTo(viewer.viewport.getHomeZoom() * 2.6);
+    };
 
     viewer.addHandler('open', () => {
-      const first = items()[0];
-      cfg.hotspots.forEach((h: any, i: number) => {
+      const s = sections[current], item = viewer.world.getItemAt(0), size = item.getContentSize();
+      el.setAttribute('aria-label', `${s.alt} Zoom with the buttons or scroll; numbered markers explain structures.`);
+      caption.textContent = s.caption;
+      notes.innerHTML = '';
+      s.hotspots.forEach((h: any, i: number) => {
         const dot = document.createElement('button');
-        dot.className = 'dz-hotspot'; dot.textContent = String(i + 1); dot.setAttribute('aria-label', h.label);
+        dot.className = 'dz-hotspot'; dot.textContent = String(i + 1); dot.setAttribute('aria-label', `${i + 1}: ${h.label}`);
         dot.addEventListener('click', () => zoomTo(i));
-        viewer.addOverlay({ element: dot, location: first.imageToViewportCoordinates(h.x * first.getContentSize().x, h.y * first.getContentSize().y), placement: OSD.Placement.CENTER });
+        viewer.addOverlay({ element: dot, location: item.imageToViewportCoordinates(h.x * size.x, h.y * size.y), placement: OSD.Placement.CENTER });
+        const li = document.createElement('li');
+        const b = document.createElement('button'); b.textContent = `${i + 1}. ${h.label}`; b.addEventListener('click', () => zoomTo(i));
+        li.append(b, document.createTextNode(h.text)); notes.append(li);
       });
-      const zoomTo = (i: number) => {
-        const h = cfg.hotspots[i];
-        const p = first.imageToViewportCoordinates(h.x * first.getContentSize().x, h.y * first.getContentSize().y);
-        viewer.viewport.panTo(p); viewer.viewport.zoomTo(viewer.viewport.getMaxZoom() * 0.4);
-      };
-      root.querySelectorAll<HTMLButtonElement>('[data-dz-goto]').forEach((b) => b.addEventListener('click', () => zoomTo(+b.dataset.dzGoto!)));
     });
+    const open = (i: number) => { current = i; viewer.clearOverlays(); viewer.open(src(sections[i])); };
+    open(0);
 
-    // Scale bar that updates with zoom (needs microns-per-pixel of the original image)
-    const scale = root.querySelector<HTMLElement>('[data-dz-scale]');
-    if (cfg.umPerPx && scale) {
-      scale.hidden = false;
-      const nice = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000];
-      const update = () => {
-        const first = items()[0]; if (!first) return;
-        const screenPxPerImagePx = first.viewportToImageZoom(viewer.viewport.getZoom(true));
-        const umPerScreenPx = cfg.umPerPx / screenPxPerImagePx;
-        const um = nice.find((n) => n / umPerScreenPx > 80) ?? 2000;
-        scale.style.width = `${um / umPerScreenPx}px`;
-        scale.textContent = um >= 1000 ? `${um / 1000} mm` : `${um} µm`;
-      };
-      viewer.addHandler('animation', update); viewer.addHandler('open', update);
-    }
+    root.querySelectorAll<HTMLButtonElement>('[data-sec]').forEach((b, _, all) => b.addEventListener('click', () => {
+      all.forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+      open(+b.dataset.sec!);
+    }));
+    root.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((b) => b.addEventListener('click', () => viewer.viewport.zoomBy(b.dataset.zoom === 'in' ? 1.6 : 1 / 1.6)));
+    root.querySelector('[data-home]')!.addEventListener('click', () => viewer.viewport.goHome());
   });
 </script>

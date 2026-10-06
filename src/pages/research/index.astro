@@ -4,9 +4,9 @@ import PageHeader from '../../components/PageHeader.astro';
 import site from '../../data/site.json';
 import { url } from '../../lib/url';
 const themes = [
-  { href: '/research/two-photon/', n: '01', title: 'Two-photon imaging in CA1', color: 'var(--green)', q: 'How do populations of CA1 neurons represent experience over time?', m: 'In vivo two-photon calcium imaging' },
-  { href: '/research/immunohistochemistry/', n: '02', title: 'Immunohistochemistry', color: 'var(--blue)', q: 'Which cell types and molecules make up the circuits we image?', m: 'Multiplexed fluorescent labelling of tissue sections' },
-  { href: '/research/electrophysiology/', n: '03', title: 'Electrophysiology', color: 'var(--red)', q: 'What are the millisecond-scale dynamics of single cells and networks?', m: 'Patch-clamp and extracellular recordings' },
+  { href: '/research/two-photon/', n: '01', title: 'Two-photon imaging in CA1', color: 'var(--green)', q: 'Why do CA1 neurons become hyperactive early in Alzheimer’s disease — and can it be reversed?', m: 'In vivo two-photon calcium imaging' },
+  { href: '/research/immunohistochemistry/', n: '02', title: 'Immunohistochemistry', color: 'var(--blue)', q: 'Where and when does β-amyloid pathology appear around the cells we image?', m: 'Fluorescent staining & confocal microscopy' },
+  { href: '/research/electrophysiology/', n: '03', title: 'Electrophysiology', color: 'var(--red)', q: 'How excitable are brain networks, and how plastic are their synapses?', m: 'Video-EEG, field recordings (LTP), local field potentials' },
   ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', n: '04', title: 'Glymphatic system', color: 'var(--magenta)', q: 'How does fluid flow through the brain support clearance and function?', m: 'Tracer imaging & modelling' }] : []),
 ];
 ---
@@ -14,7 +14,7 @@ const themes = [
   <PageHeader eyebrow="Research" title="One circuit, several windows" lead="We combine complementary methods to connect the activity, structure and physiology of hippocampal circuits. Each research page follows the same path: question → method → data → findings → papers → funding." />
   <section class="section section--tight">
     <div class="container">
-      <p class="banner" style="margin-bottom:var(--s5)"><strong class="ph">Placeholder questions.</strong> The research questions below are generic descriptions of each method’s scope; replace them with the lab’s own wording.</p>
+      <p class="banner" style="margin-bottom:var(--s5)"><strong class="ph">Draft questions.</strong> Derived from the lab’s publications — please review and replace with the lab’s own wording.</p>
       <ol class="themes" role="list">
         {themes.map((t) => (
           <li data-reveal>

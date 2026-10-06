@@ -14,6 +14,7 @@ const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numer
   <article class="section section--tight">
     <div class="container">
       <p class:list={['lead', { ph: n.placeholder }]}>{n.body}</p>
+      {n.link && <p><a class="btn" href={n.link} rel="noopener">{n.linkLabel ?? 'More'} ↗</a></p>}
       <p style="margin-top:var(--s5)"><a href={url('/news/')}>← All news</a></p>
     </div>
   </article>

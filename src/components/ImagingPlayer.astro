@@ -1,132 +1,166 @@
 ---
 /**
- * Multi-channel imaging player for real two-photon data.
- * Channels (video or image) are composited with additive ("screen") blending,
- * each tinted with its fluorophore colour. Data comes from src/data/assets.json → twoPhoton.
+ * Two-photon recording player. Real lab recordings from src/data/assets.json → twoPhoton.
+ * - Tabs switch between recordings; "Compare" plays all recordings side by side, synchronised.
+ * - Display LUTs (grey / green / fire) recolour the greyscale data for viewing only.
  */
 import Label from './Label.astro';
 import Placeholder from './Placeholder.astro';
 import assets from '../data/assets.json';
 import { url } from '../lib/url';
 
-const a = assets.twoPhoton as any;
-const channels: { name: string; color: string; type: 'video' | 'image'; src: string }[] = a.channels ?? [];
-const hasData = channels.length > 0 && channels.every((c) => c.src);
-const colorVar = (c: string) => `var(--${c})`;
-const meta = Object.entries(a.meta ?? {}).filter(([, v]) => v);
-const demoChannels = [{ name: 'GCaMP', color: 'green' }, { name: 'tdTomato', color: 'red' }];
-const shown = hasData ? channels : demoChannels;
+const a = assets.twoPhoton;
+const recs = a.recordings.filter((r) => r.src);
+const meta = Object.entries(a.meta).filter(([, v]) => v);
 ---
+{recs.length === 0 ? (
+  <Placeholder title="Two-photon recordings" hint="Add recordings to src/data/assets.json → twoPhoton.recordings." />
+) : (
 <div class="player" data-player>
-  <!-- SVG tint filters: map greyscale intensity onto each fluorophore colour -->
+  <!-- Display lookup tables (applied to greyscale video) -->
   <svg width="0" height="0" aria-hidden="true" style="position:absolute">
-    <filter id="tint-green"><feColorMatrix type="matrix" values="0 0 0 0 0  .33 .33 .33 0 0  .2 .2 .2 0 0  0 0 0 1 0" /></filter>
-    <filter id="tint-red"><feColorMatrix type="matrix" values=".33 .33 .33 0 0  .14 .14 .14 0 0  .1 .1 .1 0 0  0 0 0 1 0" /></filter>
-    <filter id="tint-blue"><feColorMatrix type="matrix" values=".1 .1 .1 0 0  .2 .2 .2 0 0  .33 .33 .33 0 0  0 0 0 1 0" /></filter>
-    <filter id="tint-magenta"><feColorMatrix type="matrix" values=".33 .33 .33 0 0  .1 .1 .1 0 0  .28 .28 .28 0 0  0 0 0 1 0" /></filter>
+    <filter id="lut-green" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.1 0.1 0.1 0 0  0.33 0.33 0.33 0 0.02  0.17 0.17 0.17 0 0  0 0 0 1 0" /><feComponentTransfer><feFuncG type="gamma" amplitude="1.9" exponent="1.1" /><feFuncR type="linear" slope="1.5" /><feFuncB type="linear" slope="1.6" /></feComponentTransfer></filter>
+    <filter id="lut-fire" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0" /><feComponentTransfer>
+      <feFuncR type="table" tableValues="0 0.35 0.85 1 1 1" /><feFuncG type="table" tableValues="0 0 0.1 0.5 0.85 1" /><feFuncB type="table" tableValues="0 0.45 0.2 0 0.2 1" />
+    </feComponentTransfer></filter>
   </svg>
 
-  <div class="player__stage">
-    {hasData ? (
-      <div class="player__view" role="img" aria-label={a.alt || 'Two-photon imaging data'}>
-        {channels.map((c, i) => c.type === 'video'
-          ? <video data-ch={i} src={url(c.src)} muted loop playsinline preload="metadata" style={`filter:url(#tint-${c.color})`}></video>
-          : <img data-ch={i} src={url(c.src)} alt="" style={`filter:url(#tint-${c.color})`} />)}
-        {a.meta?.scaleBar && <span class="scalebar mono">{a.meta.scaleBar}</span>}
-      </div>
-    ) : (
-      <Placeholder title="Two-photon imaging sequence (CA1)" hint="Add one greyscale video or image per channel to public/assets/lab/ and list them in src/data/assets.json → twoPhoton.channels. Controls below become active automatically." minHeight="380px" />
-    )}
+  <div class="player__top">
+    <div role="tablist" aria-label="Recording" class="seg">
+      {recs.map((r, i) => (
+        <button role="tab" aria-selected={i === 0 ? 'true' : 'false'} data-rec={r.id}>{r.label}</button>
+      ))}
+      <button role="tab" aria-selected="false" data-rec="compare">Compare all</button>
+    </div>
+    <div class="seg" role="group" aria-label="Display colour table">
+      <span class="seg__lbl">LUT</span>
+      <button aria-pressed="false" data-lut="none">Grey</button>
+      <button aria-pressed="true" data-lut="green">Green</button>
+      <button aria-pressed="false" data-lut="fire">Fire</button>
+    </div>
   </div>
 
-  <div class="player__controls" role="group" aria-label="Imaging controls">
-    <div class="player__row">
-      <button class="btn" data-play disabled={!hasData} aria-label="Play">▶︎ Play</button>
-      <input type="range" min="0" max="1000" value="0" data-scrub aria-label="Frame position" disabled={!hasData} />
-      <span class="mono small" data-time>00:00.0</span>
-      <label class="small">Speed
-        <select data-speed disabled={!hasData}>
-          <option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
-        </select>
-      </label>
-    </div>
-    <div class="player__row">
-      <span class="small muted">Channels</span>
-      {shown.map((c, i) => (
-        <span class="ch" style={`--c:${colorVar(c.color)}`}>
-          <button class="btn btn--sm" aria-pressed="true" data-ch-toggle={i} disabled={!hasData}>{c.name}</button>
-          <input type="range" min="0" max="100" value="100" data-ch-opacity={i} aria-label={`${c.name} intensity`} disabled={!hasData} />
-        </span>
-      ))}
-      <button class="btn btn--sm" data-merge disabled={!hasData}>Merge</button>
-    </div>
+  <div class="player__stage" data-stage data-mode="single" data-lut="green">
+    {recs.map((r, i) => (
+      <figure class="clip" data-clip={r.id} hidden={i !== 0}>
+        <video src={url(r.src)} poster={url(r.poster)} muted loop playsinline preload={i === 0 ? 'auto' : 'metadata'} aria-label={r.alt}></video>
+        <figcaption><b>{r.label}</b> <span class="ph">{r.description}</span></figcaption>
+      </figure>
+    ))}
+  </div>
+
+  <div class="player__controls" role="group" aria-label="Playback">
+    <button class="btn btn--sm" data-play aria-label="Play">▶︎ Play</button>
+    <button class="btn btn--sm" data-step="-1" aria-label="Previous frame">⟨</button>
+    <button class="btn btn--sm" data-step="1" aria-label="Next frame">⟩</button>
+    <input type="range" min="0" max="1000" value="0" data-scrub aria-label="Position in recording" />
+    <span class="mono small" data-time>0.0 s</span>
+    <label class="small">Speed
+      <select data-speed>
+        <option value="0.25">¼ (≈ real time)</option><option value="0.5">½</option><option value="1" selected>1× (4× real time)</option>
+      </select>
+    </label>
   </div>
 
   <div class="player__foot">
-    <Label kind={hasData ? 'data' : 'placeholder'} />
-    {hasData && a.caption && <span class="small muted">{a.caption}</span>}
-    {meta.length > 0 && <dl class="meta">{meta.map(([k, v]) => <><dt>{k}</dt><dd>{v as string}</dd></>)}</dl>}
-    {hasData && a.source && <span class="small muted">Source: {a.source}</span>}
+    <Label kind="data" />
+    <span class="small muted">{a.source}. The time stamp in each movie shows recording time; the clip plays at {a.playback}.</span>
+    <dl class="meta">{meta.map(([k, v]) => <><dt>{k}</dt><dd class:list={[{ ph: String(v).startsWith('[') }]}>{v}</dd></>)}</dl>
+    <span class="small muted">LUTs change only the display colours — the underlying greyscale data are unchanged.</span>
   </div>
 </div>
+)}
 
 <style>
   .player { display: grid; gap: var(--s3); }
-  .player__view { position: relative; aspect-ratio: 1; max-height: 70vh; margin: 0 auto; background: #000; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
-  .player__view video, .player__view img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: screen; transition: opacity .25s; }
-  .scalebar { position: absolute; right: 14px; bottom: 12px; color: #fff; border-top: 3px solid #fff; padding-top: 2px; font-size: .7rem; }
-  .player__controls { display: grid; gap: var(--s2); }
-  .player__row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
-  .player__row input[type=range] { flex: 1; min-width: 140px; accent-color: var(--accent); }
-  .ch { display: inline-flex; align-items: center; gap: 6px; }
-  .ch input[type=range] { width: 80px; min-width: 0; flex: none; accent-color: var(--c); }
+  .player__top { display: flex; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; }
+  .seg { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); flex-wrap: wrap; }
+  .seg button { border: 0; background: transparent; padding: .4em 1em; border-radius: 999px; cursor: pointer; font-size: .85rem; color: var(--text-2); }
+  .seg button[aria-selected='true'], .seg button[aria-pressed='true'] { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+  .seg__lbl { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .1em; color: var(--text-3); padding: 0 6px 0 10px; }
+
+  .player__stage { display: grid; gap: var(--s2); }
+  .player__stage[data-mode='single'] .clip { max-width: 520px; margin-inline: auto; width: 100%; }
+  .player__stage[data-mode='compare'] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .clip { margin: 0; }
+  .clip[hidden] { display: none; }
+  .clip video { width: 100%; aspect-ratio: 502 / 458; background: #000; border-radius: 12px; border: 1px solid var(--line); }
+  .player__stage[data-lut='green'] video { filter: url(#lut-green); }
+  .player__stage[data-lut='fire'] video { filter: url(#lut-fire); }
+  .clip figcaption { margin-top: 8px; font-size: .85rem; color: var(--text-2); display: flex; gap: 8px; flex-wrap: wrap; }
+  .clip figcaption b { font-family: var(--font-mono); color: var(--accent); }
+  .player__stage[data-mode='single'] .clip figcaption { justify-content: center; }
+
+  .player__controls { display: flex; align-items: center; gap: var(--s1) var(--s2); flex-wrap: wrap; }
+  .player__controls input[type=range] { flex: 1; min-width: 160px; accent-color: var(--accent); }
+  [data-time] { min-width: 6ch; text-align: right; }
   select { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; margin-left: 4px; }
-  .player__foot { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
-  .meta { display: flex; gap: 6px 14px; flex-wrap: wrap; margin: 0; font-family: var(--font-mono); font-size: .75rem; }
-  .meta dt { color: var(--text-3); text-transform: uppercase; } .meta dd { margin: 0; }
+  .player__foot { display: flex; gap: var(--s1) var(--s2); align-items: center; flex-wrap: wrap; }
+  .meta { display: flex; gap: 4px 14px; flex-wrap: wrap; margin: 0; font-family: var(--font-mono); font-size: .72rem; flex-basis: 100%; }
+  .meta dt { color: var(--text-3); text-transform: uppercase; } .meta dd { margin: 0 8px 0 0; }
 </style>
 
 <script>
+  const REAL_TIME_FACTOR = 4; // clips show 60 s of recording in 15 s
+  const FPS = 40;
   document.querySelectorAll<HTMLElement>('[data-player]').forEach((root) => {
-    const layers = [...root.querySelectorAll<HTMLVideoElement | HTMLImageElement>('[data-ch]')];
-    if (!layers.length) return;
-    const videos = layers.filter((l): l is HTMLVideoElement => l instanceof HTMLVideoElement);
-    const lead = videos[0];
+    const stage = root.querySelector<HTMLElement>('[data-stage]')!;
+    const clips = [...root.querySelectorAll<HTMLElement>('[data-clip]')];
+    const vids = clips.map((c) => c.querySelector('video')!);
     const play = root.querySelector<HTMLButtonElement>('[data-play]')!;
     const scrub = root.querySelector<HTMLInputElement>('[data-scrub]')!;
     const time = root.querySelector<HTMLElement>('[data-time]')!;
     const speed = root.querySelector<HTMLSelectElement>('[data-speed]')!;
-    const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${(s % 60).toFixed(1).padStart(4, '0')}`;
+    let active = vids.filter((_, i) => !clips[i].hidden);
+    const lead = () => active[0];
+    let playing = false;
 
-    if (!lead) { play.disabled = scrub.disabled = speed.disabled = true; }
-    else {
-      const sync = () => videos.forEach((v) => { if (v !== lead && Math.abs(v.currentTime - lead.currentTime) > 0.05) v.currentTime = lead.currentTime; });
-      play.addEventListener('click', () => {
-        const playing = !lead.paused;
-        videos.forEach((v) => (playing ? v.pause() : v.play()));
-        play.textContent = playing ? '▶︎ Play' : '❚❚ Pause';
-        play.setAttribute('aria-label', playing ? 'Play' : 'Pause');
-      });
-      lead.addEventListener('timeupdate', () => {
-        if (lead.duration) scrub.value = String((lead.currentTime / lead.duration) * 1000);
-        time.textContent = fmt(lead.currentTime);
-        sync();
-      });
-      scrub.addEventListener('input', () => { if (lead.duration) videos.forEach((v) => (v.currentTime = (+scrub.value / 1000) * lead.duration)); });
-      speed.addEventListener('change', () => videos.forEach((v) => (v.playbackRate = +speed.value)));
-    }
+    const setPlaying = (on: boolean) => {
+      playing = on;
+      vids.forEach((v) => (active.includes(v) && on ? v.play().catch(() => {}) : v.pause()));
+      play.textContent = on ? '❚❚ Pause' : '▶︎ Play';
+      play.setAttribute('aria-label', on ? 'Pause' : 'Play');
+    };
+    const syncTo = (t: number) => active.forEach((v) => { if (Math.abs(v.currentTime - t) > 0.04) v.currentTime = t; });
 
-    const opacity = layers.map(() => 1), on = layers.map(() => true);
-    const apply = () => layers.forEach((l, i) => (l.style.opacity = String(on[i] ? opacity[i] : 0)));
-    root.querySelectorAll<HTMLButtonElement>('[data-ch-toggle]').forEach((b) => b.addEventListener('click', () => {
-      const i = +b.dataset.chToggle!; on[i] = !on[i]; b.setAttribute('aria-pressed', String(on[i])); apply();
+    vids.forEach((v) => v.addEventListener('timeupdate', () => {
+      if (v !== lead()) return;
+      if (v.duration) scrub.value = String((v.currentTime / v.duration) * 1000);
+      time.textContent = `${(v.currentTime * REAL_TIME_FACTOR).toFixed(1)} s`;
+      if (active.length > 1) syncTo(v.currentTime);
     }));
-    root.querySelectorAll<HTMLInputElement>('[data-ch-opacity]').forEach((r) => r.addEventListener('input', () => { opacity[+r.dataset.chOpacity!] = +r.value / 100; apply(); }));
-    root.querySelector('[data-merge]')?.addEventListener('click', () => {
-      on.fill(true); opacity.fill(1);
-      root.querySelectorAll('[data-ch-toggle]').forEach((b) => b.setAttribute('aria-pressed', 'true'));
-      root.querySelectorAll<HTMLInputElement>('[data-ch-opacity]').forEach((r) => (r.value = '100'));
-      apply();
-    });
+
+    play.addEventListener('click', () => setPlaying(!playing));
+    scrub.addEventListener('input', () => { const d = lead().duration; if (d) { lead().currentTime = (+scrub.value / 1000) * d; syncTo(lead().currentTime); } });
+    speed.addEventListener('change', () => vids.forEach((v) => (v.playbackRate = +speed.value)));
+    root.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) => b.addEventListener('click', () => {
+      setPlaying(false);
+      const t = Math.max(0, lead().currentTime + +b.dataset.step! / FPS);
+      lead().currentTime = t; syncTo(t);
+    }));
+
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-rec]')];
+    tabs.forEach((tab) => tab.addEventListener('click', () => {
+      const id = tab.dataset.rec!;
+      const t = lead().currentTime;
+      tabs.forEach((x) => x.setAttribute('aria-selected', String(x === tab)));
+      stage.dataset.mode = id === 'compare' ? 'compare' : 'single';
+      clips.forEach((c) => (c.hidden = id !== 'compare' && c.dataset.clip !== id));
+      active = vids.filter((_, i) => !clips[i].hidden);
+      active.forEach((v) => (v.currentTime = t));
+      setPlaying(playing);
+    }));
+    root.querySelectorAll<HTMLButtonElement>('[data-lut]').forEach((b, _, all) => b.addEventListener('click', () => {
+      all.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      stage.dataset.lut = b.dataset.lut!;
+    }));
+
+    // Autoplay (muted) when visible, unless the visitor prefers reduced motion or has used the controls
+    const motionOK = () => document.documentElement.dataset.motion !== 'off';
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && motionOK() && !playing && !root.dataset.touched) setPlaying(true);
+      if (!e.isIntersecting && playing) setPlaying(false);
+    }, { threshold: 0.4 }).observe(stage);
+    root.addEventListener('click', () => (root.dataset.touched = '1'), { capture: true });
   });
 </script>
