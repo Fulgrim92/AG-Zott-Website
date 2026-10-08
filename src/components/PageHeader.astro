@@ -1,10 +1,11 @@
 ---
-import FluoField from './FluoField.astro';
+import NeuralBackdrop from './NeuralBackdrop.astro';
 interface Props { eyebrow: string; title: string; lead?: string; color?: string }
 const { eyebrow, title, lead, color } = Astro.props;
 ---
-<header class="page-header" style={color ? `--accent:${color}` : undefined}>
-  <FluoField />
+<header class="page-header" style={color ? `--card-c:${color}` : undefined}>
+  <NeuralBackdrop density={0.8} opacity={0.45} />
+  <div class="page-header__tint" aria-hidden="true"></div>
   <div class="container page-header__inner">
     <p class="eyebrow" data-reveal>{eyebrow}</p>
     <h1 data-split>{title}</h1>
@@ -13,6 +14,8 @@ const { eyebrow, title, lead, color } = Astro.props;
   </div>
 </header>
 <style>
-  .page-header { position: relative; overflow: hidden; }
+  .page-header { background: linear-gradient(180deg, var(--surface), var(--bg)); }
+  .page-header__tint { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(700px 360px at 88% 10%, color-mix(in srgb, var(--card-c, var(--primary)) 12%, transparent), transparent 70%); }
   .page-header__inner { position: relative; z-index: 1; }
 </style>

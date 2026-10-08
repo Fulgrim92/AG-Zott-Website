@@ -1,0 +1,152 @@
+---
+import site from '../data/site.json';
+import Logo from './Logo.astro';
+import { url, stripBase } from '../lib/url';
+
+const path = stripBase(Astro.url.pathname);
+
+// Navigation. Edit labels/links here; research topics follow site.json → features.
+const research = [
+  { href: '/research/', label: 'Overview', note: 'Questions & approach' },
+  { href: '/research/two-photon/', label: 'Two-photon imaging in CA1', note: 'In vivo calcium imaging', color: 'var(--green)' },
+  { href: '/research/immunohistochemistry/', label: 'Immunohistochemistry', note: 'Plaques & cells in brain sections', color: 'var(--blue)' },
+  { href: '/research/electrophysiology/', label: 'Electrophysiology', note: 'EEG, LTP and field potentials', color: 'var(--red)' },
+  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', label: 'Glymphatic system', note: 'Fluid flow & clearance', color: 'var(--magenta)' }] : []),
+  { href: '/#methods', label: 'From photons to findings', note: 'Our analysis pipeline, step by step' },
+];
+const lab = [
+  { href: '/funding/', label: 'Funding' },
+  { href: '/teaching/', label: 'Teaching & theses' },
+  { href: '/alumni/', label: 'Alumni' },
+];
+const nav = [
+  { href: '/', label: 'Home' },
+  { href: '/research/', label: 'Research', children: research },
+  { href: '/team/', label: 'Team' },
+  { href: '/papers/', label: 'Publications' },
+  { href: '/news/', label: 'News' },
+  { href: '/funding/', label: 'Lab', children: lab, match: ['/funding/', '/teaching/', '/alumni/'] },
+  { href: '/contact/', label: 'Contact' },
+];
+const isActive = (item: { href: string; match?: string[] }) =>
+  item.href === '/' ? path === '/' : (item.match ?? [item.href]).some((h) => path.startsWith(h));
+---
+<header class="site-header" data-header>
+  <div class="hd">
+    <a href={url('/')} class="brand" aria-label={`${site.name} — home`}>
+      <Logo size={34} />
+      <span class="brand__text">
+        <span class="brand__name">{site.name}</span>
+        <span class="brand__sub">{site.tagline}</span>
+      </span>
+    </a>
+
+    <nav aria-label="Main" class="hd__nav" id="main-nav">
+      <ul role="list" class="hd__list">
+        {nav.map((item, i) => (
+          <li class:list={['hd__item', { 'has-menu': item.children, 'is-active': isActive(item) }]}>
+            {item.children ? (
+              <>
+                <button class="hd__link" aria-expanded="false" aria-controls={`menu-${i}`} data-menu-btn>
+                  {item.label}
+                  <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+                </button>
+                <div class:list={['menu', { 'menu--wide': item.children.length > 4 }]} id={`menu-${i}`} data-menu>
+                  <ul role="list">
+                    {item.children.map((c: any) => (
+                      <li>
+                        <a href={url(c.href)} aria-current={path === c.href ? 'page' : undefined} style={c.color ? `--c:${c.color}` : undefined}>
+                          <span class="menu__label">{c.color && <i class="menu__dot" aria-hidden="true"></i>}{c.label}</span>
+                          {c.note && <span class="menu__note">{c.note}</span>}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            ) : (
+              <a class="hd__link" href={url(item.href)} aria-current={path === item.href ? 'page' : undefined}>{item.label}</a>
+            )}
+          </li>
+        ))}
+      </ul>
+      <a class="btn btn--primary hd__cta hd__cta--drawer" href={url('/contact/')}>Get in touch <span class="arr" aria-hidden="true">→</span></a>
+    </nav>
+
+    <div class="hd__end">
+      <a class="btn btn--primary hd__cta" href={url('/contact/')} data-magnetic>Get in touch <span class="arr" aria-hidden="true">→</span></a>
+      <button class="hd__burger" aria-controls="main-nav" aria-expanded="false" data-burger>
+        <span class="visually-hidden">Menu</span><span class="bars" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+</header>
+<div class="hd-scrim" data-scrim hidden></div>
+
+<style>
+  .site-header { position: fixed; inset: 0 0 auto 0; z-index: 200; height: var(--header-h);
+    background: color-mix(in srgb, #fff 94%, transparent); backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    border-bottom: 1px solid transparent; transition: transform .45s var(--ease), border-color .3s, box-shadow .3s; }
+  .site-header.is-scrolled { border-color: var(--line); box-shadow: 0 6px 24px -18px rgba(8, 30, 40, .35); }
+  .site-header.is-hidden { transform: translateY(-100%); }
+  .hd { max-width: 1360px; height: 100%; margin: 0 auto; padding: 0 clamp(var(--s2), 4vw, var(--s5)); display: flex; align-items: center; gap: var(--s3); }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; flex: none; color: var(--text); }
+  .brand:hover { color: var(--text); }
+  .brand__text { display: grid; line-height: 1.15; }
+  .brand__name { font-family: var(--font-serif); font-size: 1.28rem; letter-spacing: -.01em; }
+  .brand__sub { font-size: .7rem; color: var(--text-3); max-width: 24ch; }
+
+  .hd__nav { margin-left: auto; }
+  .hd__list { list-style: none; margin: 0; padding: 0; display: flex; gap: 2px; align-items: center; }
+  .hd__item { position: relative; }
+  .hd__link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; border-radius: 8px; border: 0; background: none; cursor: pointer;
+    font-size: .92rem; font-weight: 500; color: var(--text-2); text-decoration: none; position: relative; transition: color .2s, background .2s; }
+  .hd__link:hover, .hd__link[aria-expanded='true'] { color: var(--text); background: var(--surface-2); }
+  .hd__link svg { transition: transform .3s var(--ease); }
+  .hd__link[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .hd__item.is-active > .hd__link { color: var(--text); }
+  .hd__item.is-active > .hd__link::after { content: ''; position: absolute; left: 13px; right: 13px; bottom: 1px; height: 2px; border-radius: 2px; background: var(--primary); }
+
+  .menu { position: absolute; top: calc(100% + 10px); left: -12px; min-width: 240px; padding: 8px; border-radius: 14px; background: #fff;
+    border: 1px solid var(--line); box-shadow: var(--shadow-md); opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.98); transform-origin: 20% 0;
+    transition: opacity .22s var(--ease), transform .3s var(--ease), visibility 0s .3s; }
+  .menu--wide { min-width: 330px; }
+  .menu.is-open { opacity: 1; visibility: visible; transform: none; transition: opacity .22s var(--ease), transform .3s var(--ease); }
+  .menu ul { list-style: none; margin: 0; padding: 0; display: grid; }
+  .menu a { display: grid; gap: 1px; padding: 9px 12px; border-radius: 9px; text-decoration: none; color: var(--text); transition: background .2s; }
+  .menu a:hover, .menu a[aria-current] { background: var(--surface-2); color: var(--text); }
+  .menu__label { display: flex; align-items: center; gap: 9px; font-weight: 550; font-size: .92rem; }
+  .menu__note { font-size: .78rem; color: var(--text-3); padding-left: 0; }
+  .menu__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent); }
+  .menu a:has(.menu__dot) .menu__note { padding-left: 17px; }
+
+  .hd__end { display: flex; align-items: center; gap: 10px; }
+  .hd__cta { padding: .62em 1.15em; font-size: .88rem; }
+  .hd__cta--drawer { display: none; }
+  .hd__burger { display: none; width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--line); background: #fff; cursor: pointer; place-items: center; }
+  .bars, .bars::before, .bars::after { display: block; width: 18px; height: 1.6px; background: var(--text); position: relative; content: ''; transition: transform .3s var(--ease), background .2s; }
+  .bars::before { position: absolute; top: -6px; } .bars::after { position: absolute; top: 6px; }
+  [aria-expanded='true'] > .bars { background: transparent; }
+  [aria-expanded='true'] > .bars::before { transform: translateY(6px) rotate(45deg); }
+  [aria-expanded='true'] > .bars::after { transform: translateY(-6px) rotate(-45deg); }
+  .hd-scrim { position: fixed; inset: 0; z-index: 190; background: rgba(7, 24, 32, .35); backdrop-filter: blur(2px); }
+  .hd-scrim[hidden] { display: none; }
+
+  @media (max-width: 1180px) { .brand__sub { display: none; } .hd__link { padding: 8px 10px; } }
+  @media (max-width: 1023px) {
+    .hd__burger { display: grid; }
+    .hd__end .hd__cta { display: none; }
+    .hd__end { margin-left: auto; }
+    .hd__nav { position: fixed; top: var(--header-h); right: 0; bottom: 0; width: min(92vw, 380px); margin: 0; background: #fff; border-left: 1px solid var(--line);
+      padding: var(--s3); overflow-y: auto; transform: translateX(102%); transition: transform .45s var(--ease); display: flex; flex-direction: column; gap: var(--s3); }
+    .hd__nav.is-open { transform: none; box-shadow: -30px 0 60px -30px rgba(8, 30, 40, .4); }
+    .hd__list { flex-direction: column; align-items: stretch; gap: 0; }
+    .hd__item { border-bottom: 1px solid var(--line); }
+    .hd__link { width: 100%; justify-content: space-between; padding: 14px 4px; font-size: 1.02rem; border-radius: 0; }
+    .hd__link:hover, .hd__link[aria-expanded='true'] { background: none; }
+    .hd__item.is-active > .hd__link::after { left: 0; right: auto; width: 3px; top: 14px; bottom: 14px; height: auto; margin-left: -12px; }
+    .menu { position: static; opacity: 1; visibility: visible; transform: none; box-shadow: none; border: 0; padding: 0 0 10px; min-width: 0; display: none; }
+    .menu.is-open { display: block; }
+    .hd__cta--drawer { display: inline-flex; }
+  }
+</style>

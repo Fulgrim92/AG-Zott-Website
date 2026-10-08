@@ -1,0 +1,134 @@
+{
+  "_readme": "All text on the homepage. Edit freely — wording only, no code. Words wrapped in *asterisks* in titles are highlighted. References in 'cite' must exist in the 'references' list at the bottom.",
+
+  "hero": {
+    "eyebrow": "Research group · Technical University of Munich",
+    "title": "Understanding how Alzheimer’s disease begins in *hippocampal circuits*",
+    "lead": "We study why neurons in the hippocampus become hyperactive long before memory loss, combining in vivo two-photon imaging, histology and electrophysiology in mouse models — and ask how this early dysfunction can be prevented.",
+    "primary": { "label": "Explore our research", "href": "/research/" },
+    "secondary": { "label": "Our team", "href": "/team/" },
+    "caption": "Mouse brain, Allen Mouse Brain Atlas (CCFv3). Hippocampus highlighted; flashes are illustrative."
+  },
+
+  "about": {
+    "eyebrow": "What we do",
+    "title": "From single synapses to whole circuits",
+    "text": "Alzheimer’s disease starts silently. Years before plaques and memory loss, soluble β-amyloid disturbs how neurons talk to each other. We follow these earliest changes in the living brain to understand the mechanism — and to find the window in which it can still be stopped.",
+    "cards": [
+      { "icon": "spark", "title": "Early hyperactivity", "text": "Why hippocampal neurons become abnormally active before plaques and memory loss appear." },
+      { "icon": "synapse", "title": "Synaptic mechanisms", "text": "How soluble β-amyloid blocks glutamate reuptake and drives a vicious cycle of hyperactivation." },
+      { "icon": "scope", "title": "In vivo imaging", "text": "Two-photon calcium imaging of hundreds of CA1 neurons, cell by cell, in the living brain." }
+    ]
+  },
+
+  "approach": {
+    "eyebrow": "Our approach",
+    "title": "Complementary windows on one circuit",
+    "text": "Activity, structure and physiology of the same hippocampal circuit — measured with methods that check each other.",
+    "link": { "label": "All research", "href": "/research/" }
+  },
+
+  "team": {
+    "eyebrow": "Our team",
+    "title": "A collaborative team driven by discovery",
+    "text": "Scientists, clinicians, students and staff working together on hippocampal circuits in health and Alzheimer’s disease.",
+    "link": { "label": "Meet the team", "href": "/team/" }
+  },
+
+  "findings": {
+    "eyebrow": "Recent publications",
+    "title": "Latest findings",
+    "link": { "label": "All publications", "href": "/papers/" }
+  },
+
+  "deep": {
+    "eyebrow": "For the curious",
+    "title": "From photons to *findings*",
+    "lead": "Scroll on to see how a question about β-amyloid becomes a measurement — first as an illustrated story built on published work, then on a real recording from our lab, analysed step by step with our own pipeline.",
+    "parts": ["The idea, illustrated", "The data, for real"]
+  },
+
+  "abstract": {
+    "label": "Illustrative schematic · based on the cited literature",
+    "chapters": [
+      {
+        "title": "A synapse at rest",
+        "text": "At an excitatory synapse, glutamate released from the presynaptic terminal activates receptors on the postsynaptic spine — and is cleared within milliseconds, mostly by transporters on astrocytes (GLT-1/EAAT2).",
+        "cite": ["danbolt2001"]
+      },
+      {
+        "title": "β-amyloid jams the clearance",
+        "text": "Soluble β-amyloid — long before plaques form — blocks glutamate reuptake. Glutamate lingers in and around the synaptic cleft.",
+        "cite": ["zott2019"]
+      },
+      {
+        "title": "A vicious cycle",
+        "text": "The lingering glutamate over-excites neurons that are already active. Neuronal activity in turn releases more β-amyloid: a self-amplifying loop.",
+        "cite": ["zott2019", "cirrito2005", "bero2011"]
+      },
+      {
+        "title": "Circuits go off balance",
+        "text": "In mouse models, CA1 neurons become hyperactive before plaques appear. Later, hyperactive neurons cluster near plaques while others fall silent. Scavenging β-amyloid monomers early prevents the hyperactivity.",
+        "cite": ["busche2008", "busche2012", "zott2024", "zhang2025"]
+      },
+      {
+        "title": "Making activity visible",
+        "text": "Active neurons take up calcium; calcium indicators such as GCaMP turn it into fluorescence. A two-photon microscope excites fluorescence only at its focal point, so hundreds of CA1 neurons can be followed in the living brain.",
+        "cite": ["denk1990", "chen2013"]
+      }
+    ],
+    "handoff": "This is what that looks like for real."
+  },
+
+  "pipeline": {
+    "label": "Lab data · BL6 mouse, CA1",
+    "steps": [
+      {
+        "title": "A real recording",
+        "text": "One minute of in vivo two-photon imaging in hippocampal CA1. Every flicker is a neuron becoming active."
+      },
+      {
+        "title": "Average and correlate",
+        "text": "Averaging all frames reveals the anatomy: the tightly packed cell bodies of the pyramidal layer. Correlating each pixel with its neighbours over time highlights what changes together — the cells that were active. Drag the slider to compare."
+      },
+      {
+        "title": "Find the cells",
+        "text": "An automatic detector proposes candidate cell bodies (dashed). Every proposal is checked by eye; the solid outlines are five neurons the lab reviewed and analysed."
+      },
+      {
+        "title": "From brightness to ΔF/F",
+        "text": "The mean brightness inside an outline becomes the fluorescence trace F. A rolling 20th percentile over 30 s estimates its resting baseline F₀, and ΔF/F = (F − F₀) / F₀ expresses activity relative to rest."
+      },
+      {
+        "title": "Detect calcium transients",
+        "text": "The noise level σ is estimated from the trace itself (median absolute deviation). Peaks more than 3σ above baseline, with enough prominence, count as calcium transients — not as single spikes."
+      },
+      {
+        "title": "All together",
+        "text": "Play the recording with its traces. Coloured lines are recomputed here from the movie; the grey lines underneath are the lab’s own analysis of the same five cells. Hover a trace to find its neuron."
+      }
+    ],
+    "footnote": "Computed for this website from the web-compressed movie with the default settings of the lab’s in-house analysis software. Five example neurons — not a population statistic. Published analyses use the full-resolution recordings.",
+    "cta": { "label": "Compare three mouse lines in the imaging player", "href": "/research/two-photon/#s3" }
+  },
+
+  "join": {
+    "title": "Curious about hippocampal circuits?",
+    "text": "We welcome motivated students (BSc, MSc, MD/PhD) and postdocs interested in imaging, physiology and Alzheimer’s disease.",
+    "primary": { "label": "Open positions", "href": "/contact/" },
+    "secondary": { "label": "Thesis projects", "href": "/teaching/" }
+  },
+
+  "references": {
+    "danbolt2001": { "short": "Danbolt 2001", "full": "Danbolt NC (2001) Glutamate uptake. Prog Neurobiol 65:1–105", "doi": "10.1016/S0301-0082(00)00067-8" },
+    "zott2019": { "short": "Zott et al. 2019", "full": "Zott B et al. (2019) A vicious cycle of β amyloid–dependent neuronal hyperactivation. Science 365:559–565", "doi": "10.1126/science.aay0198" },
+    "cirrito2005": { "short": "Cirrito et al. 2005", "full": "Cirrito JR et al. (2005) Synaptic activity regulates interstitial fluid amyloid-β levels in vivo. Neuron 48:913–922", "doi": "10.1016/j.neuron.2005.10.028" },
+    "bero2011": { "short": "Bero et al. 2011", "full": "Bero AW et al. (2011) Neuronal activity regulates the regional vulnerability to amyloid-β deposition. Nat Neurosci 14:750–756", "doi": "10.1038/nn.2801" },
+    "busche2008": { "short": "Busche et al. 2008", "full": "Busche MA et al. (2008) Clusters of hyperactive neurons near amyloid plaques in a mouse model of Alzheimer’s disease. Science 321:1686–1689", "doi": "10.1126/science.1162844" },
+    "busche2012": { "short": "Busche et al. 2012", "full": "Busche MA et al. (2012) Critical role of soluble amyloid-β for early hippocampal hyperactivity in a mouse model of Alzheimer’s disease. PNAS 109:8740–8745", "doi": "10.1073/pnas.1206171109" },
+    "zott2024": { "short": "Zott et al. 2024", "full": "Zott B et al. (2024) β-amyloid monomer scavenging by an anticalin protein prevents neuronal hyperactivity in mouse models of Alzheimer’s disease. Nat Commun 15:5819", "doi": "10.1038/s41467-024-50153-y" },
+    "zhang2025": { "short": "Zhang et al. 2025", "full": "Zhang Y et al. (2025) Amyloid β–dependent neuronal silencing through synaptic decoupling. PNAS", "doi": "10.1073/pnas.2515113122" },
+    "denk1990": { "short": "Denk et al. 1990", "full": "Denk W, Strickler JH, Webb WW (1990) Two-photon laser scanning fluorescence microscopy. Science 248:73–76", "doi": "10.1126/science.2321027" },
+    "chen2013": { "short": "Chen et al. 2013", "full": "Chen T-W et al. (2013) Ultrasensitive fluorescent proteins for imaging neuronal activity. Nature 499:295–300", "doi": "10.1038/nature12354" }
+  }
+}

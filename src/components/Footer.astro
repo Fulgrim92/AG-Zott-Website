@@ -1,40 +1,95 @@
 ---
 import site from '../data/site.json';
+import Logo from './Logo.astro';
 import { url } from '../lib/url';
+const year = new Date(site.lastUpdated).getFullYear();
+const social = Object.entries(site.social ?? {}).filter(([, v]) => v);
 ---
-<footer class="site-footer">
-  <div class="container">
-    <div class="cols">
-      <div>
-        <h2>AG Zott</h2>
-        <address style="font-style:normal">{site.address.map((l) => <>{l}<br /></>)}</address>
-        <p><a href={`mailto:${site.email}`}>{site.email}</a></p>
+<footer class="site-footer theme-dark">
+  <div class="ft__glow" aria-hidden="true"></div>
+  <div class="container container--wide">
+    <div class="ft">
+      <div class="ft__brand">
+        <a href={url('/')} class="ft__logo"><Logo size={40} /><span>{site.name}</span></a>
+        <p class="muted small">{site.tagline}.<br />{site.affiliation}</p>
+        <p class="ft__fund small">Supported by the European Research Council (ERC) and the Deutsche Forschungsgemeinschaft (DFG). <a href={url('/funding/')}>Funding details</a></p>
       </div>
-      <div>
+      <nav aria-label="Footer" class="ft__col">
         <h2>Explore</h2>
-        <ul>
+        <ul role="list">
           <li><a href={url('/research/')}>Research</a></li>
-          <li><a href={url('/papers/')}>Papers</a></li>
+          <li><a href={url('/#methods')}>From photons to findings</a></li>
           <li><a href={url('/team/')}>Team</a></li>
-          <li><a href={url('/contact/')}>Contact &amp; positions</a></li>
+          <li><a href={url('/papers/')}>Publications</a></li>
+          <li><a href={url('/news/')}>News</a></li>
         </ul>
+      </nav>
+      <nav aria-label="Lab" class="ft__col">
+        <h2>Lab</h2>
+        <ul role="list">
+          <li><a href={url('/funding/')}>Funding</a></li>
+          <li><a href={url('/teaching/')}>Teaching &amp; theses</a></li>
+          <li><a href={url('/alumni/')}>Alumni</a></li>
+          <li><a href={url('/contact/')}>Open positions</a></li>
+        </ul>
+      </nav>
+      <div class="ft__col">
+        <h2>Contact</h2>
+        <address>
+          <a href={`mailto:${site.email}`} class:list={[{ ph: site.email.includes('placeholder') }]}>{site.email}</a><br />
+          {site.address.map((l) => <span class:list={[{ ph: l.includes('[') }]}>{l}<br /></span>)}
+        </address>
+        {social.length > 0 && (
+          <ul role="list" class="ft__social">
+            {social.map(([k, v]) => <li><a href={v as string} rel="noopener">{k}</a></li>)}
+          </ul>
+        )}
       </div>
-      <div>
-        <h2>Support</h2>
-        <p class="small">Our research is supported by the European Research Council (ERC) and the Deutsche Forschungsgemeinschaft (DFG). <a href={url('/funding/')}>Funding details →</a></p>
-      </div>
-      <div>
-        <h2>Legal</h2>
-        <ul>
+    </div>
+
+    <div class="ft__bottom">
+      <p class="small">© {year} {site.name} · Last updated <time datetime={site.lastUpdated}>{site.lastUpdated}</time></p>
+      <p class="small ft__labels" aria-label="Content labels used on this site">
+        <span class="label label--data">Lab data</span><span class="label label--schematic">Illustrative</span><span class="label label--placeholder">Placeholder</span>
+      </p>
+      <div class="ft__end">
+        <div class="toggles" role="group" aria-label="Display settings">
+          <button class="tgl" data-toggle-motion aria-pressed="false">Reduce motion</button>
+          <button class="tgl" data-toggle-palette aria-pressed="false">Colour-blind palette</button>
+        </div>
+        <ul role="list" class="ft__legal small">
           <li><a href={url('/impressum/')}>Impressum</a></li>
           <li><a href={url('/datenschutz/')}>Datenschutz</a></li>
           <li><a href={url('/accessibility/')}>Accessibility</a></li>
         </ul>
       </div>
     </div>
-    <p class="small" style="margin-top:var(--s5);color:var(--text-3)">
-      Content labels: <span class="label label--data">Lab data</span> <span class="label label--schematic">Illustrative schematic</span> <span class="label label--placeholder">Placeholder</span>
-      · Last updated <time datetime={site.lastUpdated}>{site.lastUpdated}</time>
-    </p>
   </div>
 </footer>
+
+<style>
+  .site-footer { position: relative; overflow: hidden; padding: var(--s7) clamp(var(--s2), 5vw, var(--s6)) var(--s4); font-size: .93rem; }
+  .ft__glow { position: absolute; inset: auto -10% -60% 30%; height: 120%; pointer-events: none;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--glow) 10%, transparent), transparent); }
+  .ft { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); gap: var(--s5); }
+  @media (max-width: 900px) { .ft { grid-template-columns: 1fr 1fr; } .ft__brand { grid-column: 1 / -1; } }
+  @media (max-width: 480px) { .ft { grid-template-columns: 1fr; } }
+  .ft__logo { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-serif); font-size: 1.5rem; text-decoration: none; margin-bottom: var(--s2); }
+  .ft__fund { color: var(--text-3); max-width: 44ch; }
+  .ft h2 { font-family: var(--font-sans); font-weight: 600; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: var(--text-3); margin-bottom: var(--s2); }
+  .ft ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .45em; }
+  .ft a, .ft__bottom a { text-decoration: none; color: var(--text-2); background: none !important; transition: color .2s; }
+  .ft a:hover, .ft__bottom a:hover { color: var(--glow); }
+  address { font-style: normal; color: var(--text-2); line-height: 1.7; }
+  .ft__social { margin-top: var(--s2) !important; display: flex !important; gap: var(--s2) !important; }
+  .ft__bottom { display: flex; justify-content: space-between; align-items: center; gap: var(--s2) var(--s4); flex-wrap: wrap;
+    margin-top: var(--s6); padding-top: var(--s3); border-top: 1px solid var(--line); color: var(--text-3); }
+  .ft__bottom p { margin: 0; }
+  .ft__labels { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ft__end { display: flex; gap: var(--s3); align-items: center; flex-wrap: wrap; }
+  .ft__legal { display: flex; gap: var(--s2); list-style: none; margin: 0; padding: 0; }
+  .toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tgl { background: transparent; border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 12px; font-size: .74rem; color: var(--text-2); cursor: pointer; transition: color .2s, border-color .2s; }
+  .tgl:hover { color: var(--text); }
+  .tgl[aria-pressed='true'] { color: var(--glow); border-color: var(--glow); }
+</style>

@@ -1,0 +1,17 @@
+---
+/** Lab mark: a CA1 pyramidal neuron (soma, apical dendrite, basal dendrites) in line art. */
+interface Props { size?: number; class?: string }
+const { size = 32, class: cls } = Astro.props;
+---
+<svg class:list={['logo', cls]} viewBox="0 0 40 40" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <path class="logo__soma" d="M20 25.5 L15.6 31 L24.4 31 Z" fill="currentColor" fill-opacity=".14" />
+  <path d="M20 25.5 V12 M20 15.5 L14 9.5 M20 13 L25.5 7 M14 9.5 L11.5 5.5 M14 9.5 L10 10.5 M25.5 7 L28.5 4.5 M25.5 7 L29.5 9 M20 19.5 L26 16.5" />
+  <path d="M15.6 31 L11 35 M24.4 31 L29 35 M17.5 31 L16 36.5 M22.5 31 L24 36.5" />
+  <circle class="logo__spark" cx="20" cy="28.6" r="1.6" fill="currentColor" stroke="none" />
+</svg>
+<style>
+  .logo { color: var(--primary); flex: none; overflow: visible; }
+  :global(.theme-dark) .logo { color: var(--glow); }
+  .logo__spark { transform-origin: 20px 28.6px; animation: spark 4.8s ease-in-out infinite; }
+  @keyframes spark { 0%, 80%, 100% { opacity: .55; transform: scale(1); } 86% { opacity: 1; transform: scale(1.9); } }
+</style>

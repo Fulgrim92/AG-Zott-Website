@@ -33,44 +33,72 @@ paletteBtn?.addEventListener('click', () => {
   window.dispatchEvent(new CustomEvent('agz:palette'));
 });
 
-/* ---------- Navigation: mobile drawer + tablet rail ---------- */
-const sidebar = document.getElementById('sidebar')!;
-const menuBtn = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+/* ---------- Header: dropdowns, mobile drawer, scroll state ---------- */
+const header = document.querySelector<HTMLElement>('[data-header]');
+const nav = document.getElementById('main-nav');
+const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
 const scrim = document.querySelector<HTMLElement>('[data-scrim]');
-const pin = document.querySelector<HTMLButtonElement>('[data-rail-pin]');
+const menuBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-menu-btn]')];
+const desktop = matchMedia('(min-width: 1024px)');
+
+const closeMenus = (except?: HTMLButtonElement) => menuBtns.forEach((b) => {
+  if (b === except) return;
+  b.setAttribute('aria-expanded', 'false');
+  document.getElementById(b.getAttribute('aria-controls')!)?.classList.remove('is-open');
+});
+const openMenu = (b: HTMLButtonElement, open: boolean) => {
+  b.setAttribute('aria-expanded', String(open));
+  document.getElementById(b.getAttribute('aria-controls')!)?.classList.toggle('is-open', open);
+};
+menuBtns.forEach((b) => {
+  const li = b.parentElement!;
+  let t = 0;
+  b.addEventListener('click', () => { const open = b.getAttribute('aria-expanded') !== 'true'; closeMenus(b); openMenu(b, open); });
+  li.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && desktop.matches) { clearTimeout(t); closeMenus(b); openMenu(b, true); } });
+  li.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && desktop.matches) t = window.setTimeout(() => openMenu(b, false), 160); });
+  li.addEventListener('focusout', (e) => { if (desktop.matches && !li.contains(e.relatedTarget as Node)) openMenu(b, false); });
+});
 
 const setDrawer = (open: boolean) => {
-  sidebar.classList.toggle('is-open', open);
-  menuBtn?.setAttribute('aria-expanded', String(open));
+  nav?.classList.toggle('is-open', open);
+  burger?.setAttribute('aria-expanded', String(open));
   if (scrim) scrim.hidden = !open;
   document.body.style.overflow = open ? 'hidden' : '';
-  if (open) sidebar.querySelector<HTMLElement>('a')?.focus();
-  else if (document.activeElement && sidebar.contains(document.activeElement)) menuBtn?.focus();
+  if (open) nav?.querySelector<HTMLElement>('a, button')?.focus();
 };
-menuBtn?.addEventListener('click', () => setDrawer(!sidebar.classList.contains('is-open')));
+burger?.addEventListener('click', () => setDrawer(!nav?.classList.contains('is-open')));
 scrim?.addEventListener('click', () => setDrawer(false));
-pin?.addEventListener('click', () => {
-  const exp = sidebar.classList.toggle('is-expanded');
-  pin.setAttribute('aria-expanded', String(exp));
-});
-document.addEventListener('click', (e) => {
-  if (sidebar.classList.contains('is-expanded') && !sidebar.contains(e.target as Node)) {
-    sidebar.classList.remove('is-expanded'); pin?.setAttribute('aria-expanded', 'false');
-  }
-});
+nav?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => { setDrawer(false); closeMenus(); }));
+desktop.addEventListener('change', () => { setDrawer(false); closeMenus(); });
+document.addEventListener('click', (e) => { if (desktop.matches && !(e.target as Element).closest?.('.has-menu')) closeMenus(); });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  if (sidebar.classList.contains('is-open')) setDrawer(false);
-  if (sidebar.classList.contains('is-expanded')) { sidebar.classList.remove('is-expanded'); pin?.setAttribute('aria-expanded', 'false'); }
+  const open = menuBtns.find((b) => b.getAttribute('aria-expanded') === 'true');
+  closeMenus(); open?.focus();
+  if (nav?.classList.contains('is-open')) { setDrawer(false); burger?.focus(); }
 });
-// Focus trap while the mobile drawer is open
-sidebar.addEventListener('keydown', (e) => {
-  if (e.key !== 'Tab' || !sidebar.classList.contains('is-open')) return;
-  const f = [...sidebar.querySelectorAll<HTMLElement>('a, button')].filter((el) => el.offsetParent !== null);
+// Focus trap inside the open drawer
+nav?.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab' || !nav.classList.contains('is-open')) return;
+  const f = [...nav.querySelectorAll<HTMLElement>('a, button'), burger!].filter((el) => el && el.offsetParent !== null);
   const first = f[0], last = f[f.length - 1];
   if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 });
+
+// Header: hairline once scrolled; slides away while reading downwards, returns on scroll up
+let lastY = scrollY;
+const onScroll = () => {
+  const y = scrollY;
+  header?.classList.toggle('is-scrolled', y > 8);
+  const menuOpen = nav?.classList.contains('is-open') || menuBtns.some((b) => b.getAttribute('aria-expanded') === 'true');
+  if (!menuOpen && !document.body.hasAttribute('data-pinning')) header?.classList.toggle('is-hidden', y > 480 && y > lastY + 2);
+  if (y < lastY - 2) header?.classList.remove('is-hidden');
+  lastY = y;
+};
+addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+header?.addEventListener('focusin', () => header.classList.remove('is-hidden'));
 
 /* ---------- Motion & micro-interactions ---------- */
 initMotion();

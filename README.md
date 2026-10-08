@@ -12,18 +12,22 @@ npm run build     # static output in dist/
 
 ## Structure
 
-- **Pinned sidebar navigation** (`src/components/Sidebar.astro`): full sidebar on desktop, icon rail on
-  tablet (expand with the › button), top bar + drawer on mobile. The nine sections are deep-linkable pages.
-- **Pages**: `src/pages/` — Home, Research (+ 4 topic pages), Team, Papers, News, Funding, Teaching, Alumni,
-  Contact, plus Impressum, Datenschutz, Accessibility.
-- **Interactive components** (`src/components/`):
-  - `ImagingPlayer` — two-photon recordings (genotype tabs, synced side-by-side compare, frame stepping, display LUTs)
-  - `RoiFigure` — ROI → ΔF/F trace movie
-  - `DeepZoom` — zoomable confocal/IHC viewer (sections, minimap, numbered hotspots)
-  - `SignalExplorer` — EEG / LTP / LFP explorer (zoom hours → ms, plain/expert notes); **illustrative simulations** from `src/scripts/signals.ts`
-  - `GlymphaticFlow` — animated schematic of CSF/ISF flow with awake/asleep toggle
-  - `CA1Layers` — interactive CA1 laminar schematic
-  - Homepage hero (`src/scripts/hero.ts`) — scroll-driven brain → hippocampus → CA1 journey
+- **Top navigation** (`src/components/Header.astro`): plain, professional header with dropdowns for Research and Lab
+  pages, a drawer on tablets and phones. Footer: `src/components/Footer.astro` (display toggles live there).
+- **Homepage** (`src/pages/index.astro`), two layers:
+  1. *First impression* — dark hero with the Allen CCFv3 mouse brain as a cloud of light (`src/scripts/heroBrain.ts`),
+     then light sections: what we do, approach (real media), team carousel, latest findings.
+  2. *For the curious* (`#methods`, dark) — a scroll-driven **graphical abstract** (`GraphicalAbstract.astro` +
+     `src/scripts/abstract.ts`: synapse → β-amyloid blocks reuptake → vicious cycle → CA1 circuit → two-photon imaging,
+     every chapter linked to its references) that hands off to a **real recording** walked through the lab's analysis
+     pipeline (`DataPipeline.astro` + `src/scripts/pipeline.ts`).
+- **Pages**: `src/pages/` — Research (+ 4 topic pages), Team, Papers, News, Funding, Teaching, Alumni, Contact,
+  Impressum, Datenschutz, Accessibility.
+- **Interactive components** (`src/components/`): `ImagingPlayer`, `RoiFigure`, `DeepZoom`, `SignalExplorer`
+  (illustrative simulations), `GlymphaticFlow`, `CA1Layers`, `EphysProcedure`, `AtlasSections`.
+- **Ambient detail**: `NeuralBackdrop.astro` (slow drifting network, pauses off-screen), line icons that draw
+  themselves, magnetic primary buttons, scroll progress line. All motion respects `prefers-reduced-motion` and the
+  on-site *Reduce motion* toggle (the graphical abstract then becomes tabbed still frames).
 
 ## Editing content (no code needed)
 
@@ -31,13 +35,28 @@ All content lives in `src/data/`:
 
 | File | Content |
 |---|---|
-| `site.json` | name, affiliation, mission, address, links, feature switches |
-| `team.json`, `alumni.json` | people |
-| `papers.json` | publications (`themes` + `grants` tags link them to research pages and funding) |
+| `home.json` | **every text on the homepage** — hero, cards, deep-dive chapters, pipeline steps, references |
+| `team.json` | **people** (homepage carousel + Team page), in display order; the `PI` entry is the group leader |
+| `site.json` | name, affiliation, address, social links, feature switches |
+| `alumni.json` | former members |
+| `papers.json` | publications (`summary` makes a paper eligible for “Latest findings”; `journalShort` for cards) |
 | `news.json` | news items (each gets its own page) |
 | `grants.json` | ERC/DFG grants — set `"verified": true` once checked |
 | `teaching.json` | courses and thesis topics |
-| `assets.json` | **manifest of lab data** for the viewers (see below) |
+| `assets.json` | manifest of lab data for the viewers (see below) |
+| `pipeline.json` | generated — do not edit (see *Methods walkthrough data*) |
+
+**Adding a person**: copy a block in `team.json`, set `name`, `role` (PI, Postdoc, PhD student, Staff, Student — used for
+the filter), `position` (shown), `focus` (list), optional `photo` (path under `public/`, e.g. `assets/team/jane.jpg`),
+`email`, `orcid`, and `"placeholder": false`. Without a photo a neutral monogram card is shown (never a generated face).
+
+### Methods walkthrough data
+
+`python3 scripts/build-pipeline.py` (needs ffmpeg, numpy, scipy, pillow) derives everything in the “data, for real”
+section from the BL6 recording already on the site: mean and local-correlation images, automatic soma proposals, and for
+the five ROIs of the lab's figure both the **lab's own ΔF/F traces** (digitised from `bl6-roi.mp4`) and traces
+**recomputed** from `bl6.mp4` with the default settings of the lab's analysis software (rolling 20th-percentile F₀ over
+30 s, MAD noise, 3σ peaks). The two agree at r = 0.92–0.99; the site shows both and says which is which.
 
 ### Content honesty rules
 
@@ -45,7 +64,8 @@ Every visual carries a label: **Lab data**, **Illustrative schematic**, or **Pla
 Text in `[PLACEHOLDER …]` / `[… TO VERIFY]` brackets is rendered in amber so it can't be mistaken for
 real content. Nothing on the site is invented lab data:
 
-- The hero brain/hippocampus is a procedural **schematic** (replace with an atlas mesh, e.g. Allen CCF, if desired).
+- The hero brain is the Allen CCFv3 atlas mesh; the flashes on CA1 are illustrative.
+- The graphical abstract is an **illustrative schematic** built on the cited literature (references in `home.json`).
 - The EEG / LTP / LFP signals are clearly labelled **illustrative simulations** modelled on the lab's paradigms.
 - Two-photon movies are real lab recordings (`public/assets/lab/2p/`); confocal images are from
   Zott et al. 2024, *Nat Commun*, Suppl. Fig. S13A (CC BY 4.0), extracted at low resolution — replace with originals.
