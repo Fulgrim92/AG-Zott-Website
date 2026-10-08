@@ -1,32 +1,60 @@
 ---
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
+import Label from '../../components/Label.astro';
+import GlymphaticTracer from '../../components/GlymphaticTracer.astro';
 import site from '../../data/site.json';
+import assets from '../../data/assets.json';
 import { url } from '../../lib/url';
+import { fepspPath } from '../../lib/fepsp';
+
+const rec = assets.twoPhoton.recordings[0];
+const ihc = assets.ihc.sections[assets.ihc.sections.length - 1];
+// illustrative fEPSPs before and after LTP, drawn at build time
+const box = { x: 30, y: 70, w: 340, mvPerPx: 0.016, tMax: 20 };
+const base = fepspPath(1.0, box), post = fepspPath(1.55, box);
+
 const themes = [
-  { href: '/research/two-photon/', n: '01', title: 'Two-photon imaging in CA1', color: 'var(--green)', q: 'Why do CA1 neurons become hyperactive early in Alzheimer’s disease — and can it be reversed?', m: 'In vivo two-photon calcium imaging' },
-  { href: '/research/immunohistochemistry/', n: '02', title: 'Immunohistochemistry', color: 'var(--blue)', q: 'Where and when does β-amyloid pathology appear around the cells we image?', m: 'Fluorescent staining & confocal microscopy' },
-  { href: '/research/electrophysiology/', n: '03', title: 'Electrophysiology', color: 'var(--red)', q: 'How excitable are brain networks, and how plastic are their synapses?', m: 'Video-EEG, field recordings (LTP), local field potentials' },
-  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', n: '04', title: 'Glymphatic system', color: 'var(--magenta)', q: 'How does fluid flow through the brain support clearance and function?', m: 'Tracer imaging & modelling' }] : []),
+  { href: '/research/two-photon/', n: '01', title: 'Two-photon imaging in CA1', color: 'var(--green)', q: 'Why do CA1 neurons become hyperactive early in Alzheimer’s disease, and can it be reversed?', m: ['In vivo', 'GCaMP calcium imaging', 'Single-cell activity'], media: 'video' },
+  { href: '/research/immunohistochemistry/', n: '02', title: 'Immunohistochemistry', color: 'var(--blue)', q: 'Where and when does β-amyloid pathology appear around the cells we image?', m: ['Brain sections', 'Fluorescent stains', 'Confocal microscopy'], media: 'ihc' },
+  { href: '/research/electrophysiology/', n: '03', title: 'Electrophysiology', color: 'var(--red)', q: 'How excitable are brain networks, and how plastic are their synapses?', m: ['Video-EEG', 'Field recordings & LTP', 'Local field potentials'], media: 'ephys' },
+  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', n: '04', title: 'Glymphatic system', color: 'var(--magenta)', q: 'How does fluid flow through the brain support clearance and function?', m: ['Tracer imaging', 'Wide-field & confocal', 'Modelling'], media: 'glym' }] : []),
 ];
 ---
 <Base title="Research">
   <PageHeader eyebrow="Research" title="One circuit, several windows" lead="We combine complementary methods to connect the activity, structure and physiology of hippocampal circuits. Each research page follows the same path: question → method → data → findings → papers → funding." />
   <section class="section section--tight">
-    <div class="container">
-      <p class="banner" style="margin-bottom:var(--s5)"><strong class="ph">Draft questions.</strong> Derived from the lab’s publications — please review and replace with the lab’s own wording.</p>
-      <ol class="themes" role="list">
+    <div class="container container--wide">
+      <p class="banner" style="margin-bottom:var(--s5)"><strong class="ph">Draft questions.</strong> Derived from the lab’s publications. Please review and replace with the lab’s own wording.</p>
+      <ol class="topics" role="list">
         {themes.map((t) => (
           <li data-reveal>
-            <a class="card theme" href={url(t.href)} style={`--card-c:${t.color}`}>
-              <span class="card__glow" aria-hidden="true"></span>
-              <span class="mono theme__n">{t.n}</span>
-              <div>
-                <h2>{t.title}</h2>
-                <p class="lead">{t.q}</p>
-                <p class="mono small muted">{t.m}</p>
+            <a class="topic" href={url(t.href)} style={`--card-c:${t.color}`}>
+              <div class="topic__media theme-dark">
+                {t.media === 'video' && <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="none" data-autoplay aria-label={rec.alt}></video>}
+                {t.media === 'ihc' && <img src={url(ihc.src)} alt={ihc.alt} loading="lazy" />}
+                {t.media === 'ephys' && (
+                  <svg viewBox="0 0 400 250" class="topic__ephys" role="img" aria-label="Illustrative field EPSPs: a baseline response in grey and a larger response after long-term potentiation in red.">
+                    <path d={base} class="fe fe--base" pathLength="1" />
+                    <path d={post} class="fe fe--post" pathLength="1" />
+                    <g class="fe__bars"><path d="M285 200 h85 M370 200 v-31" /><text x="327" y="216" text-anchor="middle">5 ms</text><text x="365" y="164" text-anchor="end">0.5 mV</text></g>
+                    <g class="fe__key"><circle cx="34" cy="206" r="4" class="k1" /><text x="44" y="210">baseline</text><circle cx="120" cy="206" r="4" class="k2" /><text x="130" y="210">after LTP</text></g>
+                  </svg>
+                )}
+                {t.media === 'glym' && <GlymphaticTracer compact />}
+                <span class="topic__label">
+                  {t.media === 'video' && <Label kind="data" />}
+                  {t.media === 'ihc' && <Label kind="data" text="Published data" />}
+                  {(t.media === 'ephys' || t.media === 'glym') && <Label kind="schematic" />}
+                </span>
+                <span class="topic__n mono" aria-hidden="true">{t.n}</span>
               </div>
-              <span class="theme__go" aria-hidden="true">→</span>
+              <div class="topic__body">
+                <h2>{t.title}</h2>
+                <p class="topic__q">{t.q}</p>
+                <ul class="topic__chips" role="list">{t.m.map((m) => <li>{m}</li>)}</ul>
+                <span class="topic__go">Explore <span aria-hidden="true">→</span></span>
+              </div>
             </a>
           </li>
         ))}
@@ -35,12 +63,45 @@ const themes = [
   </section>
 </Base>
 <style>
-  .themes { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s3); }
-  .theme { display: grid; grid-template-columns: 60px 1fr 40px; gap: var(--s3); align-items: center; padding: var(--s5) var(--s4); }
-  .theme__n { color: var(--card-c); font-size: 1rem; align-self: start; padding-top: 10px; }
-  .theme h2 { font-size: clamp(1.6rem, 2.6vw, 2.2rem); }
-  .theme .lead { margin-bottom: 6px; }
-  .theme__go { font-size: 1.8rem; color: var(--card-c); transition: transform .3s var(--ease); }
-  .theme:hover .theme__go { transform: translateX(6px); }
-  @media (max-width: 640px) { .theme { grid-template-columns: 1fr; } .theme__go { display: none; } }
+  .topics { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); }
+  @media (max-width: 860px) { .topics { grid-template-columns: 1fr; } }
+  .topic { position: relative; display: grid; grid-template-rows: auto 1fr; height: 100%; border-radius: 20px; overflow: hidden; text-decoration: none; color: var(--text);
+    background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm); transition: transform .5s var(--ease), box-shadow .5s var(--ease), border-color .4s; }
+  .topic:hover { color: var(--text); transform: translateY(-5px); border-color: color-mix(in srgb, var(--card-c) 55%, var(--line)); box-shadow: 0 24px 50px -28px color-mix(in srgb, var(--card-c) 70%, transparent), var(--shadow-md); }
+  .topic::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--card-c); transform: scaleX(0); transform-origin: 0 50%; transition: transform .6s var(--ease); }
+  .topic:hover::after { transform: none; }
+  .topic__media { position: relative; aspect-ratio: 16 / 9; background: #03080b; overflow: hidden; }
+  .topic__media video, .topic__media img, .topic__media > svg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.4s var(--ease); }
+  .topic__media img { object-fit: contain; background: #000; }
+  .topic:hover .topic__media video, .topic:hover .topic__media img { transform: scale(1.06); }
+  .topic__media::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 50% 120%, color-mix(in srgb, var(--card-c) 30%, transparent), transparent 60%); opacity: .5; transition: opacity .5s; }
+  .topic:hover .topic__media::after { opacity: .9; }
+  .topic__label { position: absolute; left: 12px; bottom: 10px; z-index: 1; }
+  .topic__n { position: absolute; right: 14px; top: 10px; z-index: 1; font-size: .8rem; letter-spacing: .1em; color: #fff; background: rgba(0, 0, 0, .45); border: 1px solid color-mix(in srgb, var(--card-c) 60%, transparent); padding: 2px 9px; border-radius: 999px; }
+  .topic__body { display: grid; align-content: start; gap: 10px; padding: var(--s3) var(--s4) var(--s4); }
+  .topic h2 { font-size: clamp(1.5rem, 2.2vw, 2rem); margin: 0; }
+  .topic__q { margin: 0; color: var(--text-2); font-size: 1.04rem; max-width: 52ch; }
+  .topic__chips { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .topic__chips li { font-size: .76rem; padding: 3px 10px; border-radius: 999px; color: var(--text-2); background: color-mix(in srgb, var(--card-c) 9%, transparent); border: 1px solid color-mix(in srgb, var(--card-c) 25%, transparent); }
+  .topic__go { margin-top: 6px; font-weight: 600; font-size: .92rem; color: var(--card-c); display: inline-flex; gap: 6px; }
+  .topic__go span { transition: transform .35s var(--ease); }
+  .topic:hover .topic__go span { transform: translateX(5px); }
+  /* illustrative fEPSP panel */
+  .topic__ephys { background: radial-gradient(90% 80% at 40% 30%, #1a0f12, #07090c); }
+  .fe { fill: none; stroke-width: 2.2; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .fe--base { stroke: #8b98a0; }
+  .fe--post { stroke: #ff6b5a; filter: drop-shadow(0 0 4px rgba(255, 107, 90, .6)); }
+  .fe { animation: fe-draw 1.6s var(--ease) .3s forwards; }
+  .fe--post { animation-delay: .9s; }
+  @keyframes fe-draw { to { stroke-dashoffset: 0; } }
+  .fe__bars path { stroke: #c9d3d6; stroke-width: 1.5; fill: none; }
+  .fe__bars text, .fe__key text { font: 10px var(--font-mono); fill: #a9b6bb; }
+  .fe__key .k1 { fill: #8b98a0; } .fe__key .k2 { fill: #ff6b5a; }
+  :global(:root[data-motion='off']) .fe { animation: none; stroke-dashoffset: 0; }
 </style>
+<script>
+  const motionOK = () => document.documentElement.dataset.motion !== 'off';
+  document.querySelectorAll<HTMLVideoElement>('video[data-autoplay]').forEach((v) => {
+    new IntersectionObserver(([e]) => { if (e.isIntersecting && motionOK()) v.play().catch(() => {}); else v.pause(); }, { threshold: 0.3 }).observe(v);
+  });
+</script>

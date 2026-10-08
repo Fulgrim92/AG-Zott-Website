@@ -64,7 +64,7 @@ export function initAbstract(root: HTMLElement) {
     return {
       g, bound,
       sx: side > 0 ? 1260 : -60, sy: 260 + rnd() * 260,
-      tx: bound ? t[0] + (t[0] < 600 ? 14 : -26) : 380 + rnd() * 440, ty: bound ? t[1] - 6 : 340 + rnd() * 40,
+      tx: bound ? t[0] + (t[0] < 600 ? 34 : -46) : 380 + rnd() * 440, ty: bound ? t[1] + (rnd() - 0.5) * 30 : 340 + rnd() * 40,
       ph: rnd() * 6.28, delay: rnd() * 0.4,
     };
   });
@@ -133,7 +133,7 @@ export function initAbstract(root: HTMLElement) {
     abeta.forEach((a) => {
       const k = clamp((st.ab - a.delay) / 0.6);
       const e = 1 - Math.pow(1 - k, 3);
-      const wob = a.bound ? 2 : 14;
+      const wob = a.bound ? 6 : 14;
       const x = a.sx + (a.tx - a.sx) * e + Math.sin(time * 0.9 + a.ph) * wob;
       const y = a.sy + (a.ty - a.sy) * e + Math.cos(time * 0.7 + a.ph) * wob;
       a.g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${((time * 20 + a.ph * 50) % 360).toFixed(0)})`);
@@ -148,26 +148,42 @@ export function initAbstract(root: HTMLElement) {
     const a = (k / 26) * Math.PI * 2 + rnd() * 0.2, r0 = 18 + rnd() * 6, r1 = 48 + rnd() * 34;
     el('path', { d: `M${(Math.cos(a) * r0).toFixed(1)} ${(Math.sin(a) * r0).toFixed(1)} Q${(Math.cos(a + 0.3) * (r1 * 0.6)).toFixed(1)} ${(Math.sin(a + 0.3) * (r1 * 0.6)).toFixed(1)} ${(Math.cos(a) * r1).toFixed(1)} ${(Math.sin(a) * r1).toFixed(1)}` }, fib);
   }
-  const plaqueXY = [860, 470];
+  const plaqueXY = [870, 585];
   type Neuron = { g: SVGElement; soma: SVGElement; glow: SVGElement; x: number; y: number; act: number; early: number; late: number; dist: number };
   const neurons: Neuron[] = [];
+  // CA1 pyramidal cells as seen through a window from above: basal dendrites up into stratum oriens,
+  // the apical dendrite down through stratum radiatum (Schaffer-collateral synapses sit on it).
   for (let i = 0; i < 64; i++) {
-    const x = 150 + (i / 63) * 960 + (rnd() - 0.5) * 18, y = 455 + (rnd() - 0.5) * 70, s = 12 + rnd() * 6;
+    const x = 240 + (i / 63) * 900 + (rnd() - 0.5) * 18, y = 440 + (rnd() - 0.5) * 60, s = 11 + rnd() * 6;
     const g = el('g', {}, neuG);
-    const top = 150 + rnd() * 50, bx = x + (rnd() - 0.5) * 30;
-    el('path', { d: `M${x} ${y - s} C${x} ${y - 90} ${bx} ${y - 160} ${bx} ${top} M${bx} ${top + 60} l${-18 - rnd() * 14} ${-34} M${(x + bx) / 2} ${y - 110} l${16 + rnd() * 16} ${-30} M${x - s * 0.5} ${y + s * 0.6} l-14 50 M${x + s * 0.5} ${y + s * 0.6} l14 46`, fill: 'none', stroke: '#2a5563', 'stroke-width': 1.6, 'stroke-linecap': 'round' }, g);
+    const bx = x + (rnd() - 0.5) * 40, bot = 790 + rnd() * 30;
+    const den = el('g', { fill: 'none', stroke: '#2a5563', 'stroke-linecap': 'round', opacity: i % 2 ? 0.45 : 0.85 }, g);
+    // apical trunk: thick near the soma, tapering; oblique branches
+    el('path', { d: `M${x} ${y + s * 0.6} C${x} ${y + 90} ${bx} ${y + 170} ${bx} ${bot}`, 'stroke-width': 2.2 }, den);
+    for (let k = 0; k < 3; k++) {
+      const yy = y + 70 + k * 70 + rnd() * 20, dir = rnd() < 0.5 ? -1 : 1, xx = x + (bx - x) * ((yy - y) / (bot - y));
+      el('path', { d: `M${xx.toFixed(1)} ${yy.toFixed(1)} q${dir * 14} ${10} ${dir * (20 + rnd() * 16)} ${30 + rnd() * 16}`, 'stroke-width': 1.1 }, den);
+    }
+    // basal dendrites into stratum oriens
+    for (let k = 0; k < 3; k++) {
+      const ang = -Math.PI / 2 + (k - 1) * 0.75 + (rnd() - 0.5) * 0.3, len = 70 + rnd() * 80;
+      const ex = x + Math.cos(ang) * len * 0.6, ey = y - s * 0.6 + Math.sin(ang) * len;
+      el('path', { d: `M${x} ${y - s * 0.5} Q${(x + ex) / 2 + (rnd() - 0.5) * 16} ${(y + ey) / 2} ${ex.toFixed(1)} ${ey.toFixed(1)}`, 'stroke-width': 1.2 }, den);
+    }
     const glow = el('circle', { cx: x, cy: y, r: s * 2.2, fill: 'url(#ga-glow)', opacity: 0 }, g);
-    const soma = el('path', { d: `M${x} ${y - s} L${x - s * 0.8} ${y + s * 0.65} L${x + s * 0.8} ${y + s * 0.65} Z`, fill: '#1d4a55', stroke: '#5fd3c6', 'stroke-opacity': 0.35, 'stroke-width': 1.2 }, g);
+    // pyramid-shaped soma, apex pointing towards the apical dendrite
+    const soma = el('path', { d: `M${x} ${y + s} L${x - s * 0.8} ${y - s * 0.65} Q${x} ${y - s * 0.95} ${x + s * 0.8} ${y - s * 0.65} Z`, fill: '#1d4a55', stroke: '#5fd3c6', 'stroke-opacity': 0.35, 'stroke-width': 1.2 }, g);
     const dist = Math.hypot(x - plaqueXY[0], y - plaqueXY[1]);
     neurons.push({ g, soma, glow, x, y, act: 0, early: rnd(), late: rnd(), dist });
   }
   const phaseEl = q('[data-ga-phase]');
-  // Rates in events/s. Before plaques: scattered hyperactive cells; with plaques: hyperactive near the plaque, some cells silent.
+  // Rates in events/s. Before plaques: scattered hyperactive cells (Busche 2012). With plaques:
+  // hyperactive cells cluster near plaques; silent cells are scattered (Busche 2008).
   const kind = (n: Neuron) => {
     if (st.plaque < 0.5) return n.early < 0.22 ? 'hyper' : 'normal';
-    if (n.dist < 170) return n.late < 0.75 ? 'hyper' : 'normal';
-    if (n.dist > 300 && n.late < 0.3) return 'silent';
-    return n.late > 0.9 ? 'hyper' : 'normal';
+    if (n.late < 0.28) return 'silent';
+    if (n.dist < 190) return 'hyper';
+    return n.late > 0.92 ? 'hyper' : 'normal';
   };
   let lastPhase = '';
   const tickPop = (dt: number) => {
@@ -234,7 +250,7 @@ export function initAbstract(root: HTMLElement) {
   const syn = q('[data-ga-syn]'), cycle = q('[data-ga-cycle]'), ring = q('[data-ga-ring]'), pop = q('[data-ga-pop]'), img = q('[data-ga-img]');
   const plaque = q('[data-ga-plaque]'), fovRect = q('[data-ga-fov]'), fovLbl = q('[data-ga-fovlbl]'), gcamp = q('[data-ga-gcamp]'), meterG = q('[data-ga-meter]');
   const lbl0 = q('[data-ga-lbl="0"]'), lbl1 = q('[data-ga-lbl="1"]');
-  const zoomOrigin = '330 300'; // the synapse shrinks into a dendrite of the population
+  const zoomOrigin = '330 640'; // the synapse shrinks into an apical dendrite in stratum radiatum
 
   const tl = gsap.timeline({ paused: true, defaults: { ease: 'none' } });
   tl.addLabel('c0', 0)
@@ -259,7 +275,7 @@ export function initAbstract(root: HTMLElement) {
     .fromTo(pop, { opacity: 0, scale: 3.2, svgOrigin: zoomOrigin }, { opacity: 1, scale: 1, svgOrigin: zoomOrigin, duration: 0.5, ease: 'power2.out' }, 3.25)
     .to(st, { pop: 1, duration: 0.2 }, 3.25)
     .to(st, { plaque: 1, duration: 0.3 }, 3.6)
-    .fromTo(plaque, { opacity: 0, scale: 0.4, svgOrigin: '860 470' }, { opacity: 1, scale: 1, svgOrigin: '860 470', duration: 0.3, ease: 'back.out(1.6)' }, 3.6)
+    .fromTo(plaque, { opacity: 0, scale: 0.4, svgOrigin: '870 585' }, { opacity: 1, scale: 1, svgOrigin: '870 585', duration: 0.3, ease: 'back.out(1.6)' }, 3.6)
     .addLabel('c4', 4)
     .to(img, { opacity: 1, duration: 0.25 }, 4)
     .to(st, { img: 1, duration: 0.25 }, 4)
@@ -294,7 +310,7 @@ export function initAbstract(root: HTMLElement) {
   if (motionOK()) {
     const pin = q<HTMLElement>('[data-ga-pin]');
     const trig = ScrollTrigger.create({
-      trigger: pin, start: 'top top', end: () => `+=${innerHeight * 6}`, pin: true, scrub: 0.6, anticipatePin: 1,
+      trigger: pin, start: 'top top', end: () => `+=${innerHeight * 3.6}`, pin: true, scrub: 0.6, anticipatePin: 1,
       animation: tl,
       onToggle: (self) => document.body.toggleAttribute('data-pinning', self.isActive),
     });

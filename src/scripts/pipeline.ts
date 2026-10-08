@@ -1,6 +1,6 @@
 /**
  * Scrollytelling over the lab's analysis pipeline, on a real recording (src/data/pipeline.json).
- * Each text step activates a state of the stage: raw movie → mean/correlation images → ROIs →
+ * Each text step activates a state of the stage: raw movie → the lab's five ROIs →
  * F, F₀ and ΔF/F → event detection → synchronised playback of movie and traces.
  */
 import { gsap } from 'gsap';
@@ -12,7 +12,7 @@ type Roi = {
   lab: { t: number[]; dff: number[] };
   computed: { fraw: number[]; fsmooth: number[]; f0: number[]; dff: number[]; events: number[]; sigma: number; threshold: number; ratePerMin: number; rLab: number };
 };
-type Data = { fps: number; frames: number; durationS: number; rois: Roi[]; proposals: { x: number; y: number }[] };
+type Data = { fps: number; frames: number; durationS: number; rois: Roi[] };
 
 const NS = 'http://www.w3.org/2000/svg';
 const mk = (tag: string, a: Record<string, string | number> = {}, p?: Element) => {
@@ -28,10 +28,6 @@ export async function initPipeline(root: HTMLElement) {
   const $ = <T extends Element>(s: string) => root.querySelector<T>(s)!;
   const stage = $<HTMLElement>('[data-dp-stage]');
   const video = $<HTMLVideoElement>('[data-dp-video]');
-  const meanImg = $<HTMLImageElement>('[data-dp-mean]');
-  const corrImg = $<HTMLImageElement>('[data-dp-corr]');
-  const mix = $<HTMLInputElement>('[data-dp-mix]');
-  const propsG = $<SVGGElement>('[data-dp-props]');
   const roisG = $<SVGGElement>('[data-dp-rois]');
   const plot = $<SVGSVGElement>('[data-dp-plot]');
   const legend = $<HTMLElement>('[data-dp-legend]');
@@ -39,15 +35,26 @@ export async function initPipeline(root: HTMLElement) {
   const stat = $<HTMLElement>('[data-dp-stat]');
   const playBtn = $<HTMLButtonElement>('[data-dp-play]');
   const steps = [...root.querySelectorAll<HTMLElement>('[data-dp-step]')];
+  const dots = [...root.querySelectorAll<HTMLElement>('[data-dp-dot]')];
+  const chips = root.querySelector<HTMLElement>('[data-dp-chips]');
   const focusRoi = data.rois.find((r) => r.id === 'orange') ?? data.rois[0];
 
-  /* ---------- image overlay: proposals and ROIs ---------- */
-  const props = data.proposals.map((p) => mk('circle', { cx: p.x, cy: p.y, r: 15, class: 'prop', opacity: 0 }, propsG));
-  const roiEls = data.rois.map((r) => {
-    const g = mk('g', { 'data-roi': r.id }, roisG);
+  /* ---------- image overlay: the lab's five ROIs (closed outlines, as in the lab figure) ---------- */
+  const roiEls = data.rois.map((r, i) => {
+    const g = mk('g', { 'data-roi': r.id, class: 'roi-g', opacity: 0 }, roisG);
     const fill = mk('ellipse', { cx: r.cx, cy: r.cy, rx: r.rx, ry: r.ry, fill: ROI_COLORS[r.id], opacity: 0, class: 'roi-fill' }, g);
-    const ring = mk('ellipse', { cx: r.cx, cy: r.cy, rx: r.rx, ry: r.ry, stroke: ROI_COLORS[r.id], class: 'roi', pathLength: 1, 'stroke-dasharray': 1, 'stroke-dashoffset': 1 }, g);
+    const ring = mk('ellipse', { cx: r.cx, cy: r.cy, rx: r.rx, ry: r.ry, stroke: ROI_COLORS[r.id], class: 'roi' }, g);
+    const tag = mk('text', { x: r.cx + r.rx + 5, y: r.cy - r.ry + 4, fill: ROI_COLORS[r.id], class: 'roi-tag' }, g);
+    tag.textContent = String(i + 1);
     return { r, g, fill, ring };
+  });
+  if (chips) data.rois.forEach((r, i) => {
+    const li = document.createElement('li');
+    li.style.setProperty('--c', ROI_COLORS[r.id]);
+    li.innerHTML = `<i></i>Cell ${i + 1}`;
+    li.addEventListener('pointerenter', () => highlight(r.id));
+    li.addEventListener('pointerleave', () => highlight(null));
+    chips.appendChild(li);
   });
 
   /* ---------- plotting helpers ---------- */
@@ -107,7 +114,7 @@ export async function initPipeline(root: HTMLElement) {
     mk('rect', { x: L, width: W - L - R, y: Y(c.sigma), height: Y(-c.sigma) - Y(c.sigma), fill: '#5fd3c6', opacity: 0.12 }, plot);
     const th = mk('line', { x1: L, x2: W - R, y1: Y(c.threshold), y2: Y(c.threshold), stroke: '#ffd166', 'stroke-dasharray': '6 4', 'stroke-width': 1.4 }, plot);
     text(W - R, Y(c.threshold) - 6, `threshold ${c.threshold.toFixed(2)} (max of 0.05 and 3σ)`, '', 'end').setAttribute('fill', '#ffd166');
-    text(W - R, Y(c.sigma) - 4, `σ = ${c.sigma.toFixed(3)}`, '', 'end').setAttribute('fill', '#5fd3c6');
+    text(L + 4, Y(-c.sigma) + 14, `σ = ${c.sigma.toFixed(3)}`, '').setAttribute('fill', '#5fd3c6');
     draw(path(c.dff, y0, h, lo, hi), { stroke: ROI_COLORS[focusRoi.id], 'stroke-width': 1.8 }, 0, 1.2);
     if (motionOK()) gsap.from(th, { opacity: 0, duration: 0.6, delay: 0.6 });
     c.events.forEach((f, i) => {
@@ -150,7 +157,8 @@ export async function initPipeline(root: HTMLElement) {
   let hoverId: string | null = null;
   const highlight = (id: string | null) => {
     hoverId = id;
-    roiEls.forEach((e) => { e.ring.classList.toggle('is-dim', !!id && e.r.id !== id); e.fill.setAttribute('opacity', id === e.r.id ? '0.25' : '0'); });
+    roiEls.forEach((e) => { e.g.classList.toggle('is-dim', !!id && e.r.id !== id); e.fill.setAttribute('opacity', id === e.r.id ? '0.25' : '0'); });
+    chips?.querySelectorAll('li').forEach((li, k) => li.classList.toggle('is-hot', data.rois[k].id === id));
     traceRows.forEach((t) => t.g.setAttribute('opacity', !id || t.r.id === id ? '1' : '0.3'));
   };
 
@@ -171,43 +179,37 @@ export async function initPipeline(root: HTMLElement) {
   gsap.ticker.add(syncTick);
 
   /* ---------- step state machine ---------- */
-  let step = -1, mixTween: gsap.core.Tween | null = null;
-  const showImg = (which: 'video' | 'mean' | 'corr' | 'mix') => {
-    video.style.opacity = which === 'video' ? '1' : '0';
-    meanImg.style.opacity = which === 'mean' || which === 'mix' ? '1' : '0';
-    corrImg.style.opacity = which === 'corr' ? '1' : which === 'mix' ? String(+mix.value / 100) : '0';
-  };
-  const drawRois = (on: boolean, dim = false) => roiEls.forEach((e, i) => {
-    gsap.to(e.ring, { overwrite: true, strokeDashoffset: on ? 0 : 1, duration: motionOK() ? 0.9 : 0, delay: on && motionOK() ? 0.3 + i * 0.12 : 0, ease: 'power2.inOut' });
-    e.ring.classList.toggle('is-dim', dim && e.r.id !== focusRoi.id);
-    e.fill.setAttribute('opacity', dim && e.r.id === focusRoi.id ? '0.25' : '0');
+  let step = -1;
+  const showRois = (on: boolean, dim = false) => roiEls.forEach((e, i) => {
+    const m = motionOK();
+    gsap.killTweensOf(e.g);
+    if (on && +(e.g.getAttribute('opacity') ?? 0) < 0.5 && m) {
+      // pop in one after another, with a brief flash of the fill
+      gsap.fromTo(e.g, { opacity: 0, scale: 1.6, svgOrigin: `${e.r.cx} ${e.r.cy}` }, { opacity: 1, scale: 1, svgOrigin: `${e.r.cx} ${e.r.cy}`, duration: 0.6, delay: 0.15 + i * 0.16, ease: 'back.out(1.7)' });
+      gsap.fromTo(e.fill, { opacity: 0.55 }, { opacity: 0, duration: 0.9, delay: 0.35 + i * 0.16 });
+    } else gsap.set(e.g, { opacity: on ? 1 : 0, scale: 1, svgOrigin: `${e.r.cx} ${e.r.cy}` });
+    e.g.classList.toggle('is-dim', dim && e.r.id !== focusRoi.id);
+    if (!(on && m)) e.fill.setAttribute('opacity', dim && e.r.id === focusRoi.id ? '0.25' : '0');
+    else if (dim) e.fill.setAttribute('opacity', e.r.id === focusRoi.id ? '0.25' : '0');
   });
-  const showProps = (on: boolean, dim = false) => props.forEach((p, i) => gsap.to(p, { overwrite: true, opacity: on ? (dim ? 0.25 : 0.9) : 0, duration: motionOK() ? 0.4 : 0, delay: on && !dim && motionOK() ? i * 0.04 : 0 }));
   const playVideo = (on: boolean) => { if (on && motionOK() && playBtn.getAttribute('aria-pressed') === 'true') video.play().catch(() => {}); else video.pause(); };
 
+  const last = steps.length - 1;
   const setStep = (i: number) => {
     if (i === step) return;
     step = i;
     steps.forEach((s, k) => s.classList.toggle('is-on', k === i));
+    dots.forEach((d, k) => { d.classList.toggle('is-on', k === i); d.classList.toggle('is-done', k < i); });
     stage.dataset.step = String(i);
-    mixTween?.kill();
-    syncing = i === 5;
-    stage.classList.toggle('is-split', i >= 3);
+    syncing = i === last;
+    stage.classList.toggle('is-split', i >= 2);
     roiEls.forEach((e) => e.ring.classList.remove('is-hot'));
-    if (i === 0) { showImg('video'); playVideo(true); showProps(false); drawRois(false); }
-    if (i === 1) {
-      showImg('mix'); playVideo(false); showProps(false); drawRois(false);
-      if (motionOK()) {
-        const o = { v: +mix.value };
-        mixTween = gsap.to(o, { v: 100, duration: 2.4, delay: 0.6, ease: 'power2.inOut', yoyo: true, repeat: 1, repeatDelay: 1.2, onUpdate: () => { mix.value = String(Math.round(o.v)); corrImg.style.opacity = String(o.v / 100); } });
-      }
-    }
-    if (i === 2) { showImg('mean'); playVideo(false); showProps(true); drawRois(true); setTimeout(() => step === 2 && showProps(true, true), 2200); }
-    if (i === 3) { showImg('mean'); playVideo(false); showProps(false); drawRois(true, true); plotF(); }
-    if (i === 4) { showImg('mean'); playVideo(false); showProps(false); drawRois(true, true); plotEvents(); }
-    if (i === 5) { showImg('video'); showProps(false); drawRois(true, false); highlight(null); plotAll(); video.currentTime = 0; playVideo(true); }
+    if (i === 0) { playVideo(true); showRois(false); }
+    if (i === 1) { playVideo(true); showRois(true); }
+    if (i === 2) { playVideo(true); showRois(true, true); plotF(); }
+    if (i === 3) { playVideo(true); showRois(true, true); plotEvents(); }
+    if (i === last) { showRois(true, false); highlight(null); plotAll(); video.currentTime = 0; playVideo(true); }
   };
-  mix.addEventListener('input', () => { mixTween?.kill(); corrImg.style.opacity = String(+mix.value / 100); });
   playBtn.addEventListener('click', () => {
     const on = playBtn.getAttribute('aria-pressed') !== 'true';
     playBtn.setAttribute('aria-pressed', String(on)); playBtn.textContent = on ? 'Pause' : 'Play';
@@ -218,7 +220,7 @@ export async function initPipeline(root: HTMLElement) {
     trigger: s, start: 'top 62%', end: 'bottom 62%',
     onToggle: (self) => { if (self.isActive) setStep(i); },
   }));
-  new IntersectionObserver(([e]) => { if (!e.isIntersecting) video.pause(); else if (step === 0 || step === 5) playVideo(true); }).observe(stage);
+  new IntersectionObserver(([e]) => { if (!e.isIntersecting) video.pause(); else if (step >= 0) playVideo(true); }).observe(stage);
   setStep(0);
   ScrollTrigger.refresh();
 }

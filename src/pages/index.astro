@@ -14,6 +14,7 @@ import news from '../data/news.json';
 import papers from '../data/papers.json';
 import { datasets } from '../scripts/signals';
 import { url } from '../lib/url';
+import { existsSync } from 'node:fs';
 
 // *word* → highlighted
 const hl = (s: string) => s.replace(/\*(.+?)\*/g, '<span class="hl">$1</span>');
@@ -44,6 +45,13 @@ const methods = [
   { href: '/research/immunohistochemistry/', title: 'Immunohistochemistry', text: 'Staining and confocal imaging of brain sections to map amyloid plaques and the cells around them.', media: 'image', label: 'published' },
   { href: '/research/electrophysiology/', title: 'Electrophysiology', text: 'EEG, synaptic plasticity (LTP) and field potentials — network function from hours to milliseconds.', media: 'trace', label: 'schematic' },
 ];
+// Funders shown in the hero. Official logo files go in public/assets/logos/ (see FunderLogo.astro);
+// until they exist, the funder's name is shown as text (never a redrawn logo).
+const logo = (f: string) => existsSync(new URL(`../../public/assets/logos/${f}`, import.meta.url)) ? url(`/assets/logos/${f}`) : null;
+const heroFunders = [
+  { id: 'ERC', name: 'European Research Council', logos: [logo('eu-emblem.svg'), logo('erc.svg')].filter(Boolean) as string[] },
+  { id: 'DFG', name: 'Deutsche Forschungsgemeinschaft', logos: [logo('dfg.svg')].filter(Boolean) as string[] },
+];
 // Cover motif per theme for publication cards (decorative, not data)
 const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.themes.includes('electrophysiology') ? 'ephys' : 'cells';
 ---
@@ -69,6 +77,16 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
           <a class="btn btn--primary" href={url(H.primary.href)} data-magnetic>{H.primary.label} <span class="arr" aria-hidden="true">→</span></a>
           <a class="btn" href={url(H.secondary.href)}>{H.secondary.label}</a>
         </div>
+        <a class="hero__funders" href={url('/funding/')} data-intro>
+          <span class="hero__fundlbl">Funded by</span>
+          {heroFunders.map((f) => (
+            <span class:list={['hero__funder', { 'has-logo': f.logos.length }]} data-nb-anchor title={f.logos.length ? f.name : `${f.name} (official logo file not yet added: public/assets/logos/)`}>
+              {f.logos.length
+                ? f.logos.map((src) => <img src={src} alt={`${f.name} logo`} height="30" />)
+                : <><b>{f.id}</b><small>{f.name}</small></>}
+            </span>
+          ))}
+        </a>
       </div>
     </div>
     <p class="hero__cap small" data-intro>{H.caption} <a href="https://atlas.brain-map.org/" rel="noopener">Allen Institute</a></p>
@@ -234,6 +252,20 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   .hero h1 :global(.hl) { font-style: normal; color: var(--glow); }
   .hero .lead { max-width: 54ch; color: #c2d3d8; }
   .hero__cta { display: flex; gap: var(--s1) var(--s2); flex-wrap: wrap; margin-top: var(--s4); }
+  .hero__funders { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-top: var(--s5); text-decoration: none; width: fit-content; }
+  .hero__fundlbl { font: 600 .66rem var(--font-sans); letter-spacing: .16em; text-transform: uppercase; color: var(--text-3); margin-right: 4px; }
+  .hero__funder { position: relative; display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 10px; border-radius: 12px; border: 1px solid var(--line-2);
+    background: rgba(9, 30, 40, .72); backdrop-filter: blur(6px); transition: border-color .3s, transform .4s var(--ease), box-shadow .4s; }
+  .hero__funder::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; box-shadow: 0 0 0 0 rgba(95, 211, 198, .35); animation: fundpulse 4.5s ease-out infinite; pointer-events: none; }
+  .hero__funder + .hero__funder::before { animation-delay: 2.2s; }
+  @keyframes fundpulse { 0% { box-shadow: 0 0 0 0 rgba(95, 211, 198, .35); } 60%, 100% { box-shadow: 0 0 0 14px rgba(95, 211, 198, 0); } }
+  .hero__funder b { font: 700 .95rem var(--font-sans); letter-spacing: .08em; color: var(--text); }
+  .hero__funder small { font-size: .74rem; color: var(--text-2); line-height: 1.2; max-width: 24ch; }
+  .hero__funder.has-logo { background: #fff; border-color: #fff; padding: 6px 12px; }
+  .hero__funder img { height: 30px; width: auto; display: block; }
+  .hero__funders:hover .hero__funder { border-color: var(--glow); }
+  .hero__funders:hover .hero__funder.has-logo { border-color: #fff; box-shadow: 0 0 24px -4px rgba(95, 211, 198, .6); }
+  :global(:root[data-motion='off']) .hero__funder::before { animation: none; }
   .hero__news { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 5px 14px 5px 5px; margin-bottom: var(--s4); border: 1px solid var(--line-2); border-radius: 999px;
     background: rgba(14, 39, 51, .6); backdrop-filter: blur(6px); text-decoration: none; font-size: .84rem; color: var(--text-2); transition: border-color .3s, color .3s; }
   .hero__news:hover { border-color: var(--glow); color: var(--text); }

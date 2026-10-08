@@ -3,6 +3,8 @@
  * Ambient background: a sparse network of nodes that drift slowly, connect when near each other,
  * and now and then pass a pulse along a connection. Decorative only (aria-hidden), pauses off-screen,
  * static with reduced motion. Colour follows --accent of the surrounding section.
+ * Elements in the same section marked [data-nb-anchor] become fixed hubs of the network
+ * (used for the funder badges in the hero): nearby nodes link to them and pulses flow out.
  */
 interface Props { density?: number; opacity?: number; class?: string }
 const { density = 1, opacity = 1, class: cls } = Astro.props;
@@ -21,6 +23,10 @@ const { density = 1, opacity = 1, class: cls } = Astro.props;
     type N = { x: number; y: number; vx: number; vy: number; r: number };
     type P = { a: number; b: number; t: number; v: number };
     let nodes: N[] = [], pulses: P[] = [];
+    const anchorEls = [...host.querySelectorAll<HTMLElement>('[data-nb-anchor]')];
+    type AP = { a: number; n: number; t: number; v: number };
+    let apulses: AP[] = [];
+    const ALINK = 230;
     const pointer = { x: -1e4, y: -1e4 };
     let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const LINK = 150;
@@ -59,6 +65,32 @@ const { density = 1, opacity = 1, class: cls } = Astro.props;
         const near = Math.max(0, 1 - Math.hypot(n.x - pointer.x, n.y - pointer.y) / 200);
         ctx.globalAlpha = 0.35 + near * 0.6;
         ctx.beginPath(); ctx.arc(n.x, n.y, n.r + near * 1.2, 0, Math.PI * 2); ctx.fill();
+      }
+      // anchors (funder badges): links to nearby nodes, pulses flowing out into the network
+      if (anchorEls.length) {
+        const cb = canvas.getBoundingClientRect();
+        const anchors = anchorEls.map((el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - cb.left, y: r.top + r.height / 2 - cb.top, w: r.width / 2 }; });
+        ctx.lineWidth = 0.7;
+        anchors.forEach((A, ai) => {
+          nodes.forEach((n, ni) => {
+            const d = Math.hypot(n.x - A.x, n.y - A.y) - A.w * 0.6;
+            if (d > ALINK || d < 0) return;
+            ctx.globalAlpha = (1 - d / ALINK) * 0.32;
+            ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(n.x, n.y); ctx.stroke();
+            if (advance && apulses.length < 5 && rnd() < 0.0009) apulses.push({ a: ai, n: ni, t: 0, v: 0.006 + rnd() * 0.008 });
+          });
+        });
+        apulses = apulses.filter((p) => {
+          const A = anchors[p.a], b = nodes[p.n];
+          if (!A || !b) return false;
+          if (advance) p.t += p.v;
+          const x = A.x + (b.x - A.x) * p.t, y = A.y + (b.y - A.y) * p.t;
+          const g = ctx.createRadialGradient(x, y, 0, x, y, 8);
+          g.addColorStop(0, color); g.addColorStop(1, 'transparent');
+          ctx.globalAlpha = Math.sin(Math.PI * p.t) * 0.85; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = color;
+          return p.t < 1;
+        });
       }
       // pulses travel along links like spikes along an axon
       pulses = pulses.filter((p) => {

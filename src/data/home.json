@@ -85,15 +85,11 @@
     "steps": [
       {
         "title": "A real recording",
-        "text": "One minute of in vivo two-photon imaging in hippocampal CA1. Every flicker is a neuron becoming active."
+        "text": "One minute of in vivo two-photon calcium imaging in hippocampal CA1 (shown at 4× speed). Every flicker is a neuron becoming active."
       },
       {
-        "title": "Average and correlate",
-        "text": "Averaging all frames reveals the anatomy: the tightly packed cell bodies of the pyramidal layer. Correlating each pixel with its neighbours over time highlights what changes together — the cells that were active. Drag the slider to compare."
-      },
-      {
-        "title": "Find the cells",
-        "text": "An automatic detector proposes candidate cell bodies (dashed). Every proposal is checked by eye; the solid outlines are five neurons the lab reviewed and analysed."
+        "title": "Five neurons, outlined",
+        "text": "The coloured outlines are five neurons the lab selected and analysed in this recording. Each outline (region of interest) follows one cell body in the pyramidal layer."
       },
       {
         "title": "From brightness to ΔF/F",
@@ -101,7 +97,7 @@
       },
       {
         "title": "Detect calcium transients",
-        "text": "The noise level σ is estimated from the trace itself (median absolute deviation). Peaks more than 3σ above baseline, with enough prominence, count as calcium transients — not as single spikes."
+        "text": "The noise level σ is estimated from the trace itself (median absolute deviation). Peaks more than 3σ above baseline, with enough prominence, count as calcium transients. A transient reflects one or more action potentials; its size does not give an exact spike count."
       },
       {
         "title": "All together",

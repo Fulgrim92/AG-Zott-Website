@@ -1,6 +1,7 @@
 ---
 import Research from '../../layouts/Research.astro';
 import GlymphaticFlow from '../../components/GlymphaticFlow.astro';
+import GlymphaticTracer from '../../components/GlymphaticTracer.astro';
 import site from '../../data/site.json';
 ---
 <Research theme="glymphatic" color="var(--magenta)" eyebrow="Research · 04" title="The glymphatic system"
@@ -22,8 +23,12 @@ import site from '../../data/site.json';
     <h2 data-reveal>Follow the flow</h2>
     <p class="muted" data-reveal>Switch between awake and asleep to compare how fluid and solutes move. Pause at any time.</p>
     <div style="margin-top:var(--s4)"><GlymphaticFlow /></div>
+
+    <h2 data-reveal style="margin-top:var(--s7)">How tracer studies see it</h2>
+    <p class="muted" data-reveal>Glymphatic flow is measured by injecting a fluorescent tracer into the cerebrospinal fluid and watching where it goes: live, through the skull, with a wide-field camera, and afterwards, in thin brain sections under a confocal microscope.</p>
+    <div style="margin-top:var(--s4)"><GlymphaticTracer /></div>
     <p class="small muted" style="margin-top:var(--s3)">
-      References: Iliff JJ et al. (2012) <i>Sci Transl Med</i> 4:147ra111 · Xie L et al. (2013) <i>Science</i> 342:373–377.
+      References: Iliff JJ et al. (2012) <i>Sci Transl Med</i> 4:147ra111 · Xie L et al. (2013) <i>Science</i> 342:373–377 · Plog BA et al. (2018) <i>JCI Insight</i> 3:e120922.
     </p>
   </Fragment>
 
