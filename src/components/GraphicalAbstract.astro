@@ -1,8 +1,8 @@
 ---
 /**
  * Scroll-driven graphical abstract (illustrative, literature-based):
- * synapse at rest → β-amyloid blocks glutamate reuptake → vicious cycle → circuit imbalance →
- * two-photon imaging, handing off to a real recording. Text and references: src/data/home.json → abstract.
+ * told from a real recording down to the synapse: real data → circuit imbalance → vicious cycle →
+ * β-amyloid blocks glutamate reuptake → healthy synapse. Text and references: src/data/home.json → abstract.
  */
 import home from '../data/home.json';
 import assets from '../data/assets.json';
@@ -13,7 +13,7 @@ const refs = home.references as Record<string, { short: string; full: string; do
 const rec = assets.twoPhoton.recordings[0];
 ---
 <section class="ga" data-ga aria-labelledby="ga-h">
-  <h3 id="ga-h" class="visually-hidden">The idea, illustrated</h3>
+  <h3 id="ga-h" class="visually-hidden">{home.deep.parts[0]}</h3>
   <div class="ga__pin" data-ga-pin>
     <div class="ga__text">
       <div class="ga__meta">
@@ -37,7 +37,7 @@ const rec = assets.twoPhoton.recordings[0];
       <p class="ga__handoff" data-ga-handoff>{A.handoff} <span aria-hidden="true">↓</span></p>
     </div>
 
-    <figure class="ga__stage" aria-label="Illustrated sequence: a glutamatergic synapse, β-amyloid blocking glutamate reuptake, a self-amplifying cycle of hyperactivity, a CA1 population with hyperactive and silent neurons near a plaque, and two-photon imaging of the population.">
+    <figure class="ga__stage" aria-label="Sequence from a real two-photon recording of CA1 neurons, through an illustrated CA1 population with hyperactive and silent neurons near a plaque, a self-amplifying cycle of hyperactivity and β-amyloid blocking glutamate reuptake, down to a healthy glutamatergic synapse.">
       <svg viewBox="0 0 1200 800" data-ga-svg aria-hidden="true" preserveAspectRatio="xMidYMid slice">
         <defs>
           <radialGradient id="ga-pre" cx="50%" cy="20%" r="80%"><stop offset="0" stop-color="#174a5c" /><stop offset="1" stop-color="#0c2a36" /></radialGradient>

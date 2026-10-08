@@ -2,11 +2,14 @@
 import Base from '../layouts/Base.astro';
 import Label from '../components/Label.astro';
 import Icon from '../components/Icon.astro';
+import Emblem from '../components/Emblem.astro';
+import ImagingField from '../components/ImagingField.astro';
 import FunderLogo from '../components/FunderLogo.astro';
 import NeuralBackdrop from '../components/NeuralBackdrop.astro';
 import TeamCarousel from '../components/TeamCarousel.astro';
 import GraphicalAbstract from '../components/GraphicalAbstract.astro';
 import DataPipeline from '../components/DataPipeline.astro';
+import AnatomyIntro from '../components/AnatomyIntro.astro';
 import home from '../data/home.json';
 import assets from '../data/assets.json';
 import site from '../data/site.json';
@@ -58,10 +61,12 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
 <Base>
   <!-- ======================= Hero ======================= -->
   <section class="hero theme-dark" aria-labelledby="hero-h">
+    <div class="hero__aurora" aria-hidden="true"><i></i><i></i><i></i></div>
     <NeuralBackdrop density={0.9} opacity={0.8} />
     <div class="hero__brain" data-hero-brain data-atlas={url('/assets/atlas/')}>
       <canvas aria-hidden="true"></canvas>
       <div class="hero__fallback" aria-hidden="true"></div>
+      <span class="hero__scan" aria-hidden="true"></span>
     </div>
     <div class="hero__inner container container--wide">
       <div class="hero__text">
@@ -94,7 +99,8 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   </section>
 
   <!-- ======================= What we do ======================= -->
-  <section class="section section--tight about" id="about" aria-labelledby="about-h">
+  <section class="section section--tight about" id="about" data-scan aria-labelledby="about-h">
+    <ImagingField />
     <div class="container container--wide about__grid">
       <div>
         <p class="eyebrow">{home.about.eyebrow}</p>
@@ -104,7 +110,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
       <ul class="about__cards" role="list">
         {home.about.cards.map((c) => (
           <li class="card about__card" data-reveal>
-            <span class="about__icon"><Icon name={c.icon} size={52} /></span>
+            <span class="about__icon"><Emblem name={c.icon} size={116} /></span>
             <h3>{c.title}</h3>
             <p class="muted small">{c.text}</p>
           </li>
@@ -113,8 +119,41 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
     </div>
   </section>
 
+  <!-- ======================= Deep dive ======================= -->
+  <div class="deep theme-dark" id="methods" data-lens>
+    <header class="deep__intro section" aria-labelledby="deep-h">
+      <NeuralBackdrop density={1.2} opacity={0.7} />
+      <div class="container deep__head">
+        <p class="eyebrow">{home.deep.eyebrow}</p>
+        <h2 id="deep-h" data-split set:html={hl(home.deep.title)} />
+        <p class="lead" data-reveal>{home.deep.lead}</p>
+        <ol class="deep__parts" role="list" data-reveal>
+          {home.deep.parts.map((p, i) => <li><span class="mono">0{i + 1}</span>{p}</li>)}
+        </ol>
+      </div>
+    </header>
+
+    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">01</span> {home.deep.parts[0]}</p></div>
+    <AnatomyIntro />
+    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">02</span> {home.deep.parts[1]}</p></div>
+    <GraphicalAbstract />
+    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">03</span> {home.deep.parts[2]}</p></div>
+    <DataPipeline />
+  </div>
+
+  <!-- ======================= Rundown ======================= -->
+  <section class="rundown" aria-labelledby="rundown-h">
+    <div class="container container--wide rundown__in">
+      <p class="eyebrow">{home.rundown.eyebrow}</p>
+      <h2 id="rundown-h" data-split>{home.rundown.title}</h2>
+      <ol class="rundown__map" role="list" data-reveal>
+        {home.rundown.items.map((it, i) => <li><a href={it.href}><span class="mono">{String(i + 1).padStart(2, '0')}</span>{it.label}</a></li>)}
+      </ol>
+    </div>
+  </section>
+
   <!-- ======================= Approach ======================= -->
-  <section class="section section--tight approach" aria-labelledby="approach-h">
+  <section class="section section--tight approach" id="approach" data-scan aria-labelledby="approach-h">
     <div class="container container--wide approach__grid">
       <div class="approach__intro">
         <p class="eyebrow">{home.approach.eyebrow}</p>
@@ -146,21 +185,8 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
     </div>
   </section>
 
-  <!-- ======================= Team ======================= -->
-  <section class="section section--tight team" aria-labelledby="team-h">
-    <div class="container container--wide team__grid">
-      <div>
-        <p class="eyebrow">{home.team.eyebrow}</p>
-        <h2 id="team-h" data-split>{home.team.title}</h2>
-        <p class="muted" data-reveal>{home.team.text}</p>
-        <a class="btn" href={url(home.team.link.href)} data-reveal>{home.team.link.label} <span class="arr" aria-hidden="true">→</span></a>
-      </div>
-      <TeamCarousel />
-    </div>
-  </section>
-
   <!-- ======================= Findings ======================= -->
-  <section class="section section--tight findings" aria-labelledby="find-h">
+  <section class="section section--tight findings" id="findings" data-scan aria-labelledby="find-h">
     <div class="container container--wide">
       <div class="sec-head">
         <div><p class="eyebrow">{home.findings.eyebrow}</p><h2 id="find-h" data-split>{home.findings.title}</h2></div>
@@ -194,28 +220,21 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
     </div>
   </section>
 
-  <!-- ======================= Deep dive ======================= -->
-  <div class="deep theme-dark" id="methods">
-    <header class="deep__intro section" aria-labelledby="deep-h">
-      <NeuralBackdrop density={1.2} opacity={0.7} />
-      <div class="container deep__head">
-        <p class="eyebrow">{home.deep.eyebrow}</p>
-        <h2 id="deep-h" data-split set:html={hl(home.deep.title)} />
-        <p class="lead" data-reveal>{home.deep.lead}</p>
-        <ol class="deep__parts" role="list" data-reveal>
-          {home.deep.parts.map((p, i) => <li><span class="mono">0{i + 1}</span>{p}</li>)}
-        </ol>
+  <!-- ======================= Team ======================= -->
+  <section class="section section--tight team" id="team" data-scan aria-labelledby="team-h">
+    <div class="container container--wide team__grid">
+      <div>
+        <p class="eyebrow">{home.team.eyebrow}</p>
+        <h2 id="team-h" data-split>{home.team.title}</h2>
+        <p class="muted" data-reveal>{home.team.text}</p>
+        <a class="btn" href={url(home.team.link.href)} data-reveal>{home.team.link.label} <span class="arr" aria-hidden="true">→</span></a>
       </div>
-    </header>
-
-    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">01</span> {home.deep.parts[0]}</p></div>
-    <GraphicalAbstract />
-    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">02</span> {home.deep.parts[1]}</p></div>
-    <DataPipeline />
-  </div>
+      <TeamCarousel />
+    </div>
+  </section>
 
   <!-- ======================= Join + funding ======================= -->
-  <section class="section section--tight join" aria-labelledby="join-h">
+  <section class="section section--tight join" id="join" data-scan aria-labelledby="join-h">
     <div class="container container--wide join__grid">
       <div class="join__card" data-reveal>
         <h2 id="join-h">{home.join.title}</h2>
@@ -239,6 +258,20 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   .hero { position: relative; min-height: min(100svh, 920px); display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; overflow: hidden; padding: calc(var(--header-h) + var(--s6)) clamp(var(--s2), 5vw, var(--s6)) var(--s7);
     background: radial-gradient(900px 600px at 78% 45%, #0f3346 0%, transparent 70%), linear-gradient(180deg, #06141b, #081c25 60%, #071820); }
   .hero__brain { position: absolute; inset: 0 -4% 0 40%; }
+  /* slow aurora in the lab colours behind everything */
+  .hero__aurora { position: absolute; inset: -20%; pointer-events: none; filter: blur(60px); opacity: .55; }
+  .hero__aurora i { position: absolute; width: 46%; height: 46%; border-radius: 50%; mix-blend-mode: screen; animation: aurora 22s ease-in-out infinite alternate; }
+  .hero__aurora i:nth-child(1) { left: 48%; top: 18%; background: radial-gradient(circle, rgba(95, 211, 198, .45), transparent 65%); }
+  .hero__aurora i:nth-child(2) { left: 62%; top: 42%; background: radial-gradient(circle, rgba(77, 255, 154, .22), transparent 65%); animation-duration: 28s; animation-delay: -9s; }
+  .hero__aurora i:nth-child(3) { left: 30%; top: 50%; background: radial-gradient(circle, rgba(155, 140, 255, .25), transparent 65%); animation-duration: 34s; animation-delay: -15s; }
+  @keyframes aurora { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-8%, 6%) scale(1.15); } 100% { transform: translate(6%, -5%) scale(.92); } }
+  /* a two-photon raster line slowly sweeping over the brain */
+  .hero__scan { position: absolute; left: 10%; right: 6%; top: 0; height: 90px; pointer-events: none; opacity: 0;
+    background: linear-gradient(180deg, transparent, rgba(255, 90, 74, .035) 75%, rgba(255, 120, 100, .32) 99%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+    animation: hero-scan 7s cubic-bezier(.45, 0, .55, 1) 3.6s infinite; }
+  @keyframes hero-scan { 0% { transform: translateY(-90px); opacity: 0; } 8% { opacity: .7; } 70% { opacity: .7; } 100% { transform: translateY(calc(100vh - 40px)); opacity: 0; } }
+  :global(:root[data-motion='off']) .hero__aurora i, :global(:root[data-motion='off']) .hero__scan { animation: none; }
   .hero__brain canvas { width: 100%; height: 100%; opacity: 0; transition: opacity 1.6s var(--ease); }
   .hero__brain.is-ready canvas { opacity: 1; }
   .hero__brain { -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%), linear-gradient(0deg, transparent, #000 18%); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent, #000 22%), linear-gradient(0deg, transparent, #000 18%); mask-composite: intersect; }
@@ -284,18 +317,22 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   }
 
   /* ---------- What we do ---------- */
-  .about { background: var(--surface); }
-  .about__grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr); gap: var(--s6); align-items: center; }
+  .about { position: relative; overflow: hidden; isolation: isolate; background: var(--surface); }
+  .about__grid { position: relative; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr); gap: var(--s6); align-items: center; }
   .about__cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
-  .about__card { text-align: center; padding: var(--s4) var(--s3); background: var(--surface-2); box-shadow: none; transition: transform .4s var(--ease), box-shadow .4s var(--ease), background .4s; }
-  .about__card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); background: var(--surface); }
-  .about__icon { display: inline-grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; margin-bottom: var(--s2);
-    background: radial-gradient(circle, var(--primary-soft) 0 60%, transparent 61%); }
+  .about__card { position: relative; text-align: center; padding: var(--s4) var(--s3); overflow: hidden;
+    background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--line)); box-shadow: none; transition: transform .4s var(--ease), box-shadow .4s var(--ease), border-color .4s; }
+  .about__card::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .5s;
+    background: radial-gradient(70% 50% at 50% 0%, color-mix(in srgb, var(--glow) 28%, transparent), transparent 70%); }
+  .about__card:hover { transform: translateY(-6px); box-shadow: 0 26px 50px -30px color-mix(in srgb, var(--primary) 70%, transparent), var(--shadow-md); border-color: color-mix(in srgb, var(--glow) 55%, var(--line)); }
+  .about__card:hover::before { opacity: 1; }
+  .about__icon { display: inline-grid; place-items: center; margin-bottom: var(--s2); }
   .about__card h3 { font-family: var(--font-sans); font-weight: 600; font-size: 1.04rem; letter-spacing: 0; margin-bottom: 6px; }
   .about__card p { margin: 0 auto; }
   @media (max-width: 1100px) { .about__grid { grid-template-columns: 1fr; gap: var(--s4); } }
-  @media (max-width: 720px) { .about__cards { grid-template-columns: 1fr; } .about__card { display: grid; grid-template-columns: 64px 1fr; text-align: left; gap: 0 var(--s2); align-items: center; padding: var(--s3); }
-    .about__icon { width: 64px; height: 64px; margin: 0; grid-row: span 2; } .about__icon :global(svg) { width: 40px; height: 40px; } .about__card p { margin: 0; } }
+  @media (max-width: 720px) { .about__cards { grid-template-columns: 1fr; } .about__card { display: grid; grid-template-columns: 84px 1fr; text-align: left; gap: 0 var(--s3); align-items: center; padding: var(--s3); }
+    .about__icon { margin: 0; grid-row: span 2; } .about__icon :global(.emb) { --s: 84px !important; } .about__card p { margin: 0; } }
 
   /* ---------- Approach ---------- */
   .approach { background: var(--bg); }
@@ -359,6 +396,19 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   .deep__part { padding: var(--s5) clamp(var(--s2), 4vw, var(--s6)) 0; }
   .deep__partlbl { display: flex; align-items: center; gap: 12px; margin: 0; font-size: .78rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--text-3); }
   .deep__partlbl .mono { color: var(--glow); }
+
+  /* ---------- Rundown: from the dark deep dive back into the overview ---------- */
+  .rundown { position: relative; padding: var(--s7, 7rem) 0 var(--s4); text-align: center;
+    background: linear-gradient(180deg, #071820 0%, color-mix(in srgb, #071820 40%, var(--bg)) 35%, var(--bg) 100%); }
+  .rundown::before { content: ''; position: absolute; left: 50%; top: 0; width: 1px; height: 90px; background: linear-gradient(180deg, transparent, var(--glow)); }
+  .rundown__in { display: grid; justify-items: center; }
+  .rundown .eyebrow { color: var(--primary); }
+  .rundown h2 { font-size: clamp(2rem, 4.4vw, 3.4rem); }
+  .rundown__map { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 0; margin: var(--s3) 0 0; }
+  .rundown__map a { display: inline-flex; gap: 10px; align-items: center; padding: 9px 18px; border-radius: 999px; text-decoration: none; color: var(--text);
+    background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm); transition: transform .35s var(--ease), border-color .3s, box-shadow .35s; }
+  .rundown__map a:hover { transform: translateY(-3px); border-color: var(--glow); box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--primary) 70%, transparent); }
+  .rundown__map .mono { color: var(--primary); font-size: .78rem; }
   .deep__partlbl::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 
   /* ---------- Join ---------- */

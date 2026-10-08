@@ -1,7 +1,7 @@
 ---
 import Research from '../../layouts/Research.astro';
 import DeepZoom from '../../components/DeepZoom.astro';
-import AtlasSections from '../../components/AtlasSections.astro';
+import { url } from '../../lib/url';
 ---
 <Research theme="immunohistochemistry" color="var(--blue)" eyebrow="Research · 02" title="Immunohistochemistry"
   lead="Making molecules visible: mapping plaques, cells and proteins behind the activity we record.">
@@ -21,9 +21,7 @@ import AtlasSections from '../../components/AtlasSections.astro';
     <h2 data-reveal>Before and after plaques</h2>
     <p class="muted" data-reveal>Confocal images of coronal brain slices from APP23xPS45 mice. Switch between a young and an old animal, zoom in, and follow the numbered markers. Cyan: amyloid plaques (Methoxy-X04); grey: neurons (NeuroTrace).</p>
     <div style="margin-top:var(--s4)"><DeepZoom /></div>
-    <h3 style="margin-top:var(--s6)">Reference anatomy: Allen Mouse Brain Atlas</h3>
-    <p class="muted">Move through coronal sections of the hippocampus in the Allen Common Coordinate Framework. Hover a region for its atlas name, click to pin it — and compare the CA1 layers with the band of pyramidal cells in our images.</p>
-    <div style="margin-top:var(--s3)"><AtlasSections /></div>
+    <p class="muted" style="margin-top:var(--s5)">To compare these sections with reference anatomy, see the <a href={url('/#methods')}>Allen Mouse Brain Atlas walkthrough on our homepage</a>, where you can move through the hippocampus section by section.</p>
   </Fragment>
 
   <Fragment slot="findings">

@@ -1,0 +1,158 @@
+---
+/**
+ * Animated emblems for the "What we do" cards: small, self-running illustrations in a dark
+ * "lens" disc. Decorative (aria-hidden). CSS/SMIL animations; paused with reduced motion.
+ *  spark   — a pyramidal neuron firing in bursts, its calcium trace scrolling below (hyperactivity)
+ *  synapse — glutamate released into the cleft and taken up by astrocytic transporters, β-amyloid nearby
+ *  scope   — a two-photon objective whose focal spot scans across CA1 cell bodies, which light up
+ */
+interface Props { name: 'spark' | 'synapse' | 'scope' | string; size?: number }
+const { name, size = 112 } = Astro.props;
+const uid = `em-${name}-${Math.random().toString(36).slice(2, 7)}`;
+const ticks = Array.from({ length: 36 }, (_, i) => i * 10);
+// calcium trace (two identical periods for a seamless scroll): bursts of transients on a quiet baseline
+const spikes = [8, 13, 18, 46, 74, 79, 104];
+const trace = (x0: number) => {
+  let d = `M${x0} 100`;
+  for (const s of spikes) d += ` L${x0 + s} 100 L${x0 + s + 1.2} 89 L${x0 + s + 5} 98.5`;
+  return d + ` L${x0 + 120} 100`;
+};
+const somaX = [30, 45, 60, 75, 90];
+---
+<span class={`emb emb--${name}`} style={`--s:${size}px`} aria-hidden="true">
+  <svg viewBox="0 0 120 120" width={size} height={size}>
+    <defs>
+      <radialGradient id={`${uid}-bg`} cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="#103744" /><stop offset="1" stop-color="#050f14" /></radialGradient>
+      <radialGradient id={`${uid}-glow`} cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#eafff4" /><stop offset=".35" stop-color="#4dff9a" stop-opacity=".8" /><stop offset="1" stop-color="#4dff9a" stop-opacity="0" /></radialGradient>
+      <linearGradient id={`${uid}-beam`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff3b30" stop-opacity="0" /><stop offset="1" stop-color="#ff6a4d" stop-opacity=".75" /></linearGradient>
+      <linearGradient id={`${uid}-metal`} x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3b5866" /><stop offset=".5" stop-color="#9fb7c2" /><stop offset="1" stop-color="#2a404b" /></linearGradient>
+      <clipPath id={`${uid}-clip`}><circle cx="60" cy="60" r="54" /></clipPath>
+    </defs>
+    <circle cx="60" cy="60" r="56" fill={`url(#${uid}-bg)`} />
+    <g class="emb__ring">
+      <circle cx="60" cy="60" r="57.5" fill="none" stroke="#5fd3c6" stroke-opacity=".35" />
+      {ticks.map((a) => <line x1="60" y1="1.5" x2="60" y2={a % 90 === 0 ? 6.5 : 4} transform={`rotate(${a} 60 60)`} stroke="#5fd3c6" stroke-opacity={a % 90 === 0 ? 0.8 : 0.35} />)}
+    </g>
+    <g clip-path={`url(#${uid}-clip)`}>
+      {name === 'spark' && (
+        <>
+          <circle cx="60" cy="64" r="10" class="emb__rip" />
+          <circle cx="60" cy="64" r="10" class="emb__rip emb__rip--2" />
+          <g fill="none" stroke="#5fd3c6" stroke-linecap="round">
+            <path d="M60 56 C60 44 59 34 60 16" stroke-width="2" />
+            <path d="M60 36 L49 26 M60 30 L71 21 M60 45 L70 38 M59.5 42 L50 36 M49 26 L45 18 M71 21 L76 14" stroke-width="1.3" />
+            <path d="M55 70 L45 80 M65 70 L75 79 M60 71 L60 82 M45 80 L41 87 M75 79 L80 85" stroke-width="1.3" />
+            <path d="M62 71 C64 82 72 88 90 90" stroke-width="1" stroke-dasharray="2 2" opacity=".7" id={`${uid}-axon`} />
+          </g>
+          <circle cx="60" cy="64" r="20" fill={`url(#${uid}-glow)`} class="emb__flash" />
+          <path d="M60 53 L51.5 70 Q60 72.5 68.5 70 Z" fill="#0f4a4a" stroke="#5fd3c6" stroke-width="1.4" />
+          <path d="M60 53 L51.5 70 Q60 72.5 68.5 70 Z" fill="#4dff9a" class="emb__flash" />
+          <circle r="2" fill="#eafff4" class="emb__ap"><animateMotion dur="1.6s" repeatCount="indefinite" path="M62 71 C64 82 72 88 90 90" keyPoints="0;0;1;1" keyTimes="0;0.12;0.4;1" calcMode="linear" /></circle>
+          <g class="emb__trace"><path d={`${trace(0)} ${trace(120).replace('M', 'L')}`} fill="none" stroke="#4dff9a" stroke-width="1.4" stroke-linejoin="round" /></g>
+        </>
+      )}
+      {name === 'synapse' && (
+        <>
+          <path d="M2 40 C20 42 32 50 35 60 C32 70 20 78 2 80 Z" fill="#2c2560" stroke="#9b8cff" stroke-opacity=".8" />
+          <path d="M118 40 C100 42 88 50 85 60 C88 70 100 78 118 80 Z" fill="#2c2560" stroke="#9b8cff" stroke-opacity=".8" />
+          <path d="M28 2 C28 32 42 47 60 47 C78 47 92 32 92 2 Z" fill="#174a5c" stroke="#5fd3c6" stroke-width="1.4" />
+          {[[51, 27], [66, 23], [60, 38], [74, 34], [45, 15]].map(([x, y], i) => (
+            <g class={i === 2 ? 'emb__ves' : ''}><circle cx={x} cy={y} r="5.4" fill="#0a2430" stroke="#5fd3c6" stroke-opacity=".7" />
+              <circle cx={x - 1.5} cy={y - 1} r="1.1" fill="#ffd166" /><circle cx={x + 1.6} cy={y + 0.6} r="1.1" fill="#ffd166" /><circle cx={x} cy={y + 2} r="1" fill="#ffd166" /></g>
+          ))}
+          <path d="M28 120 C38 100 50 94 48 84 C46 77 52 73 60 73 C68 73 74 77 72 84 C70 94 82 100 92 120 Z" fill="#16454a" stroke="#8ff0c8" stroke-width="1.4" />
+          <ellipse cx="60" cy="86" rx="16" ry="10" fill="#4dff9a" class="emb__ca" />
+          {[50, 56.7, 63.3, 70].map((x) => <rect x={x - 2} y="71" width="4" height="6" rx="1.5" fill="#5fd3c6" class="emb__rec" />)}
+          {[[-14, 6], [-6, 14], [3, 16], [10, 9], [16, 3], [-18, 2]].map(([tx, ty], i) => (
+            <circle cx="60" cy="50" r="1.7" fill="#ffd166" class="emb__glu" style={`--tx:${tx}px;--ty:${ty}px;--d:${i * 0.06}s`} />
+          ))}
+          {[[35, 55], [35, 65], [85, 55], [85, 65]].map(([x, y], i) => (
+            <rect x={x - 2.4} y={y - 3.6} width="4.8" height="7.2" rx="2.4" fill="#b9a8ff" class={i >= 2 ? 'emb__tp emb__tp--blocked' : 'emb__tp'} />
+          ))}
+          <g class="emb__ab">
+            <polygon points="0,-3.5 3,-1.75 3,1.75 0,3.5 -3,1.75 -3,-1.75" fill="#ff7a59" transform="translate(98 50)" />
+            <polygon points="0,-3.5 3,-1.75 3,1.75 0,3.5 -3,1.75 -3,-1.75" fill="#ff9a76" transform="translate(103.5 52.5)" />
+          </g>
+          <g class="emb__ab emb__ab--2">
+            <polygon points="0,-3.5 3,-1.75 3,1.75 0,3.5 -3,1.75 -3,-1.75" fill="#ff7a59" transform="translate(96 72)" />
+            <polygon points="0,-3.5 3,-1.75 3,1.75 0,3.5 -3,1.75 -3,-1.75" fill="#ff9a76" transform="translate(101.5 69.5)" />
+          </g>
+        </>
+      )}
+      {name === 'scope' && (
+        <>
+          <rect x="0" y="72" width="120" height="30" fill="#0c2a31" />
+          <path d="M0 72 H120" stroke="#5fd3c6" stroke-opacity=".25" />
+          {somaX.map((x, i) => (
+            <g>
+              <path d={`M${x} ${86 + (i % 2) * 3} V${104}`} stroke="#2a5563" stroke-width="1.4" fill="none" />
+              <path d={`M${x} ${80 + (i % 2) * 3} L${x - 5} ${90 + (i % 2) * 3} L${x + 5} ${90 + (i % 2) * 3} Z`} fill="#1d4a55" stroke="#5fd3c6" stroke-opacity=".5" stroke-width=".8" />
+              <circle cx={x} cy={86 + (i % 2) * 3} r="9" fill={`url(#${uid}-glow)`} opacity="0">
+                <animate attributeName="opacity" dur="2.4s" repeatCount="indefinite" calcMode="linear"
+                  keyTimes={`0;${((x - 30) / 60 * 0.9 + 0.001).toFixed(3)};${((x - 30) / 60 * 0.9 + 0.04).toFixed(3)};${Math.min(0.999, (x - 30) / 60 * 0.9 + 0.3).toFixed(3)};1`}
+                  values={`0;0;${i === 1 || i === 3 ? 1 : 0.55};0;0`} />
+              </circle>
+            </g>
+          ))}
+          <polygon fill={`url(#${uid}-beam)`} points="51,24 69,24 30,86">
+            <animate attributeName="points" dur="2.4s" repeatCount="indefinite" keyTimes="0;0.9;1" values="51,24 69,24 30,86; 51,24 69,24 90,86; 51,24 69,24 30,86" calcMode="linear" />
+          </polygon>
+          <circle r="3.2" cy="86" fill="#fff" class="emb__focus">
+            <animate attributeName="cx" dur="2.4s" repeatCount="indefinite" keyTimes="0;0.9;1" values="30;90;30" calcMode="linear" />
+          </circle>
+          <path d="M43 4 H77 L73 24 H47 Z" fill={`url(#${uid}-metal)`} />
+          <path d="M45 11 H75 M46 17 H74" stroke="#0b1d24" stroke-opacity=".6" />
+          <rect x="47" y="22.5" width="26" height="2.5" rx="1" fill="#c8a24a" />
+        </>
+      )}
+    </g>
+  </svg>
+</span>
+
+<style>
+  .emb { display: inline-grid; place-items: center; width: var(--s); height: var(--s); border-radius: 50%; position: relative;
+    filter: drop-shadow(0 10px 22px rgba(7, 40, 48, .35)); transition: transform .5s var(--ease); }
+  .emb svg { width: 100%; height: 100%; overflow: visible; }
+  :global(.about__card:hover) .emb { transform: scale(1.07) rotate(-2deg); }
+  .emb__ring { transform-origin: 60px 60px; animation: emb-spin 40s linear infinite; }
+  :global(.about__card:hover) .emb__ring { animation-duration: 8s; }
+  @keyframes emb-spin { to { transform: rotate(360deg); } }
+
+  /* spark: bursty firing */
+  .emb__flash { opacity: 0; animation: emb-burst 3.2s infinite; }
+  @keyframes emb-burst { 0%, 100% { opacity: 0; } 3% { opacity: 1; } 9% { opacity: .2; } 13% { opacity: 1; } 19% { opacity: .15; } 24% { opacity: .9; } 34% { opacity: 0; } 55% { opacity: 0; } 58% { opacity: .8; } 68% { opacity: 0; } }
+  .emb__rip { fill: none; stroke: #4dff9a; stroke-width: 1.2; transform-origin: 60px 64px; animation: emb-rip 3.2s infinite ease-out; opacity: 0; }
+  .emb__rip--2 { animation-delay: .35s; }
+  @keyframes emb-rip { 0% { transform: scale(1); opacity: .8; } 40% { transform: scale(4.2); opacity: 0; } 100% { opacity: 0; } }
+  .emb__trace { animation: emb-scroll 6s linear infinite; }
+  @keyframes emb-scroll { to { transform: translateX(-120px); } }
+
+  /* synapse: release → diffusion → uptake; Aβ drifting near the blocked transporters */
+  .emb__glu { opacity: 0; animation: emb-glu 2.6s infinite ease-out; animation-delay: var(--d); }
+  @keyframes emb-glu { 0% { transform: translate(0, 0); opacity: 0; } 8% { opacity: 1; } 55% { transform: translate(var(--tx), var(--ty)); opacity: 1; } 80%, 100% { transform: translate(calc(var(--tx) * 1.4), calc(var(--ty) * 1.1)); opacity: 0; } }
+  .emb__ves { transform-origin: 60px 38px; animation: emb-ves 2.6s infinite; }
+  @keyframes emb-ves { 0%, 100% { transform: scale(1); } 4% { transform: scale(.8); } 12% { transform: scale(1); } }
+  .emb__ca { opacity: 0; animation: emb-ca 2.6s infinite; }
+  @keyframes emb-ca { 0%, 15% { opacity: 0; } 30% { opacity: .55; } 70%, 100% { opacity: 0; } }
+  .emb__tp--blocked { animation: emb-tp 2.6s infinite; }
+  @keyframes emb-tp { 0%, 100% { fill: #b9a8ff; } 50% { fill: #ff7a59; } }
+  .emb__ab { animation: emb-bob 4s ease-in-out infinite; }
+  .emb__ab--2 { animation-delay: -1.7s; }
+  @keyframes emb-bob { 50% { transform: translate(-3px, 2px) rotate(8deg); } }
+
+  /* scope */
+  .emb__focus { filter: drop-shadow(0 0 3px #ff6a4d); }
+
+  :global(:root[data-motion='off']) .emb *, :global(:root[data-motion='off']) .emb { animation: none !important; transition: none !important; }
+  :global(:root[data-motion='off']) .emb__flash { opacity: .7; }
+</style>
+
+<script>
+  // SMIL animations ignore CSS; pause them when motion is reduced
+  const sync = () => {
+    const off = document.documentElement.dataset.motion === 'off';
+    document.querySelectorAll<SVGSVGElement>('.emb svg').forEach((s) => (off ? s.pauseAnimations() : s.unpauseAnimations()));
+  };
+  sync();
+  addEventListener('agz:motion', sync);
+</script>

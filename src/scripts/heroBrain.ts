@@ -81,10 +81,15 @@ export async function initHeroBrain(host: HTMLElement) {
   const pointsMat = (size: number, opacity: number) => new THREE.ShaderMaterial({
     uniforms: { uTex: { value: dot }, uTime: { value: 0 }, uSize: { value: size * renderer.getPixelRatio() }, uOpacity: { value: opacity }, uReveal: { value: 0 } },
     vertexShader: `attribute vec3 color; attribute float seed; uniform float uTime; uniform float uSize; uniform float uReveal; varying vec3 vC; varying float vA;
-      void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mv;
+      void main(){
+        // intro: points fly in from a scattered cloud and settle onto the atlas surface
+        float asm = smoothstep(seed * 0.7, seed * 0.7 + 0.35, uReveal);
+        vec3 dir = normalize(vec3(sin(seed * 91.7), cos(seed * 53.1), sin(seed * 17.3 + 1.0)) + 1e-4);
+        float k = (1.0 - asm) * (1.0 - asm);
+        vec3 p = position + dir * (1.2 + seed * 2.8) * k + vec3(0.0, 0.0, -k * 1.5);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
         float tw = 0.65 + 0.35 * sin(uTime * (0.6 + seed * 1.7) + seed * 40.0);
-        float rv = smoothstep(seed * 0.8, seed * 0.8 + 0.2, uReveal);
-        vC = color; vA = tw * rv; gl_PointSize = uSize * (0.6 + seed * 0.8) / -mv.z; }`,
+        vC = color; vA = tw * smoothstep(0.0, 0.12, uReveal) * (0.35 + 0.65 * asm); gl_PointSize = uSize * (0.6 + seed * 0.8 + k * 1.2) / -mv.z; }`,
     fragmentShader: `uniform sampler2D uTex; uniform float uOpacity; varying vec3 vC; varying float vA;
       void main(){ vec4 t = texture2D(uTex, gl_PointCoord); gl_FragColor = vec4(vC, t.a * vA * uOpacity); }`,
     transparent: true, depthWrite: false, ...additive,
@@ -168,7 +173,7 @@ export async function initHeroBrain(host: HTMLElement) {
 
   host.classList.add('is-ready');
   if (motionOK()) {
-    gsap.to(state, { intro: 1, duration: 3.2, ease: 'power2.out', delay: 0.2 });
+    gsap.to(state, { intro: 1, duration: 3.6, ease: 'power3.out', delay: 0.15 });
     ScrollTrigger.create({ trigger: host.closest('section')!, start: 'top top', end: 'bottom top', scrub: true, onUpdate: (self) => (state.scroll = self.progress) });
     start();
   } else render();

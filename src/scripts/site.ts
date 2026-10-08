@@ -59,6 +59,21 @@ menuBtns.forEach((b) => {
   li.addEventListener('focusout', (e) => { if (desktop.matches && !li.contains(e.relatedTarget as Node)) openMenu(b, false); });
 });
 
+// Dropdowns: a single highlight glides to the hovered item, tinted with its topic colour
+document.querySelectorAll<HTMLElement>('[data-menu]').forEach((menu) => {
+  const hl = menu.querySelector<HTMLElement>('[data-menu-hl]');
+  if (!hl) return;
+  const move = (a: HTMLElement | null) => {
+    if (!a) { hl.classList.remove('is-on'); return; }
+    hl.style.transform = `translateY(${a.offsetTop + (a.offsetParent === menu ? 0 : (a.offsetParent as HTMLElement).offsetTop)}px)`;
+    hl.style.height = `${a.offsetHeight}px`;
+    hl.style.setProperty('--hc', getComputedStyle(a).getPropertyValue('--c'));
+    hl.classList.add('is-on');
+  };
+  menu.querySelectorAll<HTMLElement>('a').forEach((a) => { a.addEventListener('pointerenter', () => move(a)); a.addEventListener('focus', () => move(a)); });
+  menu.addEventListener('pointerleave', () => move(null));
+});
+
 const setDrawer = (open: boolean) => {
   nav?.classList.toggle('is-open', open);
   burger?.setAttribute('aria-expanded', String(open));

@@ -31,6 +31,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       if (s.palette === 'cb') d.dataset.palette = 'cb';
       var reduce = s.motion === 'off' || (s.motion !== 'on' && matchMedia('(prefers-reduced-motion: reduce)').matches);
       if (reduce) d.dataset.motion = 'off'; else d.classList.add('js-motion');
+      // Page transitions: remember where a link was clicked so the next page opens from there
+      addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('a[href]');
+        if (!a || a.origin !== location.origin) return;
+        try { sessionStorage.setItem('agz-vt', JSON.stringify([e.clientX / innerWidth * 100, e.clientY / innerHeight * 100])); } catch (err) {}
+      }, true);
+      addEventListener('pagereveal', function (e) {
+        if (!e.viewTransition) return;
+        if (d.dataset.motion === 'off') { e.viewTransition.skipTransition(); return; }
+        try { var p = JSON.parse(sessionStorage.getItem('agz-vt') || 'null'); if (p) { d.style.setProperty('--vt-x', p[0] + '%'); d.style.setProperty('--vt-y', p[1] + '%'); } sessionStorage.removeItem('agz-vt'); } catch (err) {}
+      });
     })();
   </script>
   <script type="application/ld+json" set:html={JSON.stringify({

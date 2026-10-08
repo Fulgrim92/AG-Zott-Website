@@ -11,8 +11,8 @@ const research = [
   { href: '/research/two-photon/', label: 'Two-photon imaging in CA1', note: 'In vivo calcium imaging', color: 'var(--green)' },
   { href: '/research/immunohistochemistry/', label: 'Immunohistochemistry', note: 'Plaques & cells in brain sections', color: 'var(--blue)' },
   { href: '/research/electrophysiology/', label: 'Electrophysiology', note: 'EEG, LTP and field potentials', color: 'var(--red)' },
-  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', label: 'Glymphatic system', note: 'Fluid flow & clearance', color: 'var(--magenta)' }] : []),
-  { href: '/#methods', label: 'From photons to findings', note: 'Our analysis pipeline, step by step' },
+  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', label: 'Glymphatic system', note: 'Fluid clearance, from mouse to human MRI', color: 'var(--magenta)' }] : []),
+  { href: '/#methods', label: 'From photons to findings', note: 'Our analysis pipeline, step by step', sep: true },
 ];
 const lab = [
   { href: '/funding/', label: 'Funding' },
@@ -52,11 +52,12 @@ const isActive = (item: { href: string; match?: string[] }) =>
                   <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
                 </button>
                 <div class:list={['menu', { 'menu--wide': item.children.length > 4 }]} id={`menu-${i}`} data-menu>
+                  <span class="menu__hl" aria-hidden="true" data-menu-hl></span>
                   <ul role="list">
-                    {item.children.map((c: any) => (
-                      <li>
-                        <a href={url(c.href)} aria-current={path === c.href ? 'page' : undefined} style={c.color ? `--c:${c.color}` : undefined}>
-                          <span class="menu__label">{c.color && <i class="menu__dot" aria-hidden="true"></i>}{c.label}</span>
+                    {item.children.map((c: any, k: number) => (
+                      <li class:list={[{ 'menu__sep': c.sep }]} style={`--k:${k}`}>
+                        <a href={url(c.href)} aria-current={path === c.href ? 'page' : undefined} style={`--c:${c.color ?? 'var(--primary)'}`}>
+                          <span class="menu__label">{c.color && <i class="menu__dot" aria-hidden="true"></i>}{c.label}<span class="menu__arr" aria-hidden="true">→</span></span>
                           {c.note && <span class="menu__note">{c.note}</span>}
                         </a>
                       </li>
@@ -107,18 +108,42 @@ const isActive = (item: { href: string; match?: string[] }) =>
   .hd__item.is-active > .hd__link { color: var(--text); }
   .hd__item.is-active > .hd__link::after { content: ''; position: absolute; left: 13px; right: 13px; bottom: 1px; height: 2px; border-radius: 2px; background: var(--primary); }
 
-  .menu { position: absolute; top: calc(100% + 10px); left: -12px; min-width: 240px; padding: 8px; border-radius: 14px; background: #fff;
-    border: 1px solid var(--line); box-shadow: var(--shadow-md); opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.98); transform-origin: 20% 0;
-    transition: opacity .22s var(--ease), transform .3s var(--ease), visibility 0s .3s; }
-  .menu--wide { min-width: 330px; }
-  .menu.is-open { opacity: 1; visibility: visible; transform: none; transition: opacity .22s var(--ease), transform .3s var(--ease); }
-  .menu ul { list-style: none; margin: 0; padding: 0; display: grid; }
-  .menu a { display: grid; gap: 1px; padding: 9px 12px; border-radius: 9px; text-decoration: none; color: var(--text); transition: background .2s; }
-  .menu a:hover, .menu a[aria-current] { background: var(--surface-2); color: var(--text); }
+  .menu { position: absolute; top: calc(100% + 10px); left: -12px; min-width: 250px; padding: 8px; border-radius: 16px;
+    background: color-mix(in srgb, #fff 97%, transparent); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid var(--line); box-shadow: 0 30px 60px -30px rgba(8, 40, 50, .45), 0 2px 6px rgba(8, 40, 50, .06);
+    opacity: 0; visibility: hidden; transform: translateY(-8px) scale(.97); transform-origin: 24px 0;
+    transition: opacity .22s var(--ease), transform .35s var(--ease), visibility 0s .35s; }
+  /* accent hairline along the top edge */
+  .menu::before { content: ''; position: absolute; left: 16px; right: 16px; top: -1px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--glow), var(--primary), transparent); transform: scaleX(0); transition: transform .6s var(--ease) .05s; }
+  .menu--wide { min-width: 340px; }
+  .menu.is-open { opacity: 1; visibility: visible; transform: none; transition: opacity .22s var(--ease), transform .35s var(--ease); }
+  .menu.is-open::before { transform: none; }
+  .menu ul { position: relative; list-style: none; margin: 0; padding: 0; display: grid; }
+  .menu li { opacity: 0; transform: translateY(-4px); transition: opacity .25s var(--ease), transform .35s var(--ease); }
+  .menu.is-open li { opacity: 1; transform: none; transition-delay: calc(var(--k) * 35ms + 60ms); }
+  .menu__sep { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
+  /* one soft highlight that glides to the hovered item */
+  .menu__hl { position: absolute; left: 8px; right: 8px; top: 0; height: 0; border-radius: 10px; pointer-events: none; opacity: 0;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--hc, var(--primary)) 12%, #fff), color-mix(in srgb, var(--hc, var(--primary)) 4%, #fff));
+    box-shadow: inset 3px 0 0 var(--hc, var(--primary)); transition: transform .32s var(--ease), height .32s var(--ease), opacity .2s, --hc .3s; }
+  .menu__hl.is-on { opacity: 1; }
+  .menu a { position: relative; display: grid; gap: 1px; padding: 9px 12px; border-radius: 10px; text-decoration: none; color: var(--text); transition: color .2s; }
+  .menu a:hover, .menu a[aria-current] { color: var(--text); }
+  .menu a[aria-current] { background: var(--surface-2); }
   .menu__label { display: flex; align-items: center; gap: 9px; font-weight: 550; font-size: .92rem; }
-  .menu__note { font-size: .78rem; color: var(--text-3); padding-left: 0; }
-  .menu__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent); }
+  .menu__arr { margin-left: auto; color: var(--c); opacity: 0; transform: translateX(-6px); transition: opacity .25s, transform .3s var(--ease); }
+  .menu a:hover .menu__arr, .menu a:focus-visible .menu__arr { opacity: 1; transform: none; }
+  .menu__note { font-size: .78rem; color: var(--text-3); padding-left: 0; transition: color .2s; }
+  .menu a:hover .menu__note { color: var(--text-2); }
+  .menu__dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent); transition: transform .3s var(--ease); }
+  .menu__dot::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--c); opacity: 0; }
+  .menu a:hover .menu__dot { transform: scale(1.25); }
+  .menu a:hover .menu__dot::after { animation: menu-ping 1.2s var(--ease) infinite; }
+  @keyframes menu-ping { from { transform: scale(.6); opacity: .9; } to { transform: scale(2.4); opacity: 0; } }
   .menu a:has(.menu__dot) .menu__note { padding-left: 17px; }
+  :global(:root[data-motion='off']) .menu li, :global(:root[data-motion='off']) .menu__hl { transition: none; }
+  :global(:root[data-motion='off']) .menu a:hover .menu__dot::after { animation: none; }
 
   .hd__end { display: flex; align-items: center; gap: 10px; }
   .hd__cta { padding: .62em 1.15em; font-size: .88rem; }
@@ -147,6 +172,9 @@ const isActive = (item: { href: string; match?: string[] }) =>
     .hd__item.is-active > .hd__link::after { left: 0; right: auto; width: 3px; top: 14px; bottom: 14px; height: auto; margin-left: -12px; }
     .menu { position: static; opacity: 1; visibility: visible; transform: none; box-shadow: none; border: 0; padding: 0 0 10px; min-width: 0; display: none; }
     .menu.is-open { display: block; }
+    .menu::before, .menu__hl { display: none; }
+    .menu li { opacity: 1; transform: none; }
+    .menu { background: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
     .hd__cta--drawer { display: inline-flex; }
   }
 </style>

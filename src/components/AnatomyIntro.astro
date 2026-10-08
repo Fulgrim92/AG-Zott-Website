@@ -1,0 +1,128 @@
+---
+/**
+ * Homepage anatomy intro (scroll-driven): the mouse brain in lateral view → the hippocampus inside it →
+ * a coronal cut that opens into the real Allen atlas sections → a zoom into dorsal CA1, where we image.
+ * Outlines: scripts/build-atlas-sagittal.py (Allen CCFv3 meshes). Sections: scripts/build-atlas-sections.py.
+ * Reference anatomy, not lab data. Text: src/data/home.json → anatomy.
+ */
+import home from '../data/home.json';
+import sag from '../data/atlas-sagittal.json';
+import Label from './Label.astro';
+import AtlasSections from './AtlasSections.astro';
+import { url } from '../lib/url';
+const A = home.anatomy;
+const [vx, vy, vw, vh] = sag.viewBox;
+const first = sag.sections[0].ap;
+---
+<section class="anat" data-anat data-base={url('/assets/atlas/sections/')} data-target={A.targetSection} aria-labelledby="anat-h">
+  <h3 id="anat-h" class="visually-hidden">{home.deep.parts[0]}</h3>
+  <div class="anat__pin" data-anat-pin>
+    <div class="anat__text">
+      <div class="anat__meta"><span class="mono" data-anat-num>01</span><span class="mono"> / 0{A.steps.length}</span><div class="anat__bar" aria-hidden="true"><i data-anat-bar></i></div></div>
+      <ol class="anat__steps" role="list">
+        {A.steps.map((s, i) => (
+          <li class:list={['anat__step', { 'is-on': i === 0 }]} data-anat-step={i}>
+            <h4>{s.title}</h4>
+            <p>{s.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <figure class="anat__stage" aria-label="Animated sequence: a mouse brain in side view from the Allen Mouse Brain Atlas, the hippocampus highlighted inside it, a coronal cut through the hippocampus that opens into real atlas sections, and a zoom into dorsal CA1.">
+      <div class="anat__cor" data-anat-cor>
+        <canvas data-anat-canvas aria-hidden="true"></canvas>
+        <div class="anat__win" data-anat-win aria-hidden="true"><span class="mono">{A.windowLabel}</span></div>
+      </div>
+      <div class="anat__sag" data-anat-sag>
+        <svg viewBox={`${vx} ${vy} ${vw} ${vh}`} aria-hidden="true" data-anat-svg>
+          <defs>
+            <radialGradient id="anat-fill" cx="45%" cy="45%" r="65%"><stop offset="0" stop-color="#1b4b57" /><stop offset="1" stop-color="#0a242c" /></radialGradient>
+            <pattern id="anat-dots" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r=".7" fill="#5fd3c6" fill-opacity=".35" /></pattern>
+            <clipPath id="anat-clip"><path d={sag.brain} /></clipPath>
+            <filter id="anat-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5" /></filter>
+          </defs>
+          <path d={sag.brain} class="anat__fill" fill="url(#anat-fill)" data-anat-fill />
+          <rect x={vx} y={vy} width={vw} height={vh} fill="url(#anat-dots)" clip-path="url(#anat-clip)" class="anat__dots" data-anat-dots />
+          <path d={sag.brain} class="anat__outline" pathLength="1" data-anat-outline />
+          <g data-anat-hip opacity="0">
+            <path d={sag.hippocampus} fill="#4dff9a" filter="url(#anat-glow)" opacity=".55" />
+            <path d={sag.hippocampus} fill="#4dff9a" fill-opacity=".35" stroke="#4dff9a" stroke-width="1.2" />
+          </g>
+          <g class="anat__plane" data-anat-plane opacity="0" transform={`translate(${first} 0)`}>
+            <rect x="-5" y={vy} width="10" height={vh} fill="#ff6b5a" opacity=".16" />
+            <line x1="0" x2="0" y1={vy} y2={vy + vh} stroke="#ff8a75" stroke-width="1.4" />
+          </g>
+          <g class="anat__tags" data-anat-tags opacity="0">
+            <text x={vx + 10} y={vy - 4}>← anterior</text>
+            <text x={vx + vw - 10} y={vy - 4} text-anchor="end">posterior →</text>
+            <text x="372" y="118" data-anat-hiptag opacity="0" class="anat__hiptag">hippocampus</text>
+          </g>
+        </svg>
+      </div>
+      <p class="anat__readout mono" data-anat-readout aria-live="off"></p>
+      <figcaption class="anat__label"><Label kind="schematic" text="Reference atlas · Allen CCFv3" /></figcaption>
+    </figure>
+  </div>
+  <details class="anat__explore container container--wide">
+    <summary><span class="anat__plus" aria-hidden="true"></span>{A.exploreLabel}</summary>
+    <div class="anat__explorer"><AtlasSections /></div>
+  </details>
+</section>
+
+<style>
+  .anat { position: relative; }
+  .anat__explore { margin-top: var(--s2); }
+  .anat__explore summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 12px; padding: 10px 18px; border-radius: 999px;
+    border: 1px solid var(--line-2); color: var(--text); font-weight: 550; transition: border-color .3s, background .3s; }
+  .anat__explore summary::-webkit-details-marker { display: none; }
+  .anat__explore summary:hover { border-color: var(--glow); background: color-mix(in srgb, var(--glow) 8%, transparent); }
+  .anat__plus { position: relative; width: 12px; height: 12px; }
+  .anat__plus::before, .anat__plus::after { content: ''; position: absolute; left: 0; top: 5px; width: 12px; height: 2px; border-radius: 2px; background: var(--glow); transition: transform .35s var(--ease); }
+  .anat__plus::after { transform: rotate(90deg); }
+  .anat__explore[open] .anat__plus::after { transform: rotate(0deg); }
+  .anat__explorer { margin-top: var(--s3); max-width: 980px; }
+  .anat__pin { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr); gap: var(--s5); align-items: center;
+    padding: calc(var(--header-h) + var(--s3)) clamp(var(--s2), 4vw, var(--s6)) var(--s4); max-width: 1440px; margin: 0 auto; }
+  .anat__meta { display: flex; align-items: center; gap: 4px; color: var(--text-3); font-size: .8rem; margin-bottom: var(--s3); }
+  .anat__bar { flex: 0 1 140px; height: 2px; background: var(--line); margin-left: 12px; border-radius: 2px; overflow: hidden; }
+  .anat__bar i { display: block; height: 100%; background: var(--glow); transform-origin: 0 50%; transform: scaleX(0); }
+  .anat__steps { list-style: none; margin: 0; padding: 0; display: grid; }
+  .anat__step { grid-area: 1 / 1; opacity: 0; transform: translateY(12px); transition: opacity .45s var(--ease), transform .55s var(--ease); pointer-events: none; }
+  .anat__step.is-on { opacity: 1; transform: none; pointer-events: auto; }
+  .anat__step h4 { font-family: var(--font-serif); font-weight: 400; font-size: clamp(1.6rem, 2.6vw, 2.3rem); margin: 0 0 var(--s2); color: var(--text); }
+  .anat__step p { color: var(--text-2); margin: 0; max-width: 46ch; }
+
+  .anat__stage { position: relative; margin: 0; aspect-ratio: 16 / 10; border-radius: 22px; overflow: hidden; border: 1px solid var(--line);
+    background: radial-gradient(90% 80% at 50% 40%, #0d2a33, #050f14); perspective: 1400px; }
+  .anat__sag { position: absolute; inset: 6% 4% 10%; transform-origin: 0 0; z-index: 2; }
+  .anat__sag svg { width: 100%; height: 100%; overflow: visible; }
+  .anat__outline { fill: none; stroke: #5fd3c6; stroke-width: 1.6; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 4px rgba(95, 211, 198, .6)); }
+  .anat__fill, .anat__dots { opacity: 0; }
+  .anat__tags text { font: 9px var(--font-mono); fill: #8fb3bb; letter-spacing: .06em; }
+  .anat__tags .anat__hiptag { font-size: 12px; fill: #4dff9a; }
+  .anat__cor { position: absolute; inset: 4% 6% 9%; display: grid; place-items: center; opacity: 0; z-index: 1; transform-origin: 50% 50%; }
+  .anat__cor canvas { height: 100%; max-width: 100%; aspect-ratio: 456 / 320; display: block; border-radius: 8px; }
+  .anat__win { position: absolute; border: 1.5px solid #ff8a75; border-radius: 4px; box-shadow: 0 0 0 999px rgba(3, 10, 13, .42), 0 0 12px rgba(255, 138, 117, .55); opacity: 0; pointer-events: none; }
+  .anat__win span { position: absolute; left: 0; bottom: calc(100% + 3px / var(--z, 1)); white-space: nowrap; font-size: calc(10px / var(--z, 1)); color: #ffb3a5; letter-spacing: .05em; }
+  .anat__readout { position: absolute; right: 14px; top: 10px; margin: 0; font-size: .75rem; color: #9fc4cb; z-index: 3; }
+  .anat__label { position: absolute; left: 12px; bottom: 10px; z-index: 3; }
+
+  @media (max-width: 900px) {
+    .anat__pin { grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: var(--s3); align-items: start; padding-top: calc(var(--header-h) + var(--s2)); }
+    .anat__stage { order: -1; aspect-ratio: 4 / 3.4; }
+    .anat__step p { font-size: .95rem; }
+    .anat__meta { margin-bottom: var(--s2); }
+  }
+
+  /* Reduced motion / no JS choreography: everything readable at once */
+  :global(:root[data-motion='off']) .anat__steps { gap: var(--s3); }
+  :global(:root[data-motion='off']) .anat__step { grid-area: auto; opacity: 1; transform: none; }
+  :global(:root[data-motion='off']) .anat__outline { stroke-dashoffset: 0; }
+  :global(:root[data-motion='off']) .anat__fill, :global(:root[data-motion='off']) .anat__dots { opacity: 1; }
+</style>
+
+<script>
+  import { initAnatomy } from '../scripts/anatomy';
+  document.querySelectorAll<HTMLElement>('[data-anat]').forEach((el) => initAnatomy(el));
+</script>

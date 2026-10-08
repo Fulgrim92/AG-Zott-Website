@@ -262,18 +262,14 @@ export function initAbstract(root: HTMLElement) {
     .to(lbl0, { opacity: 0.35, duration: 0.3 }, 1.1)
     .to(lbl1, { opacity: 1, duration: 0.3 }, 1.3)
     .addLabel('c2', 2)
-    .to(st, { activity: 1, duration: 0.6 }, 2)
-    .to(cycle, { opacity: 1, duration: 0.25 }, 2.1)
-    .fromTo(ring, { strokeDashoffset: 1, strokeDasharray: '1 1' }, { strokeDashoffset: 0, duration: 0.6 }, 2.1)
-    .fromTo(cycle.querySelectorAll('.pill'), { opacity: 0 }, { opacity: 1, stagger: 0.1, duration: 0.2 }, 2.3)
+    .to(st, { activity: 1, duration: 0.25 }, 1.8)
     .addLabel('c3', 3)
-    .to(cycle, { opacity: 0, duration: 0.2 }, 3)
     .to(lbl1, { opacity: 0, duration: 0.15 }, 3)
-    .to(syn, { scale: 0.05, opacity: 0, svgOrigin: zoomOrigin, duration: 0.45, ease: 'power2.in' }, 3.05)
+    .to(syn, { scale: 0.05, opacity: 0, svgOrigin: zoomOrigin, duration: 0.3, ease: 'power2.in' }, 3.0)
     .to(meterG, { opacity: 0, duration: 0.2 }, 3.05)
-    .to(st, { zoom: 1, duration: 0.45 }, 3.05)
-    .fromTo(pop, { opacity: 0, scale: 3.2, svgOrigin: zoomOrigin }, { opacity: 1, scale: 1, svgOrigin: zoomOrigin, duration: 0.5, ease: 'power2.out' }, 3.25)
-    .to(st, { pop: 1, duration: 0.2 }, 3.25)
+    .to(st, { zoom: 1, duration: 0.3 }, 3.0)
+    .fromTo(pop, { opacity: 0, scale: 3.2, svgOrigin: zoomOrigin }, { opacity: 1, scale: 1, svgOrigin: zoomOrigin, duration: 0.3, ease: 'power2.out' }, 3.12)
+    .to(st, { pop: 1, duration: 0.2 }, 3.12)
     .to(st, { plaque: 1, duration: 0.3 }, 3.6)
     .fromTo(plaque, { opacity: 0, scale: 0.4, svgOrigin: '870 585' }, { opacity: 1, scale: 1, svgOrigin: '870 585', duration: 0.3, ease: 'back.out(1.6)' }, 3.6)
     .addLabel('c4', 4)
@@ -287,10 +283,22 @@ export function initAbstract(root: HTMLElement) {
     .fromTo(real, { clipPath: 'inset(41.25% 39.17% 26.25% 27.5% round 6px)' }, { clipPath: 'inset(0% 0% 0% 0% round 0px)', duration: 0.55, ease: 'power2.inOut' }, 5.05)
     .to(fovRect, { attr: { x: 0, y: 0, width: 1200, height: 800 }, opacity: 0, duration: 0.55, ease: 'power2.inOut' }, 5.05)
     .to(q('[data-ga-label]'), { opacity: 0, duration: 0.15 }, 5.1)
-    .to(handoff, { opacity: 1, duration: 0.2 }, 5.4)
     .to({}, { duration: 0.4 }, 5.6);
 
-  const chapterAt = (t: number) => Math.min(chapters.length - 1, Math.floor(t));
+  // The story is told in reverse of this timeline: it opens on the real recording (t = END) and zooms in,
+  // chapter by chapter, down to a single synapse (t = REST). Molecular motion always runs forward in time.
+  const END = tl.duration(), REST = 0.45, NCH = chapters.length;
+  const timeFor = (p: number) => END - clamp(p) * (END - REST);
+  const progFor = (t: number) => clamp((END - t) / (END - REST));
+  // displayed chapter d ↔ timeline segment (NCH − 1 − d); the first chapter also covers the real-data hold
+  const chapterAt = (t: number) => NCH - 1 - Math.min(NCH - 1, Math.floor(t));
+  const centreOf = (d: number) => (d === 0 ? END - 0.2 : NCH - 1 - d + 0.5);
+  const CYCLE = 2; // displayed index of "A vicious cycle"
+  const cycleTl = gsap.timeline({ paused: true })
+    .to(cycle, { opacity: 1, duration: 0.3 }, 0)
+    .fromTo(ring, { strokeDashoffset: 1, strokeDasharray: '1 1' }, { strokeDashoffset: 0, duration: 0.9, ease: 'power1.inOut' }, 0)
+    .fromTo(cycle.querySelectorAll('.pill'), { opacity: 0, y: 8 }, { opacity: 1, y: 0, stagger: 0.12, duration: 0.3 }, 0.2);
+
   let current = -1;
   const setChapter = (i: number) => {
     if (i === current) return;
@@ -298,33 +306,36 @@ export function initAbstract(root: HTMLElement) {
     chapters.forEach((c, k) => c.classList.toggle('is-on', k === i));
     tabs.forEach((t, k) => t.setAttribute('aria-selected', String(k === i)));
     num.textContent = String(i + 1).padStart(2, '0');
+    if (i === CYCLE) (motionOK() ? cycleTl.timeScale(1).play() : cycleTl.progress(1));
+    else (motionOK() ? cycleTl.timeScale(2.5).reverse() : cycleTl.progress(0));
   };
   const sync = () => {
     const t = tl.time();
     setChapter(chapterAt(t));
-    bar.style.transform = `scaleX(${clamp(t / tl.duration())})`;
+    bar.style.transform = `scaleX(${progFor(t)})`;
+    handoff.style.opacity = String(clamp((1.1 - t) / 0.5));
     if (st.real > 0.5 || t > 5.05) { if (video.paused && motionOK()) video.play().catch(() => {}); } else if (!video.paused) video.pause();
   };
   tl.eventCallback('onUpdate', sync);
+  tl.time(END);
 
   if (motionOK()) {
     const pin = q<HTMLElement>('[data-ga-pin]');
+    const seek = gsap.quickTo(tl, 'time', { duration: 0.6, ease: 'power3.out' });
     const trig = ScrollTrigger.create({
-      trigger: pin, start: 'top top', end: () => `+=${innerHeight * 3.6}`, pin: true, scrub: 0.6, anticipatePin: 1,
-      animation: tl,
+      trigger: pin, start: 'top top', end: () => `+=${innerHeight * 3.6}`, pin: true, anticipatePin: 1,
+      onUpdate: (self) => seek(timeFor(self.progress)),
       onToggle: (self) => document.body.toggleAttribute('data-pinning', self.isActive),
     });
     tabs.forEach((b, i) => b.addEventListener('click', () => {
-      const y = trig.start + (trig.end - trig.start) * ((i + 0.5) / tl.duration());
+      const y = trig.start + (trig.end - trig.start) * progFor(centreOf(i));
       scrollTo({ top: y, behavior: 'smooth' });
     }));
   } else {
     // Reduced motion: no pinning; tabs jump between still frames of the story
-    tl.progress(0);
-    const show = (i: number) => { tl.seek(i + 0.95); setChapter(i); tickSynapse(0.016); tickPop(0.016); tickImg(0.016); };
+    const show = (i: number) => { tl.seek(i === 0 ? END : NCH - 1 - i + 0.95); sync(); setChapter(i); tickSynapse(0.016); tickPop(0.016); tickImg(0.016); };
     tabs.forEach((b, i) => b.addEventListener('click', () => show(i)));
     show(0);
-    handoff.style.opacity = '1';
   }
   sync();
 }

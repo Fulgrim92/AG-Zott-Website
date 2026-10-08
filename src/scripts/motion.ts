@@ -23,6 +23,8 @@ export function initMotion() {
   drawIcons();
   parallax();
   accentSections();
+  lensDive();
+  scanSweeps();
   if (finePointer) { spotlight(); magnetic(); }
 }
 
@@ -147,6 +149,42 @@ function drawIcons() {
     gsap.to(svg.querySelectorAll('path'), {
       strokeDashoffset: 0, duration: 1.4, ease: 'power2.inOut', stagger: 0.12,
       scrollTrigger: { trigger: svg, start: 'top 88%', once: true },
+    });
+  });
+}
+
+/* "Look through the eyepiece": entering the deep dive, a microscope field stop closes around the view and opens again */
+function lensDive() {
+  const target = document.querySelector<HTMLElement>('[data-lens]');
+  if (!target) return;
+  const lens = document.createElement('div');
+  lens.className = 'lens-fx';
+  lens.setAttribute('aria-hidden', 'true');
+  lens.innerHTML = `<svg viewBox="-100 -100 200 200"><circle r="96" class="lens-fx__ring" /><circle r="90" class="lens-fx__ring lens-fx__ring--thin" />
+    <path d="M-60 0H60M0 -60V60" class="lens-fx__cross" />${Array.from({ length: 21 }, (_, i) => `<path d="M${-50 + i * 5} -3V3" class="lens-fx__tick" transform="${i % 5 ? '' : 'scale(1 2)'}" />`).join('')}</svg>`;
+  document.body.appendChild(lens);
+  const st = { r: 120, o: 0 };
+  const apply = () => { lens.style.setProperty('--r', `${st.r}vmax`); lens.style.opacity = String(st.o); };
+  const play = () => {
+    gsap.timeline({ onUpdate: apply, onComplete: () => { st.o = 0; apply(); } })
+      .set(st, { r: 90, o: 1 })
+      .to(st, { r: 26, duration: 0.38, ease: 'power3.in' })
+      .fromTo(lens.querySelector('svg'), { rotate: -30, scale: 1.3 }, { rotate: 0, scale: 1, duration: 0.5, ease: 'power3.out' }, 0)
+      .to(st, { r: 140, duration: 0.6, ease: 'power3.inOut' }, '+=0.12');
+  };
+  ScrollTrigger.create({ trigger: target, start: 'top 55%', onEnter: play });
+}
+
+/* A laser line sweeps over a section as it scrolls into view, like a raster scan building the image */
+function scanSweeps() {
+  document.querySelectorAll<HTMLElement>('[data-scan]').forEach((sec) => {
+    const line = document.createElement('span');
+    line.className = 'scan-fx';
+    line.setAttribute('aria-hidden', 'true');
+    sec.appendChild(line);
+    ScrollTrigger.create({
+      trigger: sec, start: 'top 75%', once: true,
+      onEnter: () => gsap.fromTo(line, { top: '0%', opacity: 1 }, { top: '100%', opacity: 0.2, duration: 0.9, ease: 'power2.inOut', onComplete: () => line.remove() }),
     });
   });
 }
