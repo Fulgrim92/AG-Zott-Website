@@ -9,7 +9,9 @@ import NeuralBackdrop from '../components/NeuralBackdrop.astro';
 import TeamCarousel from '../components/TeamCarousel.astro';
 import GraphicalAbstract from '../components/GraphicalAbstract.astro';
 import DataPipeline from '../components/DataPipeline.astro';
+import GlymphaticTracer from '../components/GlymphaticTracer.astro';
 import AnatomyIntro from '../components/AnatomyIntro.astro';
+import OcularDive from '../components/OcularDive.astro';
 import home from '../data/home.json';
 import assets from '../data/assets.json';
 import site from '../data/site.json';
@@ -45,16 +47,20 @@ for (let c = 0; c < cols; c++) {
 }
 const methods = [
   { href: '/research/two-photon/', title: 'Two-photon imaging', text: 'In vivo calcium imaging of hundreds of CA1 neurons to detect early, β-amyloid-driven hyperactivity.', media: 'video', label: 'data' },
+  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', title: 'Glymphatic system', text: 'Tracer imaging in mice and MRI in humans: how fluid flow clears the brain, from models to patients.', media: 'glym', label: 'schematic' }] : []),
   { href: '/research/immunohistochemistry/', title: 'Immunohistochemistry', text: 'Staining and confocal imaging of brain sections to map amyloid plaques and the cells around them.', media: 'image', label: 'published' },
   { href: '/research/electrophysiology/', title: 'Electrophysiology', text: 'EEG, synaptic plasticity (LTP) and field potentials — network function from hours to milliseconds.', media: 'trace', label: 'schematic' },
 ];
 // Funders shown in the hero. Official logo files go in public/assets/logos/ (see FunderLogo.astro);
 // until they exist, the funder's name is shown as text (never a redrawn logo).
-const logo = (f: string) => existsSync(new URL(`../../public/assets/logos/${f}`, import.meta.url)) ? url(`/assets/logos/${f}`) : null;
+const logo = (b: string) => { const f = [`${b}.svg`, `${b}.png`].find((x) => existsSync(`${process.cwd()}/public/assets/logos/${x}`)); return f ? url(`/assets/logos/${f}`) : null; };
 const heroFunders = [
-  { id: 'ERC', name: 'European Research Council', logos: [logo('eu-emblem.svg'), logo('erc.svg')].filter(Boolean) as string[] },
-  { id: 'DFG', name: 'Deutsche Forschungsgemeinschaft', logos: [logo('dfg.svg')].filter(Boolean) as string[] },
+  { id: 'ERC', name: 'European Research Council', logos: [logo('eu-emblem'), logo('erc')].filter(Boolean) as string[] },
+  { id: 'DFG', name: 'Deutsche Forschungsgemeinschaft', logos: [logo('dfg')].filter(Boolean) as string[] },
 ];
+// Summary video (rendered in video/, see video/README.md); falls back to the animated imaging field if absent
+const vid = (f: string) => existsSync(`${process.cwd()}/public/assets/video/${f}`);
+const summaryVideo = vid('summary-bg.mp4') ? { bg: url('/assets/video/summary-bg.mp4'), full: url('/assets/video/summary.mp4'), poster: url('/assets/video/summary-poster.jpg') } : null;
 // Cover motif per theme for publication cards (decorative, not data)
 const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.themes.includes('electrophysiology') ? 'ephys' : 'cells';
 ---
@@ -87,7 +93,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
           {heroFunders.map((f) => (
             <span class:list={['hero__funder', { 'has-logo': f.logos.length }]} data-nb-anchor title={f.logos.length ? f.name : `${f.name} (official logo file not yet added: public/assets/logos/)`}>
               {f.logos.length
-                ? f.logos.map((src) => <img src={src} alt={`${f.name} logo`} height="30" />)
+                ? f.logos.map((src) => <img src={src} alt={`${f.name} logo`} class={`hero__flogo hero__flogo--${f.id.toLowerCase()}`} />)
                 : <><b>{f.id}</b><small>{f.name}</small></>}
             </span>
           ))}
@@ -99,13 +105,23 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   </section>
 
   <!-- ======================= What we do ======================= -->
-  <section class="section section--tight about" id="about" data-scan aria-labelledby="about-h">
-    <ImagingField />
+  <section class="section section--tight about theme-dark" id="about" data-scan aria-labelledby="about-h">
+    {summaryVideo ? (
+      <div class="about__video" aria-hidden="true">
+        <video src={summaryVideo.bg} poster={summaryVideo.poster} muted loop playsinline preload="metadata" data-about-video></video>
+      </div>
+    ) : <ImagingField />}
     <div class="container container--wide about__grid">
       <div>
         <p class="eyebrow">{home.about.eyebrow}</p>
         <h2 id="about-h" data-split>{home.about.title}</h2>
         <p class="muted" data-reveal>{home.about.text}</p>
+        {summaryVideo && (
+          <button class="about__watch" type="button" data-watch data-reveal>
+            <span class="about__play" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M8 5v14l11-7z" fill="currentColor" /></svg></span>
+            {home.about.watchLabel}
+          </button>
+        )}
       </div>
       <ul class="about__cards" role="list">
         {home.about.cards.map((c) => (
@@ -117,10 +133,16 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
         ))}
       </ul>
     </div>
+    {summaryVideo && (
+      <dialog class="watch" data-watch-dialog aria-label={home.about.watchLabel}>
+        <video src={summaryVideo.full} poster={summaryVideo.poster} controls playsinline preload="none"></video>
+        <form method="dialog"><button class="watch__close" aria-label="Close">×</button></form>
+      </dialog>
+    )}
   </section>
 
   <!-- ======================= Deep dive ======================= -->
-  <div class="deep theme-dark" id="methods" data-lens>
+  <div class="deep theme-dark" id="methods">
     <header class="deep__intro section" aria-labelledby="deep-h">
       <NeuralBackdrop density={1.2} opacity={0.7} />
       <div class="container deep__head">
@@ -133,6 +155,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
       </div>
     </header>
 
+    <OcularDive />
     <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">01</span> {home.deep.parts[0]}</p></div>
     <AnatomyIntro />
     <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">02</span> {home.deep.parts[1]}</p></div>
@@ -168,11 +191,12 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
               <div class="method__media theme-dark">
                 {m.media === 'video' && <video src={url(rec2.src)} poster={url(rec2.poster)} muted loop playsinline preload="none" data-autoplay aria-label={rec2.alt}></video>}
                 {m.media === 'image' && <img src={url(confocal.src)} alt={confocal.alt} loading="lazy" />}
+                {m.media === 'glym' && <GlymphaticTracer compact />}
                 {m.media === 'trace' && <svg viewBox="0 0 1000 300" preserveAspectRatio="none" role="img" aria-label="Illustrative local field potential trace."><path d={lfpPath} class="method__trace" /></svg>}
                 <span class="method__label">
                   {m.label === 'data' && <Label kind="data" />}
                   {m.label === 'published' && <Label kind="data" text="Published data" />}
-                  {m.label === 'schematic' && <Label kind="schematic" text="Simulation" />}
+                  {m.label === 'schematic' && <Label kind="schematic" text={m.media === 'trace' ? 'Simulation' : undefined} />}
                 </span>
               </div>
               <h3>{m.title}</h3>
@@ -296,6 +320,9 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   .hero__funder small { font-size: .74rem; color: var(--text-2); line-height: 1.2; max-width: 24ch; }
   .hero__funder.has-logo { background: #fff; border-color: #fff; padding: 6px 12px; }
   .hero__funder img { height: 30px; width: auto; display: block; }
+  .hero__funder .hero__flogo--erc { height: 52px; }
+  .hero__funder .hero__flogo--dfg { height: 26px; }
+  @media (max-width: 480px) { .hero__funder .hero__flogo--erc { height: 44px; } .hero__funder .hero__flogo--dfg { height: 20px; } }
   .hero__funders:hover .hero__funder { border-color: var(--glow); }
   .hero__funders:hover .hero__funder.has-logo { border-color: #fff; box-shadow: 0 0 24px -4px rgba(95, 211, 198, .6); }
   :global(:root[data-motion='off']) .hero__funder::before { animation: none; }
@@ -317,11 +344,24 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   }
 
   /* ---------- What we do ---------- */
-  .about { position: relative; overflow: hidden; isolation: isolate; background: var(--surface); }
+  .about { position: relative; overflow: hidden; isolation: isolate; background: #02080a; }
+  .about__video { position: absolute; inset: 0; z-index: -1; }
+  .about__video video { width: 100%; height: 100%; object-fit: cover; opacity: .5; }
+  .about__video::after { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(2, 8, 10, .92) 0%, rgba(2, 8, 10, .55) 45%, rgba(2, 8, 10, .35) 100%), linear-gradient(0deg, rgba(2, 8, 10, .6), transparent 30%); }
+  .about__watch { margin-top: var(--s3); display: inline-flex; align-items: center; gap: 12px; padding: 8px 18px 8px 8px; border-radius: 999px; cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--glow) 50%, transparent); background: rgba(3, 20, 24, .6); color: var(--text); font: 600 .92rem var(--font-sans); backdrop-filter: blur(6px);
+    transition: border-color .3s, transform .35s var(--ease), box-shadow .35s; }
+  .about__watch:hover { border-color: var(--glow); transform: translateY(-2px); box-shadow: 0 12px 30px -14px rgba(95, 211, 198, .6); }
+  .about__play { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--glow); color: #04201c; }
+  .watch { padding: 0; border: 0; border-radius: 16px; background: #000; width: min(92vw, 1100px); overflow: hidden; }
+  .watch::backdrop { background: rgba(2, 8, 10, .85); backdrop-filter: blur(4px); }
+  .watch video { display: block; width: 100%; height: auto; }
+  .watch__close { position: absolute; top: 10px; right: 12px; width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, .55); color: #fff; font-size: 1.4rem; cursor: pointer; }
   .about__grid { position: relative; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr); gap: var(--s6); align-items: center; }
   .about__cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
   .about__card { position: relative; text-align: center; padding: var(--s4) var(--s3); overflow: hidden;
-    background: color-mix(in srgb, var(--surface) 78%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    background: rgba(6, 22, 27, .62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--line)); box-shadow: none; transition: transform .4s var(--ease), box-shadow .4s var(--ease), border-color .4s; }
   .about__card::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .5s;
     background: radial-gradient(70% 50% at 50% 0%, color-mix(in srgb, var(--glow) 28%, transparent), transparent 70%); }
@@ -338,7 +378,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   .approach { background: var(--bg); }
   .approach__grid { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 2fr); gap: var(--s6); align-items: center; }
   @media (max-width: 1100px) { .approach__grid { grid-template-columns: 1fr; gap: var(--s4); } }
-  .methods { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+  .methods { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s3); }
   @media (max-width: 860px) { .methods { grid-template-columns: 1fr; } }
   .method { display: grid; gap: 6px; text-decoration: none; color: var(--text); }
   .method:hover { color: var(--text); }
@@ -470,4 +510,21 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   document.querySelectorAll<HTMLVideoElement>('video[data-autoplay]').forEach((v) => {
     new IntersectionObserver(([e]) => { if (e.isIntersecting && motionOK()) v.play().catch(() => {}); else v.pause(); }, { threshold: 0.3 }).observe(v);
   });
+
+  // Summary video: muted background loop behind "What we do", plus the full version with captions in a dialog
+  const bgVideo = document.querySelector<HTMLVideoElement>('[data-about-video]');
+  if (bgVideo) {
+    let seen = false;
+    const sync = () => { if (seen && motionOK()) bgVideo.play().catch(() => {}); else bgVideo.pause(); };
+    new IntersectionObserver(([e]) => { seen = e.isIntersecting; sync(); }, { threshold: 0.1 }).observe(bgVideo);
+    document.addEventListener('agz:motion', sync);
+  }
+  const dlg = document.querySelector<HTMLDialogElement>('[data-watch-dialog]');
+  document.querySelector('[data-watch]')?.addEventListener('click', () => {
+    if (!dlg) return;
+    dlg.showModal();
+    dlg.querySelector('video')?.play().catch(() => {});
+  });
+  dlg?.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  dlg?.addEventListener('close', () => dlg.querySelector('video')?.pause());
 </script>

@@ -12,6 +12,7 @@
 
   "about": {
     "eyebrow": "What we do",
+    "watchLabel": "Watch the 30-second summary",
     "title": "From single synapses to whole circuits",
     "text": "Alzheimer’s disease starts silently. Years before plaques and memory loss, soluble β-amyloid disturbs how neurons talk to each other. We follow these earliest changes in the living brain to understand the mechanism — and to find the window in which it can still be stopped.",
     "cards": [
@@ -44,8 +45,8 @@
   "deep": {
     "eyebrow": "For the curious",
     "title": "From photons to *findings*",
-    "lead": "Scroll on: first, where in the brain we look. Then a real recording from the living brain, zooming in chapter by chapter to the synapse where β-amyloid interferes. Finally, that recording analysed step by step with our own pipeline.",
-    "parts": ["Where we look", "From a real recording down to the synapse", "The data, analysed step by step"]
+    "lead": "Scroll on: first, where in the brain we look. Then a real recording from the living brain and the story behind it, from a single synapse to whole circuits. Finally, that recording analysed step by step with our own pipeline.",
+    "parts": ["Where we look", "A real recording and the story behind it", "The data, analysed step by step"]
   },
 
   "rundown": {
@@ -59,11 +60,21 @@
     ]
   },
 
+  "ocular": {
+    "aria": "Illustration: looking through a microscope eyepiece into brain tissue where neurons fire.",
+    "label": "Illustration · neurons firing",
+    "steps": [
+      "Look through the eyepiece.",
+      "Inside the living brain, neurons are firing.",
+      "Each flash is a neuron becoming active. So where in the brain are we looking?"
+    ]
+  },
+
   "anatomy": {
     "_about": "Scroll sequence at the start of the deep dive. targetSection = which Allen atlas section (0 = most anterior, 100 µm apart) the zoom ends on.",
     "targetSection": 16,
     "windowLabel": "two-photon field of view",
-    "exploreLabel": "Explore the atlas sections yourself",
+    "exploreLabel": "Open the full atlas explorer (region names on hover)",
     "steps": [
       {
         "title": "The mouse brain",
@@ -79,19 +90,34 @@
       },
       {
         "title": "Into dorsal CA1",
-        "text": "We record from the pyramidal cell layer of dorsal CA1 (green), imaged from above through a small window. The box marks roughly the size of one two-photon field of view."
+        "text": "We record from the pyramidal cell layer of dorsal CA1 (green), imaged from above through a small window. The box marks roughly the size of one two-photon field of view. Use the slider to move through the brain yourself."
       }
     ]
   },
 
   "abstract": {
     "label": "Illustrative schematic · based on the cited literature",
-    "_order": "Chapters are shown in this order, from the real recording down to a single synapse.",
+    "_order": "The first chapter shows the lab's real recording; the illustrated story follows.",
     "chapters": [
       {
         "title": "A real recording",
-        "text": "This is our data: CA1 neurons in a living mouse, recorded with a two-photon microscope. Active neurons take up calcium, and the indicator GCaMP turns it into fluorescence. The laser excites fluorescence only at its focal point, so hundreds of neurons can be followed one by one.",
-        "cite": ["denk1990", "chen2013"]
+        "text": "This is our data: CA1 neurons in a living mouse, recorded with a two-photon microscope. Every flicker is a neuron becoming active. Why do some of them fire far too much in Alzheimer’s disease? The answer starts at a single synapse.",
+        "cite": []
+      },
+      {
+        "title": "A synapse at rest",
+        "text": "At an excitatory synapse, glutamate released from the presynaptic terminal activates receptors on the postsynaptic spine — and is cleared within milliseconds, mostly by transporters on astrocytes (GLT-1/EAAT2).",
+        "cite": ["danbolt2001"]
+      },
+      {
+        "title": "β-amyloid jams the clearance",
+        "text": "Soluble β-amyloid — long before plaques form — blocks glutamate reuptake. Glutamate lingers in and around the synaptic cleft.",
+        "cite": ["zott2019"]
+      },
+      {
+        "title": "A vicious cycle",
+        "text": "The lingering glutamate over-excites neurons that are already active. Neuronal activity in turn releases more β-amyloid: a self-amplifying loop.",
+        "cite": ["zott2019", "cirrito2005", "bero2011"]
       },
       {
         "title": "Circuits go off balance",
@@ -99,22 +125,12 @@
         "cite": ["busche2008", "busche2012", "zott2024", "zhang2025"]
       },
       {
-        "title": "Zooming in: a vicious cycle",
-        "text": "At the synapses of these neurons, lingering glutamate over-excites cells that are already active. Neuronal activity in turn releases more β-amyloid: a self-amplifying loop.",
-        "cite": ["zott2019", "cirrito2005", "bero2011"]
-      },
-      {
-        "title": "The trigger: β-amyloid jams the clearance",
-        "text": "Soluble β-amyloid, long before plaques form, blocks glutamate reuptake. Glutamate lingers in and around the synaptic cleft.",
-        "cite": ["zott2019"]
-      },
-      {
-        "title": "The healthy synapse",
-        "text": "Without β-amyloid, glutamate released from the presynaptic terminal activates receptors on the postsynaptic spine and is cleared within milliseconds, mostly by transporters on astrocytes (GLT-1/EAAT2). This is the balance that early β-amyloid disturbs.",
-        "cite": ["danbolt2001"]
+        "title": "Making activity visible",
+        "text": "Active neurons take up calcium; calcium indicators such as GCaMP turn it into fluorescence. A two-photon microscope excites fluorescence only at its focal point, so hundreds of CA1 neurons can be followed in the living brain.",
+        "cite": ["denk1990", "chen2013"]
       }
     ],
-    "handoff": "Next: the same recording, analysed step by step."
+    "handoff": "Back to the real recording: next, analysed step by step."
   },
 
   "pipeline": {

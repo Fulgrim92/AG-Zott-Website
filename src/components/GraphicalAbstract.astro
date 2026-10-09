@@ -1,8 +1,8 @@
 ---
 /**
  * Scroll-driven graphical abstract (illustrative, literature-based):
- * told from a real recording down to the synapse: real data → circuit imbalance → vicious cycle →
- * β-amyloid blocks glutamate reuptake → healthy synapse. Text and references: src/data/home.json → abstract.
+ * opens on a real recording, then synapse at rest → β-amyloid blocks glutamate reuptake → vicious cycle →
+ * circuit imbalance → two-photon imaging, handing back to the real recording. Text and references: src/data/home.json → abstract.
  */
 import home from '../data/home.json';
 import assets from '../data/assets.json';
@@ -13,7 +13,7 @@ const refs = home.references as Record<string, { short: string; full: string; do
 const rec = assets.twoPhoton.recordings[0];
 ---
 <section class="ga" data-ga aria-labelledby="ga-h">
-  <h3 id="ga-h" class="visually-hidden">{home.deep.parts[0]}</h3>
+  <h3 id="ga-h" class="visually-hidden">{home.deep.parts[1]}</h3>
   <div class="ga__pin" data-ga-pin>
     <div class="ga__text">
       <div class="ga__meta">
@@ -37,7 +37,7 @@ const rec = assets.twoPhoton.recordings[0];
       <p class="ga__handoff" data-ga-handoff>{A.handoff} <span aria-hidden="true">↓</span></p>
     </div>
 
-    <figure class="ga__stage" aria-label="Sequence from a real two-photon recording of CA1 neurons, through an illustrated CA1 population with hyperactive and silent neurons near a plaque, a self-amplifying cycle of hyperactivity and β-amyloid blocking glutamate reuptake, down to a healthy glutamatergic synapse.">
+    <figure class="ga__stage" aria-label="A real two-photon recording of CA1 neurons, then an illustrated sequence: a glutamatergic synapse, β-amyloid blocking glutamate reuptake, a self-amplifying cycle of hyperactivity, a CA1 population with hyperactive and silent neurons near a plaque, and two-photon imaging of the population, handing back to the real recording.">
       <svg viewBox="0 0 1200 800" data-ga-svg aria-hidden="true" preserveAspectRatio="xMidYMid slice">
         <defs>
           <radialGradient id="ga-pre" cx="50%" cy="20%" r="80%"><stop offset="0" stop-color="#174a5c" /><stop offset="1" stop-color="#0c2a36" /></radialGradient>
@@ -177,6 +177,10 @@ const rec = assets.twoPhoton.recordings[0];
         </g>
       </svg>
 
+      <div class="ga__real ga__opener" data-ga-opener>
+        <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="metadata" aria-hidden="true"></video>
+        <span class="ga__reallbl"><Label kind="data" text="Lab data · real recording" /></span>
+      </div>
       <div class="ga__real" data-ga-real>
         <video src={url(rec.src)} poster={url(rec.poster)} muted loop playsinline preload="none" aria-label={rec.alt}></video>
         <span class="ga__reallbl"><Label kind="data" text="Lab data · real recording" /></span>
@@ -188,6 +192,7 @@ const rec = assets.twoPhoton.recordings[0];
 
 <style>
   .ga { position: relative; }
+  .ga__real.ga__opener { opacity: 1; clip-path: none; z-index: 3; transform-origin: 40% 55%; }
   .ga__pin { height: 100vh; height: 100svh; display: grid; grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.6fr); gap: clamp(var(--s3), 4vw, var(--s6));
     align-items: center; padding: calc(var(--header-h) * 0.5) clamp(var(--s2), 4vw, var(--s6)); max-width: 1480px; margin: 0 auto; }
   .ga__text { position: relative; display: grid; gap: var(--s3); align-content: center; }

@@ -251,13 +251,6 @@ main p a:not(.btn):not(.link-arrow):hover, main li > a:not([class]):hover { back
 :root[data-motion='off']::view-transition-old(root), :root[data-motion='off']::view-transition-new(root) { animation: none; }
 
 /* ---------- Themed transitions ---------- */
-/* Microscope field stop (entering the deep dive) */
-.lens-fx { position: fixed; inset: 0; z-index: 400; pointer-events: none; opacity: 0; display: grid; place-items: center;
-  background: radial-gradient(circle at 50% 50%, transparent calc(var(--r, 120vmax) - 1px), rgba(2, 10, 13, .96) var(--r, 120vmax)); }
-.lens-fx svg { width: calc(var(--r, 120vmax) * 2); height: calc(var(--r, 120vmax) * 2); max-width: none; overflow: visible; }
-.lens-fx__ring { fill: none; stroke: #5fd3c6; stroke-width: .8; opacity: .8; }
-.lens-fx__ring--thin { stroke-width: .3; stroke-dasharray: 1 2; }
-.lens-fx__cross, .lens-fx__tick { stroke: #5fd3c6; stroke-width: .3; opacity: .6; }
 /* Raster scan line over sections */
 [data-scan] { position: relative; }
 .scan-fx { position: absolute; left: 0; right: 0; height: 2px; pointer-events: none; z-index: 2; opacity: 0;

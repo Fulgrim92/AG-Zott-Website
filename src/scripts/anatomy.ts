@@ -86,6 +86,15 @@ export function initAnatomy(root: HTMLElement) {
 
   /* ---------------- render ---------------- */
   let shownK = -1;
+  // after the sequence, a slider lets visitors move through the sections themselves
+  let manual: number | null = null;
+  const man = { zoom: 1, win: 1 };
+  const ctrl = q('[data-anat-ctrl]'), slider = q<HTMLInputElement>('[data-anat-slider]');
+  const loadRest = async () => { await loadAll(); if (!meta) return; for (let k = 0; k < meta.slices.length; k++) if (!frames.has(k)) await compose(k).catch(() => {}); };
+  slider.addEventListener('input', () => {
+    if (manual === null) { man.zoom = st.zoom; man.win = st.win; gsap.to(man, { zoom: 0, win: 0, duration: 0.6, ease: 'power2.out', onUpdate: () => render() }); loadRest().then(() => render()); }
+    manual = +slider.value; shownK = -1; render();
+  });
   const render = () => {
     outline.style.strokeDashoffset = String(1 - st.draw);
     fill.style.opacity = String(st.fill); dots.style.opacity = String(st.fill * 0.9);
@@ -95,10 +104,11 @@ export function initAnatomy(root: HTMLElement) {
 
     // cutting plane: slides from in front of the hippocampus to the section being shown
     const secs = meta?.slices;
-    const k = Math.round(st.k);
+    const K = manual ?? st.k, Z = manual !== null ? man.zoom : st.zoom, WIN = manual !== null ? man.win : st.win;
+    const k = Math.round(K);
     const ap0 = secs ? secs[0].ap_voxel : 243;
     let apK = ap0;
-    if (secs) { const i0 = Math.floor(st.k), i1 = Math.min(secs.length - 1, i0 + 1); apK = lerp(secs[i0].ap_voxel, secs[i1].ap_voxel, st.k - i0); }
+    if (secs) { const i0 = Math.floor(K), i1 = Math.min(secs.length - 1, i0 + 1); apK = lerp(secs[i0].ap_voxel, secs[i1].ap_voxel, K - i0); }
     const x = lerp(ap0 - 90, ap0, st.cut) + (apK - ap0);
     plane.setAttribute('transform', `translate(${x.toFixed(1)} 0)`);
     plane.setAttribute('opacity', String(st.plane));
@@ -106,7 +116,7 @@ export function initAnatomy(root: HTMLElement) {
     // lateral view shrinks into a corner map while the section opens
     const e = st.open;
     sagW.style.transform = `translate(${(-1 * e).toFixed(2)}%, ${(-3 * e).toFixed(2)}%) scale(${lerp(1, 0.26, e).toFixed(3)})`;
-    sagW.style.opacity = String(lerp(1, 0.9, e) * (1 - st.zoom * 0.85));
+    sagW.style.opacity = String(lerp(1, 0.9, e) * (1 - Z * 0.85));
     cor.style.opacity = String(clamp(e * 1.6));
     cor.style.clipPath = `inset(0 ${(50 * (1 - e)).toFixed(1)}% 0 ${(50 * (1 - e)).toFixed(1)}%)`;
 
@@ -123,13 +133,13 @@ export function initAnatomy(root: HTMLElement) {
     const W = meta?.width ?? 456, H = meta?.height ?? 320;
     const pt = ca1 ?? { x: W * 0.62, y: H * 0.3 };
     const ox = canvas.offsetLeft + (pt.x / W) * canvas.clientWidth, oy = canvas.offsetTop + (pt.y / H) * canvas.clientHeight;
-    const z = 1 + st.zoom * 1.8;
+    const z = 1 + Z * 1.8;
     cor.style.transformOrigin = `${ox}px ${oy}px`;
     cor.style.transform = `rotateY(${((1 - e) * 60).toFixed(1)}deg) scale(${z.toFixed(3)})`;
     const fw = (20 / W) * canvas.clientWidth, fh = (11 / H) * canvas.clientHeight; // ≈ 0.5 × 0.28 mm
     win.style.left = `${ox - fw / 2}px`; win.style.top = `${oy - fh / 2}px`;
     win.style.width = `${fw}px`; win.style.height = `${fh}px`;
-    win.style.opacity = String(st.win);
+    win.style.opacity = String(WIN);
     win.style.borderWidth = `${(1.5 / z).toFixed(2)}px`; win.style.setProperty('--z', z.toFixed(3));
   };
 
@@ -151,13 +161,16 @@ export function initAnatomy(root: HTMLElement) {
     const t = tl.time();
     const i = bounds.reduce((a, b, k) => (t >= b ? k : a), 0);
     bar.style.transform = `scaleX(${clamp(t / tl.duration())})`;
+    const done = t >= tl.duration() - 0.35;
+    ctrl.classList.toggle('is-on', done || !motionOK());
+    if (!done && manual !== null && motionOK()) { manual = null; slider.value = String(target); shownK = -1; }
     if (i === cur) return;
     cur = i;
     steps.forEach((s, k) => s.classList.toggle('is-on', k === i));
     num.textContent = String(i + 1).padStart(2, '0');
   };
 
-  new IntersectionObserver(([en]) => { if (en.isIntersecting) loadAll(); }, { rootMargin: '150% 0px' }).observe(root);
+  new IntersectionObserver(([en]) => { if (en.isIntersecting) loadAll().then(() => { if (meta) { slider.max = String(meta.slices.length - 1); slider.value = String(target); } }); }, { rootMargin: '150% 0px' }).observe(root);
   new ResizeObserver(() => { shownK = -1; render(); }).observe(canvas);
 
   if (motionOK()) {

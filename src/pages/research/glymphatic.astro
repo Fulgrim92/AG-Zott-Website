@@ -9,7 +9,7 @@ import papers from '../../data/papers.json';
 // The lab's MRI studies: tag them in papers.json with "themes": ["glymphatic"] and "methods": ["MRI"]
 const mriPapers = (papers as any[]).filter((p) => p.themes.includes('glymphatic') && p.methods?.includes('MRI')).sort((a, b) => b.year - a.year);
 ---
-<Research theme="glymphatic" color="var(--magenta)" eyebrow="Research · 04" title="The glymphatic system"
+<Research theme="glymphatic" color="var(--magenta)" eyebrow="Research · 02" title="The glymphatic system"
   lead="How the brain rinses itself: cerebrospinal fluid flow and the clearance of waste, studied in mice and in humans.">
   <Fragment slot="question">
     {!site.features.glymphaticVerified && (

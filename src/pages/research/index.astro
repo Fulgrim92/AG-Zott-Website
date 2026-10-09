@@ -16,9 +16,9 @@ const base = fepspPath(1.0, box), post = fepspPath(1.55, box);
 
 const themes = [
   { href: '/research/two-photon/', n: '01', title: 'Two-photon imaging in CA1', color: 'var(--green)', q: 'Why do CA1 neurons become hyperactive early in Alzheimer’s disease, and can it be reversed?', m: ['In vivo', 'GCaMP calcium imaging', 'Single-cell activity'], media: 'video' },
-  { href: '/research/immunohistochemistry/', n: '02', title: 'Immunohistochemistry', color: 'var(--blue)', q: 'Where and when does β-amyloid pathology appear around the cells we image?', m: ['Brain sections', 'Fluorescent stains', 'Confocal microscopy'], media: 'ihc' },
-  { href: '/research/electrophysiology/', n: '03', title: 'Electrophysiology', color: 'var(--red)', q: 'How excitable are brain networks, and how plastic are their synapses?', m: ['Video-EEG', 'Field recordings & LTP', 'Local field potentials'], media: 'ephys' },
-  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', n: '04', title: 'Glymphatic system', color: 'var(--magenta)', q: 'How does fluid flow through the brain support clearance, from mouse models to patients?', m: ['Tracer imaging', 'Human MRI', 'Translational'], media: 'glym' }] : []),
+  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', n: '02', title: 'Glymphatic system', color: 'var(--magenta)', q: 'How does fluid flow through the brain support clearance, from mouse models to patients?', m: ['Tracer imaging', 'Human MRI', 'Translational'], media: 'glym' }] : []),
+  { href: '/research/immunohistochemistry/', n: '03', title: 'Immunohistochemistry', color: 'var(--blue)', q: 'Where and when does β-amyloid pathology appear around the cells we image?', m: ['Brain sections', 'Fluorescent stains', 'Confocal microscopy'], media: 'ihc' },
+  { href: '/research/electrophysiology/', n: '04', title: 'Electrophysiology', color: 'var(--red)', q: 'How excitable are brain networks, and how plastic are their synapses?', m: ['Video-EEG', 'Field recordings & LTP', 'Local field potentials'], media: 'ephys' },
 ];
 ---
 <Base title="Research">

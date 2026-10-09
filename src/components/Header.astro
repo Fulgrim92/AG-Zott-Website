@@ -9,9 +9,9 @@ const path = stripBase(Astro.url.pathname);
 const research = [
   { href: '/research/', label: 'Overview', note: 'Questions & approach' },
   { href: '/research/two-photon/', label: 'Two-photon imaging in CA1', note: 'In vivo calcium imaging', color: 'var(--green)' },
+  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', label: 'Glymphatic system', note: 'Fluid clearance, from mouse to human MRI', color: 'var(--magenta)' }] : []),
   { href: '/research/immunohistochemistry/', label: 'Immunohistochemistry', note: 'Plaques & cells in brain sections', color: 'var(--blue)' },
   { href: '/research/electrophysiology/', label: 'Electrophysiology', note: 'EEG, LTP and field potentials', color: 'var(--red)' },
-  ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', label: 'Glymphatic system', note: 'Fluid clearance, from mouse to human MRI', color: 'var(--magenta)' }] : []),
   { href: '/#methods', label: 'From photons to findings', note: 'Our analysis pipeline, step by step', sep: true },
 ];
 const lab = [
@@ -36,7 +36,7 @@ const isActive = (item: { href: string; match?: string[] }) =>
     <a href={url('/')} class="brand" aria-label={`${site.name} — home`}>
       <Logo size={34} />
       <span class="brand__text">
-        <span class="brand__name">{site.name}</span>
+        <span class="brand__name">{site.name.startsWith('AG ') ? <><span class="brand__ag">AG</span>{site.name.slice(3)}</> : site.name}</span>
         <span class="brand__sub">{site.tagline}</span>
       </span>
     </a>
@@ -94,7 +94,10 @@ const isActive = (item: { href: string; match?: string[] }) =>
   .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; flex: none; color: var(--text); }
   .brand:hover { color: var(--text); }
   .brand__text { display: grid; line-height: 1.15; }
-  .brand__name { font-family: var(--font-serif); font-size: 1.28rem; letter-spacing: -.01em; }
+  .brand__name { font-family: var(--font-serif); font-size: 1.34rem; letter-spacing: -.01em; display: inline-flex; align-items: baseline; gap: 6px; }
+  .brand__ag { font: 700 .62rem var(--font-mono); letter-spacing: .14em; padding: 2px 5px 1px; border-radius: 4px; color: #fff;
+    background: linear-gradient(135deg, #2a8f8a, var(--primary)); transform: translateY(-3px); }
+  .brand:hover .brand__ag { background: linear-gradient(135deg, var(--glow), var(--primary)); }
   .brand__sub { font-size: .7rem; color: var(--text-3); max-width: 24ch; }
 
   .hd__nav { margin-left: auto; }
