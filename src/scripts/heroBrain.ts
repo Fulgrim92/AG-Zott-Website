@@ -54,7 +54,8 @@ export async function initHeroBrain(host: HTMLElement) {
       const x = q[i] * manifest.scale + manifest.origin[0];
       const y = q[i + 1] * manifest.scale + manifest.origin[1];
       const z = q[i + 2] * manifest.scale + manifest.origin[2];
-      pos[i] = x * S; pos[i + 1] = -z * S; pos[i + 2] = y * S;
+      // mesh z grows dorsally (DV = 320 − z), so +z is up; −y keeps the axes right-handed
+      pos[i] = x * S; pos[i + 1] = z * S; pos[i + 2] = -y * S;
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -83,13 +84,13 @@ export async function initHeroBrain(host: HTMLElement) {
     vertexShader: `attribute vec3 color; attribute float seed; uniform float uTime; uniform float uSize; uniform float uReveal; varying vec3 vC; varying float vA;
       void main(){
         // intro: points fly in from a scattered cloud and settle onto the atlas surface
-        float asm = smoothstep(seed * 0.7, seed * 0.7 + 0.35, uReveal);
+        float settle = smoothstep(seed * 0.7, seed * 0.7 + 0.35, uReveal);
         vec3 dir = normalize(vec3(sin(seed * 91.7), cos(seed * 53.1), sin(seed * 17.3 + 1.0)) + 1e-4);
-        float k = (1.0 - asm) * (1.0 - asm);
+        float k = (1.0 - settle) * (1.0 - settle);
         vec3 p = position + dir * (1.2 + seed * 2.8) * k + vec3(0.0, 0.0, -k * 1.5);
         vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv;
         float tw = 0.65 + 0.35 * sin(uTime * (0.6 + seed * 1.7) + seed * 40.0);
-        vC = color; vA = tw * smoothstep(0.0, 0.12, uReveal) * (0.35 + 0.65 * asm); gl_PointSize = uSize * (0.6 + seed * 0.8 + k * 1.2) / -mv.z; }`,
+        vC = color; vA = tw * smoothstep(0.0, 0.12, uReveal) * (0.35 + 0.65 * settle); gl_PointSize = uSize * (0.6 + seed * 0.8 + k * 1.2) / -mv.z; }`,
     fragmentShader: `uniform sampler2D uTex; uniform float uOpacity; varying vec3 vC; varying float vA;
       void main(){ vec4 t = texture2D(uTex, gl_PointCoord); gl_FragColor = vec4(vC, t.a * vA * uOpacity); }`,
     transparent: true, depthWrite: false, ...additive,

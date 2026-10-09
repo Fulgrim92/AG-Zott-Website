@@ -12,6 +12,8 @@ import DataPipeline from '../components/DataPipeline.astro';
 import GlymphaticTracer from '../components/GlymphaticTracer.astro';
 import AnatomyIntro from '../components/AnatomyIntro.astro';
 import OcularDive from '../components/OcularDive.astro';
+import Logo from '../components/Logo.astro';
+import team from '../data/team.json';
 import EphysSlice from '../components/EphysSlice.astro';
 import home from '../data/home.json';
 import assets from '../data/assets.json';
@@ -32,9 +34,31 @@ const confocal = assets.ihc.sections[assets.ihc.sections.length - 1];
 const findings = [...papers].filter((p: any) => !p.placeholder && p.summary).sort((a, b) => b.year - a.year).slice(0, 3);
 const newsByDoi = Object.fromEntries(news.filter((n) => n.link?.includes('doi.org')).map((n) => [n.link!.split('doi.org/')[1], n.date]));
 const fmtMonth = (d?: string, y?: number) => (d ? new Date(d).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : String(y));
+// Journal mastheads for the findings cards: typographic, in each journal's house colours (no logo files)
+const JOURNALS: Record<string, { mast: string; cls: string }> = {
+  'Science': { mast: 'Science', cls: 'science' },
+  'Nature Communications': { mast: 'nature communications', cls: 'natcomms' },
+  'PNAS': { mast: 'PNAS', cls: 'pnas' },
+  'Neuron': { mast: 'Neuron', cls: 'cell' },
+  'Seminars in Cell & Developmental Biology': { mast: 'Seminars in Cell & Developmental Biology', cls: 'elsevier' },
+  'Annual Review of Neuroscience': { mast: 'Annual Review of Neuroscience', cls: 'annrev' },
+};
+const journalMeta = (p: any) => {
+  const name = shortJournal(p.journal, p.journalShort);
+  const vol = (p.journal.match(/\s(\d+)[(:]/) ?? [])[1];
+  return { name, vol, ...(JOURNALS[name] ?? { mast: name, cls: 'generic' }) };
+};
 const shortJournal = (j: string, s?: string) => s || j.replace(/\s*\(.*?\)/, '').replace(/\s[\d(].*$/, '');
 const authorsShort = (a: string) => { const l = a.split(', '); return l.length > 3 ? `${l.slice(0, 3).join(', ')} … ${l[l.length - 1]}` : a; };
 
+// Hero team strip: PI first, then members (photos from team.json, initials until a photo is added)
+const heroTeam = (team as any[]).slice(0, 4).map((m) => ({
+  label: m.placeholder ? m.position : m.name,
+  role: m.placeholder ? 'Open position' : m.position,
+  photo: m.photo,
+  initials: m.name.replace(/\[.*?\]/g, '').trim().split(/\s+/).map((w: string) => w[0]).slice(0, 2).join('') || '?',
+  ph: m.placeholder,
+}));
 const methods = [
   { href: '/research/two-photon/', title: 'Two-photon imaging', text: 'In vivo calcium imaging of hundreds of CA1 neurons to detect early, β-amyloid-driven hyperactivity.', media: 'video', label: 'data' },
   ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', title: 'Glymphatic system', text: 'Tracer imaging in mice and MRI in humans: how fluid flow clears the brain, from models to patients.', media: 'glym', label: 'schematic' }] : []),
@@ -65,6 +89,23 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
       <span class="hero__scan" aria-hidden="true"></span>
     </div>
     <div class="hero__inner container container--wide">
+      <div class="hero__brand" data-intro>
+        <span class="hero__ring" aria-hidden="true"></span>
+        <Logo size={104} class="hero__logo" />
+        <p class="hero__name" aria-hidden="true">AG Zott</p>
+        <p class="hero__sub">{site.tagline ?? 'Hippocampal circuits in health and Alzheimer’s disease'}</p>
+      </div>
+      <a class="hero__team" href={url('/team/')} data-intro aria-label="Meet the team">
+        <ul role="list">
+          {heroTeam.map((m, i) => (
+            <li class:list={['hero__member', { 'is-ph': m.ph }]} style={`--i:${i}`}>
+              <span class="hero__face">{m.photo ? <img src={url(m.photo)} alt="" loading="lazy" /> : <span>{m.initials}</span>}</span>
+              <span class="hero__who"><b>{m.label}</b><small>{m.role}</small></span>
+            </li>
+          ))}
+        </ul>
+        <span class="hero__teamlink">Meet the team <span aria-hidden="true">→</span></span>
+      </a>
       <div class="hero__text">
         {latestPaperNews && (
           <a class="hero__news" href={url(`/news/${latestPaperNews.slug}/`)} data-intro>
@@ -191,7 +232,8 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
         {findings.map((p: any, i) => (
           <li data-reveal>
             <a class="pub" href={p.doi ? `https://doi.org/${p.doi}` : url('/papers/')} rel="noopener">
-              <div class={`pub__cover pub__cover--${motif(p)}`} aria-hidden="true">
+              <div class={`pub__cover pub__cover--${motif(p)} jm--${journalMeta(p).cls}`} aria-hidden="true">
+                <span class="pub__mast"><span>{journalMeta(p).mast}</span></span>
                 <svg viewBox="0 0 200 200" data-cover={motif(p)}>
                   {motif(p) === 'cells' && Array.from({ length: 22 }, (_, k) => {
                     const a = k * 2.4, r = 18 + (k * 37) % 70;
@@ -200,7 +242,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
                   {motif(p) === 'ihc' && Array.from({ length: 30 }, (_, k) => <circle cx={(k * 53) % 200} cy={(k * 89) % 200} r={2 + (k % 5)} class={k % 3 ? '' : 'on'} style={`--d:${(k % 6) * 0.5}s`} />)}
                   {motif(p) === 'ephys' && <path d="M0 100 L30 100 L36 60 L42 140 L48 100 L90 100 L96 50 L102 150 L108 100 L200 100" class="ln" />}
                 </svg>
-                <span class="pub__journal">{shortJournal(p.journal, p.journalShort)}</span>
+                <span class="pub__journal">{journalMeta(p).vol ? `Vol. ${journalMeta(p).vol} · ` : ''}{p.year}</span>
               </div>
               <div class="pub__body">
                 <p class="pub__meta"><span>{fmtMonth(newsByDoi[p.doi], p.year)}</span><span>{shortJournal(p.journal, p.journalShort)}</span></p>
@@ -296,8 +338,48 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   .hero__fallback { display: none; position: absolute; inset: 10% 5% 10% 20%; border-radius: 50%; filter: blur(30px);
     background: radial-gradient(40% 45% at 50% 50%, rgba(95, 211, 198, .35), transparent 70%), radial-gradient(30% 30% at 60% 55%, rgba(77, 255, 154, .25), transparent 70%); }
   .hero__brain:global(.no-webgl) .hero__fallback { display: block; }
-  .hero__inner { position: relative; z-index: 1; width: 100%; min-width: 0; }
-  .hero__text { max-width: 680px; min-width: 0; }
+  .hero__inner { position: relative; z-index: 1; width: 100%; min-width: 0; display: grid; gap: var(--s3) clamp(var(--s4), 5vw, var(--s7));
+    grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); grid-template-areas: 'brand text' 'team text'; align-items: start; }
+  .hero__text { grid-area: text; max-width: 680px; min-width: 0; align-self: center; text-shadow: 0 2px 24px rgba(2, 10, 14, .7); }
+  /* brand panel: the title card of the summary video */
+  .hero__brand { grid-area: brand; position: relative; display: grid; justify-items: center; align-content: center; gap: 6px; padding: var(--s5) var(--s3) var(--s4);
+    border-radius: 22px; overflow: hidden; isolation: isolate; text-align: center;
+    background: radial-gradient(90% 80% at 50% 35%, #0b2a31, #03090c 75%); border: 1px solid rgba(95, 211, 198, .18); box-shadow: 0 30px 70px -40px #000; }
+  .hero__ring { position: absolute; left: 50%; top: 42%; width: 240px; height: 240px; margin: -120px 0 0 -120px; border-radius: 50%; z-index: -1;
+    background: radial-gradient(circle, rgba(77, 255, 154, .16), transparent 62%); animation: hero-breathe 6s ease-in-out infinite; }
+  @keyframes hero-breathe { 50% { transform: scale(1.15); opacity: .7; } }
+  .hero__brand :global(.hero__logo) { width: clamp(72px, 8vw, 104px); height: auto; filter: drop-shadow(0 0 18px rgba(95, 211, 198, .35)); }
+  .hero__name { margin: var(--s1) 0 0; font-family: var(--font-serif); font-size: clamp(2.6rem, 5vw, 4.4rem); line-height: 1; color: #e8f4f2; letter-spacing: -.01em; }
+  .hero__sub { margin: 0; color: #8fb3bb; font-size: .95rem; max-width: 30ch; }
+  /* team strip */
+  .hero__team { grid-area: team; display: grid; gap: 10px; text-decoration: none; color: inherit; }
+  .hero__team ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; }
+  .hero__member { display: grid; justify-items: center; gap: 8px; padding: 12px 8px 10px; border-radius: 16px; text-align: center; min-width: 0;
+    background: rgba(6, 22, 27, .7); border: 1px solid rgba(95, 211, 198, .16); backdrop-filter: blur(6px);
+    transition: transform .4s var(--ease), border-color .3s; transition-delay: calc(var(--i) * 40ms); }
+  .hero__team:hover .hero__member { transform: translateY(-3px); border-color: rgba(95, 211, 198, .45); }
+  .hero__face { width: 58px; height: 58px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+    background: radial-gradient(circle at 35% 30%, #12404a, #061418); box-shadow: 0 0 0 1.5px rgba(95, 211, 198, .5), 0 0 22px -6px rgba(95, 211, 198, .6); }
+  .hero__face img { width: 100%; height: 100%; object-fit: cover; }
+  .hero__face span { font: 400 1.2rem var(--font-serif); color: #bfeee6; }
+  .hero__member.is-ph .hero__face { box-shadow: 0 0 0 1.5px rgba(255, 190, 90, .45); }
+  .hero__who { display: grid; gap: 2px; min-width: 0; }
+  .hero__who b { font: 600 .8rem/1.25 var(--font-sans); color: #e8f4f2; }
+  .hero__who small { font-size: .7rem; color: #8fb3bb; }
+  .hero__member.is-ph .hero__who b { color: #f3c47a; }
+  .hero__teamlink { justify-self: end; font-size: .82rem; color: var(--glow); }
+  @media (max-width: 900px) {
+    .hero__inner { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'brand' 'text' 'team'; }
+    .hero__brand { grid-template-columns: auto 1fr; justify-items: start; text-align: left; padding: var(--s2) var(--s3); gap: 2px var(--s2); }
+    .hero__brand :global(.hero__logo) { grid-row: span 2; width: 56px; }
+    .hero__name { font-size: 2.2rem; margin: 0; }
+    .hero__sub { font-size: .8rem; }
+    .hero__ring { left: 40px; top: 50%; width: 140px; height: 140px; margin: -70px 0 0 -70px; }
+    .hero__team ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hero__member { grid-template-columns: auto minmax(0, 1fr); justify-items: start; text-align: left; align-items: center; padding: 8px 10px; }
+    .hero__face { width: 42px; height: 42px; }
+  }
+  :global(:root[data-motion='off']) .hero__ring { animation: none; }
   .hero h1 { overflow-wrap: break-word; hyphens: auto; }
   .hero h1 { font-size: clamp(2.4rem, 4.4vw, 4rem); line-height: 1.04; margin-bottom: var(--s3); }
   .hero h1 :global(.hl) { font-style: normal; color: var(--glow); }
@@ -398,21 +480,35 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   .pub { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: var(--s2); height: 100%; padding: var(--s2); border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line);
     text-decoration: none; color: var(--text); box-shadow: var(--shadow-sm); transition: transform .4s var(--ease), box-shadow .4s var(--ease), border-color .3s; }
   .pub:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); color: var(--text); border-color: var(--line-2); }
-  .pub__cover { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 1; align-self: start; background: radial-gradient(circle at 40% 35%, #12384a, #061218); }
-  .pub__cover svg { width: 100%; height: 100%; }
+  .pub__cover { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 3 / 4; align-self: start; display: grid; grid-template-rows: auto 1fr;
+    background: radial-gradient(circle at 40% 60%, #12384a, #061218); box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .6), inset 0 0 0 1px rgba(255, 255, 255, .06); }
+  .pub__cover svg { width: 100%; height: 100%; min-height: 0; }
+  /* masthead: journal name set in a style close to the journal's own cover */
+  .pub__mast { display: grid; place-items: center; min-height: 34%; padding: 8px 8px 6px; text-align: center; line-height: 1; }
+  .jm--science .pub__mast { background: #fff; border-bottom: 3px solid #b8001f; }
+  .jm--science .pub__mast span { font: 700 1.7rem 'Times New Roman', Georgia, serif; color: #b8001f; letter-spacing: -.01em; }
+  .jm--natcomms .pub__mast { background: #fff; border-bottom: 1px solid #ddd; }
+  .jm--natcomms .pub__mast span { font: 700 .95rem/1 var(--font-sans); color: #111; letter-spacing: -.02em; text-transform: lowercase; }
+  .jm--pnas .pub__mast { background: #fff; border-bottom: 3px solid #1f4e8c; }
+  .jm--pnas .pub__mast span { font: 900 1.65rem var(--font-sans); color: #1f4e8c; letter-spacing: .06em; }
+  .jm--cell .pub__mast { background: #00a3ad; } .jm--cell .pub__mast span { font: 700 1.4rem var(--font-sans); color: #fff; }
+  .jm--elsevier .pub__mast { background: #f5f1ea; border-bottom: 3px solid #e9711c; }
+  .jm--elsevier .pub__mast span { font: 600 .66rem/1.2 Georgia, serif; color: #3a2a1a; }
+  .jm--annrev .pub__mast { background: #6b1d2a; } .jm--annrev .pub__mast span { font: 600 .72rem/1.15 Georgia, serif; color: #f5e9d8; letter-spacing: .02em; }
+  .jm--generic .pub__mast { background: #e8f4f2; } .jm--generic .pub__mast span { font: 600 .8rem/1.2 var(--font-serif); color: #0d2a30; }
   .pub__cover circle { fill: #5fd3c6; opacity: .22; }
   .pub__cover circle.on { fill: #4dff9a; opacity: .2; animation: blink 3.2s ease-in-out var(--d) infinite; }
   .pub__cover--ihc circle { fill: #8f9bff; } .pub__cover--ihc circle.on { fill: #3fd8ff; }
   .pub__cover .ln { fill: none; stroke: #ff6b4a; stroke-width: 2; }
   @keyframes blink { 0%, 60%, 100% { opacity: .2; } 70% { opacity: .95; } }
-  .pub__journal { position: absolute; left: 8px; bottom: 7px; right: 8px; font: 600 .6rem var(--font-sans); letter-spacing: .12em; text-transform: uppercase; color: #cfe3e6; }
+  .pub__journal { position: absolute; left: 8px; bottom: 7px; right: 8px; font: 600 .6rem var(--font-mono); letter-spacing: .08em; color: #cfe3e6; }
   .pub__meta { display: flex; gap: 10px; margin: 0 0 6px; font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--primary); }
   .pub__meta span + span { color: var(--text-3); }
   .pub h3 { font-size: 1.08rem; line-height: 1.3; margin: 0 0 8px; }
   .pub__sum { margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .pub__auth { color: var(--text-3); margin: 0; font-size: .78rem; }
   .pub__auth :global(b) { color: var(--text-2); font-weight: 600; }
-  @media (max-width: 480px) { .pub { grid-template-columns: 1fr; } .pub__cover { aspect-ratio: 3 / 1; } }
+  @media (max-width: 480px) { .pub { grid-template-columns: 96px minmax(0, 1fr); } .jm--science .pub__mast span, .jm--pnas .pub__mast span { font-size: 1.25rem; } .jm--natcomms .pub__mast span { font-size: .7rem; } }
 
   /* ---------- Deep dive ---------- */
   .deep { position: relative; background: linear-gradient(180deg, #071820, #061218 40%, #071820); }
