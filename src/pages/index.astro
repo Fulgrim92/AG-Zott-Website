@@ -108,7 +108,9 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   <section class="section section--tight about theme-dark" id="about" data-scan aria-labelledby="about-h">
     {summaryVideo ? (
       <div class="about__video" aria-hidden="true">
-        <video src={summaryVideo.bg} poster={summaryVideo.poster} muted loop playsinline preload="metadata" data-about-video></video>
+        <video poster={summaryVideo.poster} muted loop playsinline preload="metadata" data-about-video>
+          <source src={summaryVideo.bg.replace('.mp4', '.webm')} type="video/webm" /><source src={summaryVideo.bg} type="video/mp4" />
+        </video>
       </div>
     ) : <ImagingField />}
     <div class="container container--wide about__grid">
@@ -135,7 +137,9 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
     </div>
     {summaryVideo && (
       <dialog class="watch" data-watch-dialog aria-label={home.about.watchLabel}>
-        <video src={summaryVideo.full} poster={summaryVideo.poster} controls playsinline preload="none"></video>
+        <video poster={summaryVideo.poster} controls playsinline preload="none">
+          <source src={summaryVideo.full.replace('.mp4', '.webm')} type="video/webm" /><source src={summaryVideo.full} type="video/mp4" />
+        </video>
         <form method="dialog"><button class="watch__close" aria-label="Close">×</button></form>
       </dialog>
     )}

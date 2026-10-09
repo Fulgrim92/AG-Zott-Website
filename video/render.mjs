@@ -37,7 +37,10 @@ if (!frameRange) {
   mkdirSync(dest, { recursive: true });
   for (const [id, name] of [['SummaryBg', 'summary-bg.mp4'], ['Summary', 'summary.mp4']]) {
     const src = path.join(outDir, `${id}.mp4`);
-    if (existsSync(src)) cpSync(src, path.join(dest, name));
+    if (!existsSync(src)) continue;
+    cpSync(src, path.join(dest, name));
+    // VP9 copy for browsers without H.264
+    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', src, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', id === 'SummaryBg' ? '40' : '34', '-row-mt', '1', '-cpu-used', '4', '-an', path.join(dest, name.replace('.mp4', '.webm'))]);
   }
   const bg = path.join(outDir, 'SummaryBg.mp4');
   if (existsSync(bg)) execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '2', '-i', bg, '-frames:v', '1', '-q:v', '4', path.join(dest, 'summary-poster.jpg')]);
