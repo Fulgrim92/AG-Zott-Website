@@ -3,6 +3,7 @@
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
 import { cpSync, mkdirSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
 const here = path.dirname(new URL(import.meta.url).pathname);
@@ -28,4 +29,17 @@ for (const id of ['SummaryBg', 'Summary']) {
     onProgress: ({ progress }) => process.stdout.write(`\r${id} ${(progress * 100).toFixed(0)}%   `),
   });
   console.log('\nwrote', out);
+}
+
+// Publish to the website (skipped for partial renders)
+if (!frameRange) {
+  const dest = path.join(site, 'public/assets/video');
+  mkdirSync(dest, { recursive: true });
+  for (const [id, name] of [['SummaryBg', 'summary-bg.mp4'], ['Summary', 'summary.mp4']]) {
+    const src = path.join(outDir, `${id}.mp4`);
+    if (existsSync(src)) cpSync(src, path.join(dest, name));
+  }
+  const bg = path.join(outDir, 'SummaryBg.mp4');
+  if (existsSync(bg)) execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '2', '-i', bg, '-frames:v', '1', '-q:v', '4', path.join(dest, 'summary-poster.jpg')]);
+  console.log('copied to', dest);
 }
