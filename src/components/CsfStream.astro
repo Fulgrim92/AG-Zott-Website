@@ -1,0 +1,283 @@
+---
+/**
+ * How CSF-STREAM MRI measures cerebrospinal fluid mobility in humans without a tracer, after
+ * Hirschler L et al. (2025) Nat Neurosci 28:2392–2401, doi:10.1038/s41593-025-02073-3.
+ * Steps 1–2 are illustrative schematics (decay curves and spin phases are not to scale).
+ * Step 3 shows values reported in that paper (cycle amplitudes, n = 11; CAA vs controls, n = 8 each).
+ */
+import Label from './Label.astro';
+const W = 560, H = 330;
+// Step 1: signal decay during the T2 preparation (illustrative time constants; CSF decays far more slowly)
+const PX = 330, PW = 200, PY = 70, PH = 170, TMAX = 560;
+const px = (t: number) => PX + (t / TMAX) * PW;
+const py = (v: number) => PY + PH - v * PH;
+const T2 = { tissue: 45, blood: 30, csf: 1100 };
+const curve = (t2: number) => Array.from({ length: 80 }, (_, i) => (i / 79) * TMAX).map((t, i) => `${i ? 'L' : 'M'}${px(t).toFixed(1)} ${py(Math.exp(-t / t2)).toFixed(1)}`).join(' ');
+// Step 2: spin phases in two voxels
+const spins = Array.from({ length: 9 }, (_, i) => ({ x: (i % 3) * 30, y: Math.floor(i / 3) * 30, k: ((i * 37) % 9) / 8 - 0.5 }));
+// Step 3: published cycle amplitudes (% change in mobility), Hirschler et al. 2025
+const drivers = [
+  { roi: 'Fourth ventricle', heart: 8.4, breath: 2.5 },
+  { roi: 'Around the middle cerebral artery', heart: 3.2, breath: 1.2 },
+  { roi: 'Around penetrating vessels', heart: 2.8, breath: 2.6 },
+];
+const BX = 200, BW = 300, BMAX = 9;
+const bx = (v: number) => (v / BMAX) * BW;
+const steps = [
+  { k: 'Isolate', t: 'Only the fluid is left', d: 'A long preparation before each image lets the signal of brain tissue and blood fade away. Cerebrospinal fluid keeps its signal much longer, so after about half a second only the fluid around the brain, in the ventricles and along the vessels is still visible.' },
+  { k: 'Encode', t: 'Moving fluid goes dark', d: 'Extra magnetic gradients make moving water fall out of step and lose signal, while still water keeps it. One reference scan and six scans with gradients in different directions give, for every 0.45 mm voxel, how mobile the fluid is and in which direction it mainly moves.' },
+  { k: 'Measure', t: 'What moves the fluid', d: 'Sorting the images by heartbeat and breathing showed that the heartbeat drives fluid in the large spaces, while around penetrating vessels both rhythms are similar. Watching a flickering visual pattern raised mobility in the visual cortex by 1.2 % on average. In cerebral amyloid angiopathy, mobility around the middle cerebral artery was about 20 % higher than in controls.' },
+];
+---
+<figure class="cs" data-cs>
+  <div class="cs__tabs" role="tablist" aria-label="CSF-STREAM in three steps">
+    {steps.map((s, i) => (
+      <button role="tab" type="button" class:list={['cs__tab', { 'is-on': i === 0 }]} aria-selected={i === 0 ? 'true' : 'false'} data-cs-tab={i}>
+        <span class="mono">0{i + 1}</span> {s.k}<span class="cs__bar" aria-hidden="true"></span>
+      </button>
+    ))}
+  </div>
+  <div class="cs__body">
+    <div class="cs__text">
+      {steps.map((s, i) => (
+        <div class:list={['cs__copy', { 'is-on': i === 0 }]} data-cs-copy={i}>
+          <h4>{s.t}</h4>
+          <p>{s.d}</p>
+        </div>
+      ))}
+    </div>
+    <svg class="cs__stage" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Illustration of CSF-STREAM MRI in three steps: isolating the fluid signal, encoding motion, and the measured influence of heartbeat and breathing.">
+      <defs>
+        <radialGradient id="cs-brain" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#4a5560" /><stop offset="1" stop-color="#2b333b" /></radialGradient>
+        <clipPath id="cs-head"><ellipse cx="150" cy="165" rx="118" ry="140" /></clipPath>
+      </defs>
+
+      <!-- ===== Step 1: T2 preparation ===== -->
+      <g class="cs__step is-on" data-cs-step="0">
+        <g clip-path="url(#cs-head)">
+          <rect x="20" y="15" width="260" height="300" fill="#05080b" />
+          <!-- brain tissue -->
+          <g data-cs-layer="tissue">
+            <ellipse cx="150" cy="165" rx="108" ry="130" fill="url(#cs-brain)" />
+            <path d="M150 40 V290" stroke="#1b2228" stroke-width="3" />
+          </g>
+          <!-- blood vessels: middle cerebral arteries, cortical veins -->
+          <g data-cs-layer="blood" fill="none" stroke="#e0505a" stroke-linecap="round">
+            <path d="M150 150 C120 150 95 140 72 118 M150 150 C180 150 205 140 228 118" stroke-width="5" />
+            <path d="M72 118 C60 100 58 80 66 64 M228 118 C240 100 242 80 234 64 M95 140 C80 170 70 200 70 230 M205 140 C220 170 230 200 230 230" stroke-width="3" />
+            <path d="M150 288 C140 260 146 240 150 220" stroke-width="4" stroke="#9a3550" />
+          </g>
+          <!-- CSF: subarachnoid rim, sulci, ventricles, perivascular spaces -->
+          <g data-cs-layer="csf" fill="#e8f6ff">
+            <ellipse cx="150" cy="165" rx="114" ry="136" fill="none" stroke="#e8f6ff" stroke-width="5" />
+            <path d="M138 120 C120 135 118 170 132 190 L142 180 C134 165 136 140 146 128 Z M162 120 C180 135 182 170 168 190 L158 180 C166 165 164 140 154 128 Z" />
+            <g stroke="#e8f6ff" stroke-width="2.4" fill="none" stroke-linecap="round">
+              <path d="M150 150 C120 150 95 140 72 118" stroke-width="10" stroke-opacity=".35" />
+              <path d="M150 150 C180 150 205 140 228 118" stroke-width="10" stroke-opacity=".35" />
+              <path d="M44 120 L60 128 M40 165 L58 166 M46 210 L62 202 M256 120 L240 128 M260 165 L242 166 M254 210 L238 202 M110 40 L114 56 M190 40 L186 56" />
+              <path d="M112 168 l-4 -14 M104 178 l-6 -12 M118 186 l-2 -14 M188 168 l4 -14 M196 178 l6 -12 M182 186 l2 -14" stroke-width="1.6" />
+            </g>
+          </g>
+        </g>
+        <ellipse cx="150" cy="165" rx="118" ry="140" fill="none" stroke="#5fd3c6" stroke-opacity=".25" />
+        <!-- decay plot -->
+        <g class="cs__plot">
+          <line x1={PX} x2={PX + PW} y1={PY + PH} y2={PY + PH} />
+          <line x1={PX} x2={PX} y1={PY} y2={PY + PH} />
+          <text x={PX} y={PY - 10}>signal</text>
+          <text x={PX + PW} y={PY + PH + 18} text-anchor="end">time in the preparation →</text>
+        </g>
+        <path d={curve(T2.tissue)} class="cs__c" stroke="#9aa6b0" />
+        <path d={curve(T2.blood)} class="cs__c" stroke="#e0505a" />
+        <path d={curve(T2.csf)} class="cs__c" stroke="#e8f6ff" />
+        <g class="cs__key" transform={`translate(${PX + 92} ${PY + 108})`}>
+          <text y="0" fill="#e8f6ff">fluid (CSF)</text><text y="16" fill="#e0505a">blood</text><text y="32" fill="#9aa6b0">brain tissue</text>
+        </g>
+        <line class="cs__te" x1={px(495)} x2={px(495)} y1={PY - 4} y2={PY + PH} />
+        <text class="cs__tel" x={px(495) + 4} y={PY + PH + 34} text-anchor="end">readout ≈ 0.5 s</text>
+        <line class="cs__head" data-cs-head x1={PX} x2={PX} y1={PY} y2={PY + PH} />
+      </g>
+
+      <!-- ===== Step 2: motion encoding ===== -->
+      <g class="cs__step" data-cs-step="1">
+        <!-- artery with its perivascular space -->
+        <g transform="translate(0 30)">
+          <rect x="30" y="36" width="500" height="64" rx="32" fill="#e8f6ff" fill-opacity=".1" stroke="#e8f6ff" stroke-opacity=".4" stroke-dasharray="4 5" />
+          <rect x="30" y="52" width="500" height="32" rx="16" fill="#e0505a" opacity=".75" data-cs-artery />
+          <text x="40" y="26" class="cs__lbl">perivascular space (fluid)</text>
+          <text x="520" y="73" class="cs__lbl" text-anchor="end" fill="#fff">artery</text>
+          <g data-cs-flow>{Array.from({ length: 22 }, (_, i) => <circle cx={40 + i * 22.5} cy={i % 2 ? 44 : 92} r="3" fill="#e8f6ff" />)}</g>
+        </g>
+        <!-- gradient direction indicator -->
+        <g transform="translate(280 182)">
+          <circle r="26" fill="none" stroke="#5fd3c6" stroke-opacity=".3" />
+          <g data-cs-grad><path d="M-22 0 H22 M14 -7 L22 0 L14 7" stroke="#ffd166" stroke-width="2.5" fill="none" stroke-linecap="round" /></g>
+          <text y="44" class="cs__lbl" text-anchor="middle">gradient</text><text y="60" class="cs__lbl" text-anchor="middle">direction <tspan data-cs-dir>1</tspan> of 6</text>
+        </g>
+        <!-- voxels: still vs moving -->
+        {[{ x: 70, title: 'still fluid', moving: false }, { x: 400, title: 'moving fluid', moving: true }].map((v) => (
+          <g transform={`translate(${v.x} 160)`}>
+            <rect x="-14" y="-14" width="88" height="88" rx="8" fill="#0a1a20" stroke="#5fd3c6" stroke-opacity=".35" />
+            {spins.map((s) => (
+              <g transform={`translate(${s.x} ${s.y})`}>
+                <circle r="9" fill="none" stroke="#e8f6ff" stroke-opacity=".25" />
+                <line x1="0" y1="0" x2="0" y2="-8" stroke="#e8f6ff" stroke-width="2" stroke-linecap="round" data-cs-spin={v.moving ? s.k : 0} />
+              </g>
+            ))}
+            <text x="30" y="96" class="cs__lbl" text-anchor="middle">{v.title}</text>
+            <rect x="-14" y="106" width="88" height="8" rx="4" fill="#5fd3c6" fill-opacity=".15" />
+            <rect x="-14" y="106" width="88" height="8" rx="4" fill="#5fd3c6" data-cs-sig={v.moving ? 1 : 0} />
+            <text x="30" y="130" class="cs__lbl" text-anchor="middle">signal</text>
+          </g>
+        ))}
+      </g>
+
+      <!-- ===== Step 3: published values ===== -->
+      <g class="cs__step" data-cs-step="2">
+        <text x="20" y="34" class="cs__h">Mobility change over each cycle (%)</text>
+        <g class="cs__key" transform="translate(360 30)"><rect width="12" height="10" y="-9" fill="#ff5fd2" /><text x="18">heartbeat</text><rect x="100" width="12" height="10" y="-9" fill="#5fd3c6" /><text x="118">breathing</text></g>
+        {drivers.map((d, i) => (
+          <g transform={`translate(0 ${70 + i * 66})`}>
+            <text x={BX - 12} y="12" class="cs__roi" text-anchor="end">{d.roi.split(' ').slice(0, 2).join(' ')}</text>
+            <text x={BX - 12} y="27" class="cs__roi" text-anchor="end">{d.roi.split(' ').slice(2).join(' ')}</text>
+            <rect x={BX} y="0" height="16" rx="3" fill="#ff5fd2" width={bx(d.heart)} class="cs__b" style={`--d:${i * 0.12}s`} />
+            <text x={BX + bx(d.heart) + 6} y="13" class="cs__v">{d.heart}</text>
+            <rect x={BX} y="20" height="16" rx="3" fill="#5fd3c6" width={bx(d.breath)} class="cs__b" style={`--d:${i * 0.12 + 0.06}s`} />
+            <text x={BX + bx(d.breath) + 6} y="33" class="cs__v">{d.breath}</text>
+          </g>
+        ))}
+        <line x1={BX} x2={BX} y1="60" y2="270" stroke="#5fd3c6" stroke-opacity=".3" />
+        <text x="20" y="300" class="cs__lbl">n = 11 healthy volunteers, 7 T</text>
+      </g>
+    </svg>
+  </div>
+  <figcaption>
+    <span data-cs-cap="0" class="is-on"><Label kind="schematic" /> <span>Signal curves and spins not to scale.</span></span>
+    <span data-cs-cap="1"><Label kind="schematic" /> <span>Spins not to scale.</span></span>
+    <span data-cs-cap="2"><Label kind="data" text="Published data" /> <span>Values from Hirschler et al. (2025).</span></span>
+    <span class="small muted">After Hirschler L et al. (2025) Region-specific drivers of CSF mobility measured with MRI in humans. <i>Nat Neurosci</i> 28:2392–2401. <a href="https://doi.org/10.1038/s41593-025-02073-3" rel="noopener">doi:10.1038/s41593-025-02073-3</a></span>
+  </figcaption>
+</figure>
+
+<style>
+  .cs { margin: 0; padding: clamp(var(--s3), 3vw, var(--s4)); border-radius: 20px; background: radial-gradient(120% 90% at 100% 0%, #1b1430, #05080c); color: #e8f4f2;
+    border: 1px solid color-mix(in srgb, var(--magenta) 30%, transparent); }
+  .cs__tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: var(--s3); }
+  .cs__tab { position: relative; overflow: hidden; text-align: left; padding: 10px 12px 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .1); background: rgba(255, 255, 255, .03);
+    color: #8fb3bb; font: 600 .95rem var(--font-sans); cursor: pointer; transition: color .3s, border-color .3s, background .3s; }
+  .cs__tab .mono { color: var(--magenta); margin-right: 4px; }
+  .cs__tab.is-on { color: #fff; border-color: color-mix(in srgb, var(--magenta) 60%, transparent); background: rgba(255, 95, 210, .08); }
+  .cs__bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--magenta); transform-origin: left; transform: scaleX(0); }
+  .cs__tab.is-on .cs__bar { animation: cs-bar var(--cs-dur, 9s) linear forwards; }
+  .cs.is-paused .cs__tab.is-on .cs__bar { animation: none; transform: scaleX(1); }
+  @keyframes cs-bar { to { transform: scaleX(1); } }
+  .cs__body { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr); gap: var(--s4); align-items: center; }
+  .cs__text { display: grid; }
+  .cs__copy { grid-area: 1 / 1; opacity: 0; transform: translateY(8px); transition: opacity .45s, transform .5s var(--ease); pointer-events: none; }
+  .cs__copy.is-on { opacity: 1; transform: none; pointer-events: auto; }
+  .cs__copy h4 { margin: 0 0 8px; font-family: var(--font-serif); font-size: 1.4rem; font-weight: 400; color: #fff; }
+  .cs__copy p { margin: 0; color: #b9cdd2; font-size: .98rem; line-height: 1.6; }
+  .cs__stage { width: 100%; height: auto; display: block; }
+  .cs__step { opacity: 0; transition: opacity .5s; pointer-events: none; }
+  .cs__step.is-on { opacity: 1; }
+  .cs__plot line { stroke: #5f7880; }
+  .cs__plot text, .cs__key text, .cs__lbl, .cs__tel { font: 10.5px var(--font-mono); fill: #8fb3bb; }
+  .cs__key text { font-size: 10px; }
+  .cs__c { fill: none; stroke-width: 2.4; }
+  .cs__te { stroke: #ffd166; stroke-dasharray: 3 4; }
+  .cs__tel { fill: #ffd166; }
+  .cs__head { stroke: #fff; stroke-opacity: .6; }
+  .cs__h { font: 600 13px var(--font-sans); fill: #e8f4f2; }
+  .cs__roi { font: 11.5px var(--font-sans); fill: #b9cdd2; }
+  .cs__v { font: 600 11px var(--font-mono); fill: #e8f4f2; }
+  .cs__b { transform-box: fill-box; transform-origin: left; transform: scaleX(0); transition: transform .9s var(--ease) var(--d, 0s); }
+  .cs__step.is-on .cs__b { transform: scaleX(1); }
+  .cs figcaption { margin-top: var(--s3); display: grid; gap: 6px; }
+  .cs figcaption [data-cs-cap] { display: none; color: #b9cdd2; font-size: .9rem; }
+  .cs figcaption [data-cs-cap].is-on { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .cs figcaption .muted { color: #8fb3bb; }
+  .cs figcaption a { color: #ff9ae4; }
+  @media (max-width: 760px) {
+    .cs__body { grid-template-columns: 1fr; gap: var(--s3); }
+    .cs__stage { order: -1; }
+    .cs__tab { font-size: .85rem; padding: 8px 8px 12px; }
+    .cs__plot text, .cs__key text, .cs__lbl, .cs__tel { font-size: 14px; }
+    .cs__roi { font-size: 15px; } .cs__v { font-size: 14px; } .cs__h { font-size: 17px; }
+  }
+  :global(:root[data-motion='off']) .cs__b { transition: none; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-cs]').forEach((root) => {
+    const DUR = 9000;
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-cs-tab]')];
+    const q = (s: string) => [...root.querySelectorAll<SVGElement | HTMLElement>(s)];
+    const layer = (n: string) => root.querySelector<SVGGElement>(`[data-cs-layer="${n}"]`)!;
+    const head = root.querySelector<SVGLineElement>('[data-cs-head]')!;
+    const grad = root.querySelector<SVGGElement>('[data-cs-grad]')!;
+    const dirTxt = root.querySelector('[data-cs-dir]')!;
+    const flow = root.querySelector<SVGGElement>('[data-cs-flow]')!;
+    const artery = root.querySelector<SVGRectElement>('[data-cs-artery]')!;
+    const spinEls = q('[data-cs-spin]') as SVGLineElement[];
+    const sigEls = q('[data-cs-sig]') as SVGRectElement[];
+    root.style.setProperty('--cs-dur', `${DUR / 1000}s`);
+    let cur = 0, t0 = performance.now(), raf = 0, visible = false, auto = true;
+    const off = () => document.documentElement.dataset.motion === 'off';
+
+    const show = (i: number) => {
+      cur = i; t0 = performance.now();
+      tabs.forEach((b, k) => { b.classList.toggle('is-on', k === i); b.setAttribute('aria-selected', String(k === i)); });
+      for (const sel of ['[data-cs-copy]', '[data-cs-step]', '[data-cs-cap]']) q(sel).forEach((el, k) => el.classList.toggle('is-on', k === i));
+      if (off()) still();
+    };
+    // static end state for reduced motion
+    const still = () => {
+      layer('tissue').style.opacity = '0.04'; layer('blood').style.opacity = '0.02'; layer('csf').style.opacity = '1';
+      head.setAttribute('x1', head.getAttribute('x1')!);
+    };
+
+    const frame = (now: number) => {
+      const e = now - t0;
+      if (cur === 0) {
+        // playhead sweeps the preparation; layers fade with their decay curves (illustrative constants)
+        const t = Math.min(1, e / (DUR * 0.6)) * 495;
+        const x = 330 + (t / 560) * 200;
+        head.setAttribute('x1', `${x}`); head.setAttribute('x2', `${x}`);
+        layer('tissue').style.opacity = `${Math.max(0.04, Math.exp(-t / 45))}`;
+        layer('blood').style.opacity = `${Math.max(0.02, Math.exp(-t / 30))}`;
+        layer('csf').style.opacity = `${Math.exp(-t / 1100)}`;
+      } else if (cur === 1) {
+        const s = e / 1000;
+        // pulsatile back-and-forth motion along the vessel with each heartbeat (~1 per second)
+        const beat = Math.sin(s * 2 * Math.PI) ** 3;
+        flow.setAttribute('transform', `translate(${beat * 8} 0)`);
+        artery.setAttribute('transform', `translate(0 ${-Math.max(0, beat) * 1.5}) scale(1 ${1 + Math.max(0, beat) * 0.02})`);
+        const dir = Math.floor(s / 1.4) % 6;
+        dirTxt.textContent = String(dir + 1);
+        grad.setAttribute('transform', `rotate(${dir * 30})`);
+        // phase spread of moving spins grows over the encoding; alignment with the flow sets how much
+        const enc = (s % 1.4) / 1.4, along = Math.abs(Math.cos((dir * 30 * Math.PI) / 180));
+        let sum = 0;
+        spinEls.forEach((el) => {
+          const k = +(el.dataset.csSpin ?? 0);
+          const a = k * enc * 300 * (0.35 + 0.65 * along);
+          el.setAttribute('transform', `rotate(${a})`);
+          if (k !== 0) sum += Math.cos((a * Math.PI) / 180);
+        });
+        const n = spinEls.filter((el) => +(el.dataset.csSpin ?? 0) !== 0).length || 1;
+        sigEls.forEach((el) => { if (el.dataset.csSig === '1') el.setAttribute('width', `${Math.max(8, 88 * Math.abs(sum / n))}`); });
+      }
+      if (auto && e > DUR) show((cur + 1) % 3);
+      if (visible) raf = requestAnimationFrame(frame);
+    };
+    const run = () => { cancelAnimationFrame(raf); if (visible && !off()) raf = requestAnimationFrame(frame); else still(); };
+    tabs.forEach((b, i) => b.addEventListener('click', () => { auto = false; root.classList.add('is-paused'); show(i); run(); }));
+    tabs.forEach((b, i) => b.addEventListener('keydown', (ev) => {
+      const d = ev.key === 'ArrowRight' ? 1 : ev.key === 'ArrowLeft' ? -1 : 0;
+      if (d) { ev.preventDefault(); const n = (i + d + 3) % 3; tabs[n].focus(); tabs[n].click(); }
+    }));
+    new IntersectionObserver(([en]) => { const was = visible; visible = en.isIntersecting; if (visible && !was) { t0 = performance.now(); run(); } }, { threshold: 0.25 }).observe(root);
+    document.addEventListener('agz:motion', run);
+    if (off()) { auto = false; root.classList.add('is-paused'); still(); }
+  });
+</script>
