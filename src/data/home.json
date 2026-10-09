@@ -50,13 +50,14 @@
   },
 
   "rundown": {
-    "eyebrow": "Keep scrolling",
+    "eyebrow": "Overview",
     "title": "The lab at a glance",
     "items": [
       { "label": "Our methods", "href": "#approach" },
       { "label": "Latest findings", "href": "#findings" },
       { "label": "The team", "href": "#team" },
-      { "label": "Join us & funding", "href": "#join" }
+      { "label": "Join us & funding", "href": "#join" },
+      { "label": "Dive deeper: from photons to findings", "href": "#methods" }
     ]
   },
 

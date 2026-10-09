@@ -12,12 +12,12 @@ import DataPipeline from '../components/DataPipeline.astro';
 import GlymphaticTracer from '../components/GlymphaticTracer.astro';
 import AnatomyIntro from '../components/AnatomyIntro.astro';
 import OcularDive from '../components/OcularDive.astro';
+import EphysSlice from '../components/EphysSlice.astro';
 import home from '../data/home.json';
 import assets from '../data/assets.json';
 import site from '../data/site.json';
 import news from '../data/news.json';
 import papers from '../data/papers.json';
-import { datasets } from '../scripts/signals';
 import { url } from '../lib/url';
 import { existsSync } from 'node:fs';
 
@@ -35,21 +35,11 @@ const fmtMonth = (d?: string, y?: number) => (d ? new Date(d).toLocaleDateString
 const shortJournal = (j: string, s?: string) => s || j.replace(/\s*\(.*?\)/, '').replace(/\s[\d(].*$/, '');
 const authorsShort = (a: string) => { const l = a.split(', '); return l.length > 3 ? `${l.slice(0, 3).join(', ')} … ${l[l.length - 1]}` : a; };
 
-// Build-time SVG of the illustrative LFP (min/max decimation)
-const lfp = datasets.lfp().series[0];
-const cols = 300, per = Math.floor(lfp.y.length / cols);
-let lfpPath = '';
-for (let c = 0; c < cols; c++) {
-  let lo = Infinity, hi = -Infinity;
-  for (let i = c * per; i < (c + 1) * per; i++) { const v = lfp.y[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
-  const x = ((c / cols) * 1000).toFixed(1), Y = (v: number) => (150 - v * 130).toFixed(1);
-  lfpPath += `${c ? 'L' : 'M'}${x} ${Y(hi)}L${x} ${Y(lo)}`;
-}
 const methods = [
   { href: '/research/two-photon/', title: 'Two-photon imaging', text: 'In vivo calcium imaging of hundreds of CA1 neurons to detect early, β-amyloid-driven hyperactivity.', media: 'video', label: 'data' },
   ...(site.features.glymphatic ? [{ href: '/research/glymphatic/', title: 'Glymphatic system', text: 'Tracer imaging in mice and MRI in humans: how fluid flow clears the brain, from models to patients.', media: 'glym', label: 'schematic' }] : []),
   { href: '/research/immunohistochemistry/', title: 'Immunohistochemistry', text: 'Staining and confocal imaging of brain sections to map amyloid plaques and the cells around them.', media: 'image', label: 'published' },
-  { href: '/research/electrophysiology/', title: 'Electrophysiology', text: 'EEG, synaptic plasticity (LTP) and field potentials — network function from hours to milliseconds.', media: 'trace', label: 'schematic' },
+  { href: '/research/electrophysiology/', title: 'Electrophysiology', text: 'Brain-slice recordings of synaptic plasticity (LTP), EEG and field potentials: network function from hours to milliseconds.', media: 'trace', label: 'schematic' },
 ];
 // Funders shown in the hero. Official logo files go in public/assets/logos/ (see FunderLogo.astro);
 // until they exist, the funder's name is shown as text (never a redrawn logo).
@@ -145,29 +135,6 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
     )}
   </section>
 
-  <!-- ======================= Deep dive ======================= -->
-  <div class="deep theme-dark" id="methods">
-    <header class="deep__intro section" aria-labelledby="deep-h">
-      <NeuralBackdrop density={1.2} opacity={0.7} />
-      <div class="container deep__head">
-        <p class="eyebrow">{home.deep.eyebrow}</p>
-        <h2 id="deep-h" data-split set:html={hl(home.deep.title)} />
-        <p class="lead" data-reveal>{home.deep.lead}</p>
-        <ol class="deep__parts" role="list" data-reveal>
-          {home.deep.parts.map((p, i) => <li><span class="mono">0{i + 1}</span>{p}</li>)}
-        </ol>
-      </div>
-    </header>
-
-    <OcularDive />
-    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">01</span> {home.deep.parts[0]}</p></div>
-    <AnatomyIntro />
-    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">02</span> {home.deep.parts[1]}</p></div>
-    <GraphicalAbstract />
-    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">03</span> {home.deep.parts[2]}</p></div>
-    <DataPipeline />
-  </div>
-
   <!-- ======================= Rundown ======================= -->
   <section class="rundown" aria-labelledby="rundown-h">
     <div class="container container--wide rundown__in">
@@ -196,11 +163,11 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
                 {m.media === 'video' && <video src={url(rec2.src)} poster={url(rec2.poster)} muted loop playsinline preload="none" data-autoplay aria-label={rec2.alt}></video>}
                 {m.media === 'image' && <img src={url(confocal.src)} alt={confocal.alt} loading="lazy" />}
                 {m.media === 'glym' && <GlymphaticTracer compact />}
-                {m.media === 'trace' && <svg viewBox="0 0 1000 300" preserveAspectRatio="none" role="img" aria-label="Illustrative local field potential trace."><path d={lfpPath} class="method__trace" /></svg>}
+                {m.media === 'trace' && <EphysSlice />}
                 <span class="method__label">
                   {m.label === 'data' && <Label kind="data" />}
                   {m.label === 'published' && <Label kind="data" text="Published data" />}
-                  {m.label === 'schematic' && <Label kind="schematic" text={m.media === 'trace' ? 'Simulation' : undefined} />}
+                  {m.label === 'schematic' && <Label kind="schematic" />}
                 </span>
               </div>
               <h3>{m.title}</h3>
@@ -279,6 +246,29 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
       </a>
     </div>
   </section>
+
+  <!-- ======================= Deep dive ======================= -->
+  <div class="deep theme-dark" id="methods">
+    <header class="deep__intro section" aria-labelledby="deep-h">
+      <NeuralBackdrop density={1.2} opacity={0.7} />
+      <div class="container deep__head">
+        <p class="eyebrow">{home.deep.eyebrow}</p>
+        <h2 id="deep-h" data-split set:html={hl(home.deep.title)} />
+        <p class="lead" data-reveal>{home.deep.lead}</p>
+        <ol class="deep__parts" role="list" data-reveal>
+          {home.deep.parts.map((p, i) => <li><span class="mono">0{i + 1}</span>{p}</li>)}
+        </ol>
+      </div>
+    </header>
+
+    <OcularDive />
+    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">01</span> {home.deep.parts[0]}</p></div>
+    <AnatomyIntro />
+    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">02</span> {home.deep.parts[1]}</p></div>
+    <GraphicalAbstract />
+    <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">03</span> {home.deep.parts[2]}</p></div>
+    <DataPipeline />
+  </div>
 </Base>
 
 <style>
@@ -391,7 +381,6 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   .method__media video, .method__media img, .method__media svg { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease); }
   .method:hover .method__media video, .method:hover .method__media img { transform: scale(1.06); }
   .method__media img { object-fit: contain; background: #000; }
-  .method__trace { fill: none; stroke: var(--red); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
   .method__label { position: absolute; left: 8px; bottom: 8px; }
   .method h3 { font-family: var(--font-sans); font-weight: 600; font-size: 1.04rem; margin: 0; letter-spacing: 0; }
   .method p { margin: 0; }
