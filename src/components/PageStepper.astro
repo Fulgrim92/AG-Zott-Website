@@ -1,0 +1,136 @@
+---
+/**
+ * Floating page controls for the homepage:
+ * - an arrow button that jumps to the next section (any element with data-stop="Label"), and back to the top at the end;
+ * - "Start the tour" while the deep dive is on screen: scrolls through the eyepiece, atlas, story and analysis at
+ *   reading pace. Any wheel, touch or key press hands control back to the visitor.
+ */
+---
+<div class="ps" data-ps>
+  <div class="ps__tour" data-ps-tourbar hidden>
+    <button type="button" class="ps__btn ps__btn--tour" data-ps-tour aria-pressed="false">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path class="ps__play" d="M8 5v14l11-7z" /><path class="ps__pause" d="M7 5h4v14H7zM13 5h4v14h-4z" /></svg>
+      <span data-ps-tourlbl>Start the tour</span>
+    </button>
+    <span class="ps__prog" aria-hidden="true"><i data-ps-prog></i></span>
+  </div>
+  <button type="button" class="ps__btn ps__btn--next" data-ps-next aria-label="Next section">
+    <span class="ps__lbl" data-ps-lbl>Next</span>
+    <span class="ps__arrow" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 4v15M5 12l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+  </button>
+</div>
+
+<style>
+  .ps { position: fixed; right: clamp(12px, 2.4vw, 28px); bottom: clamp(12px, 2.4vw, 28px); z-index: 60; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+  .ps > * { pointer-events: auto; }
+  .ps__btn { display: inline-flex; align-items: center; gap: 10px; border: 1px solid rgba(95, 211, 198, .45); border-radius: 999px; cursor: pointer;
+    background: rgba(4, 18, 22, .82); color: #e8f4f2; font: 600 .86rem var(--font-sans); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 12px 30px -14px rgba(0, 0, 0, .7); transition: border-color .3s, transform .35s var(--ease), box-shadow .35s; }
+  .ps__btn:hover { border-color: #5fd3c6; transform: translateY(-2px); box-shadow: 0 16px 36px -14px rgba(95, 211, 198, .55); }
+  .ps__btn:focus-visible { outline: 2px solid #5fd3c6; outline-offset: 3px; }
+  .ps__btn--next { padding: 6px 6px 6px 16px; }
+  .ps__lbl { max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ps__arrow { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #5fd3c6; color: #04201c; transition: transform .45s var(--ease); }
+  .ps.is-end .ps__arrow { transform: rotate(180deg); }
+  .ps:not(.is-end) .ps__btn--next:hover .ps__arrow { animation: ps-nudge 1s var(--ease) infinite; }
+  @keyframes ps-nudge { 50% { transform: translateY(3px); } }
+  .ps__tour { position: relative; display: flex; }
+  .ps__btn--tour { padding: 10px 16px 10px 14px; border-color: rgba(77, 255, 154, .55); }
+  .ps__btn--tour svg { fill: #4dff9a; }
+  .ps__pause { display: none; }
+  .ps.is-touring .ps__play { display: none; } .ps.is-touring .ps__pause { display: inline; }
+  .ps__prog { position: absolute; left: 14px; right: 14px; bottom: 4px; height: 2px; border-radius: 2px; background: rgba(255, 255, 255, .12); overflow: hidden; opacity: 0; transition: opacity .3s; }
+  .ps.is-touring .ps__prog { opacity: 1; }
+  .ps__prog i { display: block; height: 100%; width: 100%; background: #4dff9a; transform-origin: left; transform: scaleX(var(--p, 0)); }
+  .ps__tour[hidden] { display: none; }
+  @media (max-width: 640px) {
+    .ps__lbl { display: none; }
+    .ps__btn--next { padding: 4px; }
+    .ps__btn--tour { padding: 9px 14px 9px 12px; font-size: .8rem; }
+  }
+  @media print { .ps { display: none; } }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-ps]');
+  if (root) {
+    const nextBtn = root.querySelector<HTMLButtonElement>('[data-ps-next]')!;
+    const lbl = root.querySelector<HTMLElement>('[data-ps-lbl]')!;
+    const tourBar = root.querySelector<HTMLElement>('[data-ps-tourbar]')!;
+    const tourBtn = root.querySelector<HTMLButtonElement>('[data-ps-tour]')!;
+    const tourLbl = root.querySelector<HTMLElement>('[data-ps-tourlbl]')!;
+    const prog = root.querySelector<HTMLElement>('[data-ps-prog]')!;
+    const deep = document.querySelector<HTMLElement>('[data-tour]');
+    const header = () => document.querySelector('[data-header]')?.getBoundingClientRect().height ?? 0;
+    const top = (el: Element) => el.getBoundingClientRect().top + scrollY;
+    const stops = () => [...document.querySelectorAll<HTMLElement>('[data-stop]')].map((el) => ({ el, y: Math.max(0, top(el) - header() + 1), label: el.dataset.stop! }));
+    const smooth = (y: number) => scrollTo({ top: y, behavior: document.documentElement.dataset.motion === 'off' ? 'auto' : 'smooth' });
+
+    // ----- next-section arrow -----
+    const next = () => stops().find((s) => s.y > scrollY + 8);
+    const update = () => {
+      const n = next();
+      root.classList.toggle('is-end', !n);
+      lbl.textContent = n ? n.label : 'Back to top';
+      nextBtn.setAttribute('aria-label', n ? `Next section: ${n.label}` : 'Back to top');
+    };
+    // jump to the target; sections that load lazily can shift it while scrolling, so re-aim once the scroll settles
+    const go = (s?: { el: HTMLElement }) => {
+      if (!s) { smooth(0); return; }
+      const aim = () => Math.max(0, top(s.el) - header() + 1);
+      smooth(aim());
+      let n = 0;
+      const check = () => { if (Math.abs(aim() - scrollY) > 24 && n++ < 3) { smooth(aim()); setTimeout(check, 900); } };
+      setTimeout(check, 900);
+    };
+    nextBtn.addEventListener('click', () => { stopTour(); go(next()); });
+    let raf = 0;
+    addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); }, { passive: true });
+    addEventListener('resize', update);
+    update();
+    document.querySelectorAll<HTMLElement>('[data-ps-go]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); go(next()); }));
+
+    // ----- guided tour through the deep dive -----
+    let touring = false, last = 0, tRaf = 0, pos = 0;
+    const PX_PER_S = () => innerHeight * 0.3;          // reading pace: about a third of a screen per second
+    const span = () => { const a = top(deep!) - header(), b = a + deep!.offsetHeight - innerHeight; return [a, Math.max(a, b)]; };
+    const step = (now: number) => {
+      if (!touring) return;
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      const [a, b] = span();
+      pos = Math.min(b, Math.max(pos, a) + PX_PER_S() * dt);
+      scrollTo({ top: pos, behavior: 'instant' as ScrollBehavior });
+      prog.style.setProperty('--p', String((pos - a) / (b - a || 1)));
+      if (pos >= b) { stopTour(); return; }
+      tRaf = requestAnimationFrame(step);
+    };
+    const startTour = () => {
+      if (!deep) return;
+      const [a, b] = span();
+      pos = scrollY < a - 2 || scrollY >= b - 2 ? a : scrollY;
+      if (Math.abs(scrollY - pos) > 2) scrollTo({ top: pos, behavior: 'instant' as ScrollBehavior });
+      touring = true; root.classList.add('is-touring'); tourBtn.setAttribute('aria-pressed', 'true'); tourLbl.textContent = 'Pause tour';
+      last = performance.now(); tRaf = requestAnimationFrame(step);
+    };
+    function stopTour() {
+      if (!touring) return;
+      touring = false; cancelAnimationFrame(tRaf);
+      root!.classList.remove('is-touring'); tourBtn.setAttribute('aria-pressed', 'false');
+      const [, b] = deep ? span() : [0, 0];
+      tourLbl.textContent = scrollY >= b - 4 ? 'Replay the tour' : 'Resume tour';
+    }
+    if (deep) {
+      tourBtn.addEventListener('click', () => (touring ? stopTour() : startTour()));
+      document.querySelectorAll<HTMLElement>('[data-tour-start]').forEach((b) => b.addEventListener('click', startTour));
+      // the visitor takes over as soon as they scroll themselves
+      ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach((ev) => addEventListener(ev, (e) => {
+        if (touring && !(e.target as HTMLElement)?.closest?.('[data-ps]')) stopTour();
+      }, { passive: true }));
+      // offer the tour while the eyepiece and the rest of the deep dive are on screen
+      new IntersectionObserver(([e]) => {
+        tourBar.hidden = !e.isIntersecting && !touring;
+        if (!e.isIntersecting) { stopTour(); tourLbl.textContent = 'Start the tour'; }
+      }, { threshold: 0 }).observe(deep);
+    }
+  }
+</script>

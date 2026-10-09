@@ -46,6 +46,8 @@
     "eyebrow": "For the curious",
     "title": "From photons to *findings*",
     "lead": "Scroll on: first, where in the brain we look. Then a real recording from the living brain and the story behind it, from a single synapse to whole circuits. Finally, that recording analysed step by step with our own pipeline.",
+    "tour": "Start the tour",
+    "tourHint": "Sit back: the page scrolls itself. Scroll or press any key to take over.",
     "parts": ["Where we look", "A real recording and the story behind it", "The data, analysed step by step"]
   },
 

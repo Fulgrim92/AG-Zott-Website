@@ -37,6 +37,21 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         if (!a || a.origin !== location.origin) return;
         try { sessionStorage.setItem('agz-vt', JSON.stringify([e.clientX / innerWidth * 100, e.clientY / innerHeight * 100])); } catch (err) {}
       }, true);
+      // Every link opens the next page at its top (or exactly at the #section it points to), not at a remembered
+      // or half-restored position; back/forward keeps the browser's own restoration
+      var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+      if (nav.type !== 'back_forward') {
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+        var touched = false;
+        ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(function (ev) { addEventListener(ev, function () { touched = true; }, { passive: true, once: true }); });
+        var land = function () {
+          if (touched) return;
+          var t = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+          if (t) t.scrollIntoView(); else scrollTo(0, 0);
+        };
+        addEventListener('DOMContentLoaded', land);
+        addEventListener('load', function () { land(); setTimeout(land, 700); setTimeout(land, 1600); });
+      }
       addEventListener('pagereveal', function (e) {
         if (!e.viewTransition) return;
         if (d.dataset.motion === 'off') { e.viewTransition.skipTransition(); return; }

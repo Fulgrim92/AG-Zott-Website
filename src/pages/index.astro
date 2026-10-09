@@ -13,6 +13,7 @@ import GlymphaticTracer from '../components/GlymphaticTracer.astro';
 import AnatomyIntro from '../components/AnatomyIntro.astro';
 import OcularDive from '../components/OcularDive.astro';
 import Logo from '../components/Logo.astro';
+import PageStepper from '../components/PageStepper.astro';
 import team from '../data/team.json';
 import EphysSlice from '../components/EphysSlice.astro';
 import home from '../data/home.json';
@@ -80,7 +81,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
 ---
 <Base>
   <!-- ======================= Hero ======================= -->
-  <section class="hero theme-dark" aria-labelledby="hero-h">
+  <section class="hero theme-dark" aria-labelledby="hero-h" data-stop="Top">
     <div class="hero__aurora" aria-hidden="true"><i></i><i></i><i></i></div>
     <NeuralBackdrop density={0.9} opacity={0.8} />
     <div class="hero__brain" data-hero-brain data-atlas={url('/assets/atlas/')}>
@@ -132,11 +133,11 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
       </div>
     </div>
     <p class="hero__cap small" data-intro>{H.caption} <a href="https://atlas.brain-map.org/" rel="noopener">Allen Institute</a></p>
-    <a class="hero__scroll" href="#about" aria-label="Scroll to content"><span></span></a>
+    <a class="hero__scroll" href="#about" data-ps-go><span class="hero__scrolltxt">Scroll or tap</span><span class="hero__scrollbtn" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 4v15M5 12l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg></span></a>
   </section>
 
   <!-- ======================= What we do ======================= -->
-  <section class="section section--tight about theme-dark" id="about" data-scan aria-labelledby="about-h">
+  <section class="section section--tight about theme-dark" id="about" data-scan aria-labelledby="about-h" data-stop="What we do">
     {summaryVideo ? (
       <div class="about__video" aria-hidden="true">
         <video poster={summaryVideo.poster} muted loop playsinline preload="metadata" data-about-video>
@@ -177,7 +178,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   </section>
 
   <!-- ======================= Rundown ======================= -->
-  <section class="rundown" aria-labelledby="rundown-h">
+  <section class="rundown" aria-labelledby="rundown-h" data-stop="The lab at a glance">
     <div class="container container--wide rundown__in">
       <p class="eyebrow">{home.rundown.eyebrow}</p>
       <h2 id="rundown-h" data-split>{home.rundown.title}</h2>
@@ -188,7 +189,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   </section>
 
   <!-- ======================= Approach ======================= -->
-  <section class="section section--tight approach" id="approach" data-scan aria-labelledby="approach-h">
+  <section class="section section--tight approach" id="approach" data-scan aria-labelledby="approach-h" data-stop="Our methods">
     <div class="container container--wide approach__grid">
       <div class="approach__intro">
         <p class="eyebrow">{home.approach.eyebrow}</p>
@@ -222,7 +223,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   </section>
 
   <!-- ======================= Findings ======================= -->
-  <section class="section section--tight findings" id="findings" data-scan aria-labelledby="find-h">
+  <section class="section section--tight findings" id="findings" data-scan aria-labelledby="find-h" data-stop="Latest findings">
     <div class="container container--wide">
       <div class="sec-head">
         <div><p class="eyebrow">{home.findings.eyebrow}</p><h2 id="find-h" data-split>{home.findings.title}</h2></div>
@@ -258,7 +259,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   </section>
 
   <!-- ======================= Team ======================= -->
-  <section class="section section--tight team" id="team" data-scan aria-labelledby="team-h">
+  <section class="section section--tight team" id="team" data-scan aria-labelledby="team-h" data-stop="The team">
     <div class="container container--wide team__grid">
       <div>
         <p class="eyebrow">{home.team.eyebrow}</p>
@@ -271,7 +272,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   </section>
 
   <!-- ======================= Join + funding ======================= -->
-  <section class="section section--tight join" id="join" data-scan aria-labelledby="join-h">
+  <section class="section section--tight join" id="join" data-scan aria-labelledby="join-h" data-stop="Join us & funding">
     <div class="container container--wide join__grid">
       <div class="join__card" data-reveal>
         <h2 id="join-h">{home.join.title}</h2>
@@ -290,7 +291,7 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   </section>
 
   <!-- ======================= Deep dive ======================= -->
-  <div class="deep theme-dark" id="methods">
+  <div class="deep theme-dark" id="methods" data-stop="Dive deeper" data-tour>
     <header class="deep__intro section" aria-labelledby="deep-h">
       <NeuralBackdrop density={1.2} opacity={0.7} />
       <div class="container deep__head">
@@ -300,17 +301,22 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
         <ol class="deep__parts" role="list" data-reveal>
           {home.deep.parts.map((p, i) => <li><span class="mono">0{i + 1}</span>{p}</li>)}
         </ol>
+        <div class="deep__start" data-reveal>
+          <button type="button" class="btn btn--primary" data-tour-start><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg> {home.deep.tour}</button>
+          <span class="small">{home.deep.tourHint}</span>
+        </div>
       </div>
     </header>
 
-    <OcularDive />
+    <div data-stop="Through the eyepiece"><OcularDive /></div>
     <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">01</span> {home.deep.parts[0]}</p></div>
-    <AnatomyIntro />
+    <div data-stop="Where we look"><AnatomyIntro /></div>
     <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">02</span> {home.deep.parts[1]}</p></div>
-    <GraphicalAbstract />
+    <div data-stop="The story behind it"><GraphicalAbstract /></div>
     <div class="deep__part container container--wide"><p class="deep__partlbl"><span class="mono">03</span> {home.deep.parts[2]}</p></div>
-    <DataPipeline />
+    <div data-stop="Step by step"><DataPipeline /></div>
   </div>
+  <PageStepper />
 </Base>
 
 <style>
@@ -409,8 +415,15 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   .hero__new { flex: none; font: 600 .64rem var(--font-sans); letter-spacing: .12em; text-transform: uppercase; background: var(--glow); color: #04201c; border-radius: 999px; padding: 3px 9px; }
   .hero__cap { position: absolute; right: clamp(var(--s2), 4vw, var(--s5)); bottom: var(--s3); margin: 0; max-width: 34ch; text-align: right; color: var(--text-3); font-size: .74rem; z-index: 1; }
   .hero__cap a { color: inherit; }
-  .hero__scroll { position: absolute; left: 50%; bottom: var(--s3); width: 26px; height: 42px; margin-left: -13px; border: 1.5px solid var(--line-2); border-radius: 14px; z-index: 1; }
-  .hero__scroll span { position: absolute; left: 50%; top: 8px; width: 3px; height: 8px; margin-left: -1.5px; border-radius: 2px; background: var(--glow); animation: wheel 2.2s var(--ease) infinite; }
+  .hero__scroll { position: absolute; left: 50%; bottom: var(--s3); transform: translateX(-50%); z-index: 2; display: inline-flex; align-items: center; gap: 10px; padding: 5px 5px 5px 14px;
+    border: 1px solid rgba(95, 211, 198, .4); border-radius: 999px; background: rgba(4, 18, 22, .6); color: #c2d3d8; font: 600 .78rem var(--font-sans); text-decoration: none; backdrop-filter: blur(6px); }
+  .hero__scroll:hover { color: #fff; border-color: var(--glow); }
+  .hero__scrollbtn { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--glow); color: #04201c; animation: hero-bob 2.2s var(--ease) infinite; }
+  @keyframes hero-bob { 50% { transform: translateY(4px); } }
+  :global(:root[data-motion='off']) .hero__scrollbtn { animation: none; }
+  .deep__start { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); margin-top: var(--s4); }
+  .deep__start .btn svg { margin-right: 4px; }
+  .deep__start .small { color: #8fb3bb; }
   @keyframes wheel { 0% { opacity: 0; transform: translateY(-4px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(14px); } }
   @media (max-width: 900px) {
     .hero { align-items: end; min-height: 100svh; }
@@ -579,8 +592,6 @@ const motif = (p: any) => p.themes.includes('immunohistochemistry') ? 'ihc' : p.
   };
   lazy('[data-ga]', (el) => import('../scripts/abstract').then((m) => { m.initAbstract(el); ScrollTrigger.refresh(); }));
   lazy('[data-dp]', (el) => import('../scripts/pipeline').then((m) => m.initPipeline(el)));
-  // Deep links (#methods) work after the lazy modules add their pin spacing
-  if (location.hash === '#methods') setTimeout(() => document.getElementById('methods')?.scrollIntoView(), 600);
 
   // Hero entrance
   if (motionOK()) {

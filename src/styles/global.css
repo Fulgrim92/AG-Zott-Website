@@ -269,3 +269,6 @@ main p a:not(.btn):not(.link-arrow):hover, main li > a:not([class]):hover { back
   from { clip-path: circle(0% at var(--vt-x, 50%) var(--vt-y, 50%)); filter: brightness(1.4); }
   to { clip-path: circle(150% at var(--vt-x, 50%) var(--vt-y, 50%)); filter: none; }
 }
+
+/* in-page targets clear the fixed header */
+[id] { scroll-margin-top: calc(var(--header-h, 72px) + 8px); }
