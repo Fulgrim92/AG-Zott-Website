@@ -109,7 +109,7 @@ walk('home', home, ''); walk('team', team, ''); walk('site', site, '');
 
   // ---- storage: shared artifact db inside claude.ai, else this browser ----
   let edits = new Map<string, Edit>();
-  type Store = { save(e: Edit): Promise<void>; remove(key: string): Promise<void> };
+  type Store = { save(e?: Edit): Promise<void>; remove(key?: string): Promise<void> };
   const docId = (key: string) => key.replace(/[^A-Za-z0-9_\-.~:@+]/g, '_');
   const local: Store = {
     async save() { try { localStorage.setItem(LS, JSON.stringify([...edits.values()])); } catch {} },
@@ -240,15 +240,18 @@ walk('home', home, ''); walk('team', team, ''); walk('site', site, '');
     const db = await claude?.use('db').catch(() => null);
     if (!db) return;
     const col = db.collection('edits');
+    let unsub = () => {};
+    // viewers who may not write shared data keep their edits in their own browser
+    const fallback = () => { unsub(); store = local; where.textContent = 'saved in this browser'; local.save(); };
     store = {
-      save: (e) => col.doc(docId(e.key)).set(e),
-      remove: (key) => col.doc(docId(key)).delete(),
+      save: (e) => col.doc(docId(e.key)).set(e).catch(fallback),
+      remove: (key) => col.doc(docId(key)).delete().catch(fallback),
     };
     where.textContent = 'shared with everyone on this preview';
-    col.onSnapshot((snap: { docs: { data(): Edit }[] }) => {
+    unsub = col.onSnapshot((snap: { docs: { data(): Edit }[] }) => {
       const next = new Map<string, Edit>();
       snap.docs.forEach((d) => { const e = d.data(); if (e && ORIGINAL.has(e.key)) next.set(e.key, { ...e }); });
       edits = next; paint();
-    }, () => { store = local; where.textContent = 'saved in this browser'; });
+    }, fallback);
   })();
 </script>
