@@ -21,7 +21,7 @@ export const themeColor: Record<string, string> = {
 
 export const themeLabel: Record<string, string> = {
   'two-photon': 'Two-photon CA1',
+  glymphatic: 'Glymphatic system',
   immunohistochemistry: 'Immunohistochemistry',
   electrophysiology: 'Electrophysiology',
-  glymphatic: 'Glymphatic system',
 };

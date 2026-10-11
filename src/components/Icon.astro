@@ -1,0 +1,22 @@
+---
+/** Line icons drawn on a 48×48 grid. Paths use pathLength=1 so they can be "drawn" on scroll ([data-draw]). */
+interface Props { name: string; size?: number }
+const { name, size = 48 } = Astro.props;
+const paths: Record<string, string[]> = {
+  // neuron with an activity trace
+  spark: ['M24 30 L18 37 H30 Z', 'M24 30 V14 M24 18 L17 11 M24 15 L31 8 M24 23 L31 20', 'M18 37 L13 42 M30 37 L35 42', 'M4 44 H14 L16 40 L18 46 L20 34 L22 44 H26'],
+  // presynaptic bouton, cleft, spine, transmitter
+  synapse: ['M10 6 C10 16 14 20 24 20 C34 20 38 16 38 6', 'M10 42 C10 32 14 28 24 28 C34 28 38 32 38 42', 'M18 12 a2.5 2.5 0 1 0 0.01 0 M26 10 a2.5 2.5 0 1 0 0.01 0 M30 15 a2 2 0 1 0 0.01 0', 'M20 24 h0.01 M24 23.5 h0.01 M28 24 h0.01', 'M17 28 v3 M24 28 v3 M31 28 v3'],
+  // microscope objective with focal spot
+  scope: ['M18 4 H30 V12 L27 18 H21 L18 12 Z', 'M21 18 L24 24 L27 18', 'M10 34 C16 30 32 30 38 34 C32 38 16 38 10 34 Z', 'M24 24 V30', 'M24 31.5 a1.6 1.6 0 1 0 0.01 0', 'M6 44 H42'],
+  brain: ['M24 8 C18 6 12 9 11 15 C6 17 5 24 9 28 C8 34 13 39 19 38 C21 41 24 41 24 41 V8', 'M24 8 C30 6 36 9 37 15 C42 17 43 24 39 28 C40 34 35 39 29 38 C27 41 24 41 24 41', 'M16 16 C19 17 20 20 19 23 M32 16 C29 17 28 20 29 23 M15 30 C18 29 21 31 21 34 M33 30 C30 29 27 31 27 34'],
+};
+const d = paths[name] ?? paths.spark;
+---
+<svg class="icon" viewBox="0 0 48 48" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-draw>
+  {d.map((p) => <path d={p} pathLength="1" />)}
+</svg>
+<style>
+  .icon { color: var(--primary); overflow: visible; }
+  :global(.js-motion) .icon path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+</style>

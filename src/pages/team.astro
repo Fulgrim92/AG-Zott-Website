@@ -5,8 +5,8 @@ import team from '../data/team.json';
 import site from '../data/site.json';
 import papers from '../data/papers.json';
 import { url } from '../lib/url';
-const pi = site.pi;
-const members = team.filter((m) => m.role !== 'PI');
+const pi = team.find((m) => m.role === 'PI') ?? team[0];
+const members = team.filter((m) => m !== pi);
 const roles = [...new Set(members.map((m) => m.role))];
 const piPapers = papers.filter((p) => !p.placeholder && p.authors.includes('Zott B')).sort((a, b) => b.year - a.year);
 const initials = (n: string) => n.replace(/\[.*?\]/g, '').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('');
@@ -15,15 +15,15 @@ const initials = (n: string) => n.replace(/\[.*?\]/g, '').trim().split(/\s+/).ma
   <PageHeader eyebrow="Team" title="The people behind the data" lead="Scientists, students and staff working together on hippocampal circuits." />
   <section class="section section--tight" aria-labelledby="pi-h">
     <div class="container pi">
-      <div class="pi__photo" data-wipe>{pi.photo ? <img src={url(pi.photo)} alt={`Portrait of ${pi.name}`} /> : <div class="avatar" aria-hidden="true"><span>BZ</span><small>photo placeholder</small></div>}</div>
+      <div class="pi__photo" data-wipe>{pi.photo ? <img src={url(pi.photo)} alt={`Portrait of ${pi.name}`} /> : <div class="avatar" aria-hidden="true"><span>{initials(pi.name)}</span><small>photo placeholder</small></div>}</div>
       <div>
-        <p class="mono small role">{pi.role}</p>
+        <p class="mono small role">{pi.position}</p>
         <h2 id="pi-h" data-split>{pi.name}</h2>
         <p class="ph small">{pi.title} · {site.department}</p>
         <p class="lead">{pi.bio}</p>
         <p class="small ph">{pi.bioNote}</p>
         <ul class="chips" role="list">
-          {['Alzheimer’s disease', 'β-amyloid', 'Neuronal hyperactivity', 'Hippocampus · CA1', 'Two-photon imaging', 'Neuroradiology'].map((c) => <li class="tag">{c}</li>)}
+          {pi.focus.map((c) => <li class="tag">{c}</li>)}
         </ul>
         <p class="links">
           <a href={url('/contact/')}>Contact</a>
@@ -53,9 +53,9 @@ const initials = (n: string) => n.replace(/\[.*?\]/g, '').trim().split(/\s+/).ma
               {m.photo
                 ? <img src={url(m.photo)} alt={`Portrait of ${m.name}`} loading="lazy" width="320" height="320" />
                 : <div class="avatar" aria-hidden="true"><span>{initials(m.name) || '—'}</span><small>photo placeholder</small></div>}
-              <p class="mono small role">{m.role}</p>
-              <h2 class:list={[{ ph: m.placeholder }]}>{m.name}</h2>
-              <p class:list={['muted small', { ph: m.placeholder }]}>{m.focus}</p>
+              <p class="mono small role">{m.position}</p>
+              <h2 class:list={[{ ph: m.placeholder }]}>{m.name.replace('[PLACEHOLDER] ', '')}</h2>
+              <p class:list={['muted small', { ph: m.placeholder }]}>{m.focus.join(' · ')}</p>
               <p class="links small">
                 {m.email && <a href={`mailto:${m.email}`}>Email</a>}
                 {m.orcid && <a href={m.orcid}>ORCID</a>}

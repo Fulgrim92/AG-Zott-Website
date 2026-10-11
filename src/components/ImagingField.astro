@@ -1,0 +1,78 @@
+---
+/**
+ * Decorative background: a faint two-photon "field of view" of CA1 cell bodies. A slow raster line
+ * sweeps down the field and individual somata light up briefly (illustrative, not data).
+ * Pauses off-screen and with reduced motion.
+ */
+---
+<div class="imf" aria-hidden="true"><canvas data-imf></canvas></div>
+
+<style>
+  .imf { position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    -webkit-mask-image: radial-gradient(120% 90% at 70% 50%, #000 30%, transparent 85%); mask-image: radial-gradient(120% 90% at 70% 50%, #000 30%, transparent 85%); }
+  .imf canvas { width: 100%; height: 100%; display: block; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLCanvasElement>('[data-imf]').forEach((cv) => {
+    const ctx = cv.getContext('2d')!;
+    const css = getComputedStyle(document.documentElement);
+    const col = (v: string, f: string) => css.getPropertyValue(v).trim() || f;
+    let W = 0, H = 0, dpr = 1;
+    type Cell = { x: number; y: number; r: number; a: number; t: number; rate: number; hyper: boolean };
+    let cells: Cell[] = [];
+    // deterministic pseudo-random so the layout is stable between visits
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const layout = () => {
+      dpr = Math.min(2, devicePixelRatio || 1);
+      W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr;
+      seed = 7; cells = [];
+      const n = Math.round((W * H) / (W < 700 ? 5200 : 3800));
+      for (let i = 0; i < n; i++) {
+        const x = rnd() * W, y = rnd() * H;
+        if (cells.some((c) => Math.hypot(c.x - x, c.y - y) < 18)) continue;
+        const hyper = rnd() < 0.08;
+        cells.push({ x, y, r: 4 + rnd() * 3.5, a: rnd() * Math.PI, t: -99, rate: hyper ? 0.9 : 0.06 + rnd() * 0.12, hyper });
+      }
+    };
+    layout();
+    let ro = new ResizeObserver(() => layout()); ro.observe(cv);
+    const motionOK = () => document.documentElement.dataset.motion !== 'off';
+    let visible = false, raf = 0, last = performance.now(), scan = 0;
+    const draw = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      const t = now / 1000;
+      const ink = col('--primary', '#13595f'), glow = col('--glow', '#5fd3c6');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+      scan = (scan + dt * 0.09) % 1.15;
+      const sy = scan * H;
+      for (const c of cells) {
+        if (motionOK() && Math.random() < c.rate * dt) c.t = t;
+        const k = Math.max(0, 1 - (t - c.t) / (c.hyper ? 0.7 : 1.1));
+        const near = Math.max(0, 1 - Math.abs(c.y - sy) / 40) * 0.25;
+        ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.a);
+        ctx.globalAlpha = 0.09 + near * 0.4; ctx.strokeStyle = ink; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.ellipse(0, 0, c.r, c.r * 0.72, 0, 0, Math.PI * 2); ctx.stroke();
+        if (k > 0) {
+          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, c.r * 3.2);
+          g.addColorStop(0, glow); g.addColorStop(1, 'transparent');
+          ctx.globalAlpha = k * 0.55; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, c.r * 3.2, 0, Math.PI * 2); ctx.fill();
+          ctx.globalAlpha = k * 0.8; ctx.fillStyle = glow; ctx.beginPath(); ctx.ellipse(0, 0, c.r, c.r * 0.72, 0, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+      }
+      // raster scan line
+      if (motionOK()) {
+        const g = ctx.createLinearGradient(0, sy - 60, 0, sy + 2);
+        g.addColorStop(0, 'transparent'); g.addColorStop(1, glow);
+        ctx.globalAlpha = 0.12; ctx.fillStyle = g; ctx.fillRect(0, sy - 60, W, 62);
+        ctx.globalAlpha = 0.35; ctx.fillRect(0, sy, W, 1);
+      }
+      ctx.globalAlpha = 1;
+      if (visible && motionOK()) raf = requestAnimationFrame(draw);
+    };
+    const start = () => { cancelAnimationFrame(raf); last = performance.now(); raf = requestAnimationFrame(draw); };
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) start(); else cancelAnimationFrame(raf); }).observe(cv);
+    addEventListener('agz:motion', start);
+  });
+</script>

@@ -6,23 +6,21 @@
  * Illustrative schematics — typical parameters, not lab data.
  */
 import Label from './Label.astro';
+import { fepspAt, fepspPath, STIM_MS, VOLLEY_MS, ONSET_MS, TAU_MS } from '../lib/fepsp';
 
 // --- tiny deterministic helpers for illustrative traces (build time) ---
 let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-const fepsp = (x0: number, y0: number, w: number, depth: number) => {
-  const pts: string[] = [];
-  for (let i = 0; i <= 120; i++) {
-    const t = i / 120, x = x0 + t * w;
-    let y = 0;
-    if (t > 0.08 && t < 0.11) y = -26 * Math.sin(((t - 0.08) / 0.03) * Math.PI);         // stimulus artefact
-    else if (t > 0.13 && t < 0.19) y = 5 * Math.sin(((t - 0.13) / 0.06) * Math.PI);      // fibre volley
-    else if (t > 0.2) { const u = (t - 0.2) / 0.16; y = depth * u * Math.exp(1 - u); }  // fEPSP (downward)
-    pts.push(`${x.toFixed(1)},${(y0 + y).toFixed(1)}`);
-  }
-  return `M${pts.join(' L')}`;
-};
+// Screen: fEPSPs before (grey) and after LTP (green), 0–20 ms; 0.025 mV per px
+const scr = { x: 872, y: 268, w: 272, mvPerPx: 0.025, tMax: 20 };
+const tx = (t: number) => scr.x + (t / scr.tMax) * scr.w;
+const vy = (v: number) => scr.y - v / scr.mvPerPx;
+// initial slope: 20–60 % of the rise of the potentiated response
+const s0 = ONSET_MS + 0.12 * TAU_MS, s1 = ONSET_MS + 0.5 * TAU_MS;
+const slope = { x1: tx(s0), y1: vy(fepspAt(s0, 1.55)), x2: tx(s1), y2: vy(fepspAt(s1, 1.55)) };
+const ext = 0.45; // extend the slope line a little beyond the measured segment
+const slopeLine = { x1: slope.x1 - (slope.x2 - slope.x1) * ext, y1: slope.y1 - (slope.y2 - slope.y1) * ext, x2: slope.x2 + (slope.x2 - slope.x1) * ext, y2: slope.y2 + (slope.y2 - slope.y1) * ext };
 const ltpPts = Array.from({ length: 60 }, (_, i) => {
-  const m = i - 15, base = 100, v = m < 0 ? base : 150 + 70 * Math.exp(-m / 3);
+  const m = i - 15, base = 100, v = m < 0 ? base : 150 + 80 * Math.exp(-m / 2.5);
   return { x: 842 + i * 5.1, y: 452 - (v + (rnd() - 0.5) * 10 - 80) * 0.55 };
 });
 let eeg = 'M840 300';
@@ -37,9 +35,9 @@ const ticks = Array.from({ length: 70 }, () => 840 + 90 + rnd() * 210).sort((a, 
 
 const slice = [
   { box: '0 0 1200 700', title: 'The rig', plain: 'A living brain slice sits in a recording chamber, continuously bathed in oxygenated artificial cerebrospinal fluid (ACSF). Micromanipulators position two electrodes; an amplifier and stimulator connect them to the computer.', expert: 'Submerged or interface chamber, perfusion with carbogenated ACSF (typically 2–3 ml/min, 30–32 °C).' },
-  { box: '180 130 500 292', title: 'Acute hippocampal slice', plain: 'The brain is cut into 300–400 µm thick slices with a vibratome. A transverse slice keeps the hippocampal circuit intact: dentate gyrus → CA3 → CA1. A small grid holds it in place.', expert: 'Slices recover ≥ 1 h before recording; the CA3→CA1 Schaffer-collateral pathway is preserved within the slice plane.' },
-  { box: '300 262 300 175', title: 'Electrodes in CA1', plain: 'A stimulating electrode activates the Schaffer collaterals — axons coming from CA3. A fine glass electrode in CA1 stratum radiatum picks up the combined synaptic response of many neurons.', expert: 'Bipolar stimulation electrode in s. radiatum near CA2; ACSF-filled glass pipette (1–3 MΩ) in CA1 s. radiatum.' },
-  { box: '815 196 370 216', title: 'Stimulate & record', plain: 'Each brief electrical pulse produces a field EPSP. Its initial slope is a measure of synaptic strength; the small fibre volley before it shows how many axons were activated.', expert: 'Test pulses every 15–30 s at ~30–50 % of maximal response; fEPSP slope measured over the initial 10–90 % of the rising phase.' },
+  { box: '228 236 420 245', title: 'Acute hippocampal slice', plain: 'The brain is cut into 300–400 µm thick slices with a vibratome. A transverse slice keeps the hippocampal circuit intact: entorhinal cortex → dentate gyrus → CA3 → CA1. A small grid holds it in place.', expert: 'Slices recover ≥ 1 h before recording; the CA3→CA1 Schaffer-collateral pathway is preserved within the slice plane.' },
+  { box: '355 300 180 105', title: 'Electrodes in CA1', plain: 'A stimulating electrode activates the Schaffer collaterals — axons coming from CA3. A fine glass electrode in CA1 stratum radiatum picks up the combined synaptic response of many neurons.', expert: 'Bipolar stimulation electrode in proximal CA1 s. radiatum (towards CA2); ACSF-filled glass pipette (1–3 MΩ) in s. radiatum a few hundred µm further along CA1.' },
+  { box: '822 200 344 200', title: 'Stimulate & record', plain: 'Each brief pulse first gives a stimulus artefact and a small fibre volley (the axons firing), then the field EPSP: a negative deflection, because positive ions flow into the dendrites at the activated synapses. Its initial slope measures synaptic strength.', expert: 'Test pulses every 15–30 s at ~30–50 % of the maximal response; slope measured on the early part of the falling phase, clear of the fibre volley. After LTP the fEPSP grows while the fibre volley stays the same.' },
   { box: '815 330 370 216', title: 'Induce LTP', plain: 'After a stable baseline, a short theta-burst stimulus is given. If the synapses strengthen, the response stays larger for an hour or more — long-term potentiation, a cellular model of memory.', expert: 'Theta-burst stimulation (bursts of 4 pulses at 100 Hz, every 200 ms); potentiation quantified 50–60 min after induction relative to baseline.' },
 ];
 const vivo = [
@@ -80,7 +78,7 @@ const vivo = [
             <rect x="1020" y="128" width="130" height="22" rx="4" class="lcd" />
             <rect x="820" y="196" width="350" height="350" rx="12" class="box" />
             <rect x="832" y="208" width="326" height="326" rx="6" fill="#03060a" />
-            <text x="842" y="226" class="t-xs dim">{id === 'slice' ? 'fEPSP (mV) · 10 ms' : 'EEG (µV) · hours'}</text>
+            <text x="842" y="226" class="t-xs dim">{id === 'slice' ? 'fEPSP · CA1 stratum radiatum' : 'EEG (µV) · hours'}</text>
             <text x="842" y="364" class="t-xs dim">{id === 'slice' ? 'fEPSP slope (% of baseline) · min' : 'Detected events'}</text>
             <line x1="842" x2="1150" y1="350" y2="350" class="grid" />
           </g>
@@ -95,39 +93,67 @@ const vivo = [
               {/* chamber */}
               <circle cx="430" cy="395" r="240" class="chamber" />
               <circle cx="430" cy="395" r="226" fill={`url(#acsf-${id})`} />
-              {/* slice */}
-              <path d="M268 380 C 268 300, 360 268, 440 272 C 545 276, 600 330, 598 392 C 596 470, 520 505, 430 505 C 330 505, 268 460, 268 380 Z" class="slice" />
-              {/* hippocampus: CA pyramidal layer + dentate gyrus */}
-              <path d="M300 360 C 330 315, 420 300, 480 312 C 545 325, 575 370, 555 410 C 540 440, 500 432, 482 408" class="ca" />
-              <path d="M505 372 C 465 352, 418 368, 418 400 C 418 432, 465 448, 505 430" class="dg" />
-              {/* Schaffer collaterals in stratum radiatum */}
-              <path d="M548 378 C 525 352, 470 338, 395 343 C 360 345, 330 352, 312 365" class="sc" />
+              {/* acute transverse hippocampal slice (local coordinates, scaled into the chamber) */}
+              <g transform="translate(267 268) scale(0.68)" class="hc">
+                {/* tissue: hippocampus with subiculum and a strip of entorhinal cortex */}
+                <path d="M30 120 C40 60 150 22 290 30 C390 36 470 86 492 168 C510 236 478 312 404 330 C330 346 250 340 190 318 C120 296 40 330 8 286 C-12 250 18 180 30 120 Z" class="tissue" />
+                {/* alveus (axons along the outer surface) */}
+                <path d="M44 128 C70 64 170 36 290 44 C380 50 450 96 470 160" class="alveus" />
+                {/* hippocampal fissure between CA1 and the dentate gyrus */}
+                <path d="M120 192 C180 176 260 176 340 196" class="fissure" />
+                {/* pyramidal cell layer: CA1 → CA2 → CA3, ending in the hilus */}
+                <path d="M68 168 C96 104 190 74 290 80 C360 85 420 112 446 162" class="ca1" />
+                <path d="M446 162 C470 212 456 262 410 280 C372 294 336 282 314 262" class="ca3" />
+                {/* dentate gyrus granule cell layer: upper and lower blade, opening towards CA3 */}
+                <path d="M346 214 C300 196 238 204 220 240 C206 268 240 302 334 302" class="dg" />
+                {/* Schaffer collaterals: CA3 axons to CA1 stratum radiatum */}
+                <g class="sc">
+                  <path d="M428 244 C412 186 392 140 336 126 C270 112 190 116 110 138" />
+                  <path d="M418 256 C404 196 382 152 330 140 C262 128 186 132 104 152" />
+                  <path d="M436 230 C424 176 402 126 344 114 C280 102 200 104 120 124" />
+                </g>
+                {/* mossy fibres: dentate granule cells to CA3 (stratum lucidum) */}
+                <path d="M300 252 C340 254 392 268 424 248 C446 230 444 188 428 150" class="mf" />
+                {/* perforant path from entorhinal cortex to the dentate gyrus and CA1 */}
+                <path d="M30 262 C80 236 150 206 236 196" class="pp" />
+                {/* action potentials travelling along the Schaffer collaterals, from stimulation to recording site */}
+                <circle r="4" class="pulse"><animateMotion dur="1.3s" repeatCount="indefinite" path="M346 125 C300 118 250 118 192 124" /></circle>
+                <circle r="4" class="pulse"><animateMotion dur="1.3s" begin="0.45s" repeatCount="indefinite" path="M346 125 C300 118 250 118 192 124" /></circle>
+              </g>
               {/* harp */}
               <g class="harp"><path d="M262 300 C 300 520, 560 520, 600 300" />{[0, 1, 2, 3, 4, 5, 6].map((i) => <line x1={300 + i * 42} x2={300 + i * 42} y1="275" y2="505" />)}</g>
               {/* electrodes + manipulators */}
               <rect x="640" y="70" width="90" height="46" rx="6" class="manip" /><text x="648" y="62" class="t-sm dim">Manipulator</text>
-              <path d="M685 116 L 503 342 L 500 341 L 676 112 Z" class="stim" />
+              <path d="M685 116 L 503.5 352.5 L 500.5 351.5 L 676 112 Z" class="stim" />
               <rect x="150" y="70" width="90" height="46" rx="6" class="manip" />
-              <path d="M195 116 L 394 344 L 398 343 L 210 112 Z" fill={`url(#glass-${id})`} class="pipette" />
-              <path d="M398 343 L 220 110" class="pipette-wire" />
+              <path d="M195 116 L 395 353 L 398 352 L 210 112 Z" fill={`url(#glass-${id})`} class="pipette" />
+              <path d="M396 350 L 220 110" class="pipette-wire" />
               {/* cables to amplifier */}
               <path d="M730 92 C 780 92, 790 110, 820 110" class="cable" />
               <path d="M240 92 C 420 20, 760 30, 820 100" class="cable" />
-              {/* signal travelling along the Schaffer collaterals */}
-              <circle r="3.2" class="pulse"><animateMotion dur="1.2s" repeatCount="indefinite" path="M500 342 C 470 337, 440 338, 397 344" /></circle>
-              <circle r="3.2" class="pulse"><animateMotion dur="1.2s" begin="0.4s" repeatCount="indefinite" path="M500 342 C 470 337, 440 338, 397 344" /></circle>
-              {/* screen content */}
-              <path d={fepsp(842, 262, 300, 52)} class="trace base" />
-              <path d={fepsp(842, 262, 300, 78)} class="trace post" />
+              {/* screen content: illustrative fEPSPs (0–20 ms) and LTP time course */}
+              <defs><clipPath id="scr-clip"><rect x="832" y="208" width="326" height="146" /></clipPath></defs>
+              <g clip-path="url(#scr-clip)">
+                <path d={fepspPath(1.0, scr)} class="trace base" />
+                <path d={fepspPath(1.55, scr)} class="trace post" />
+              </g>
               <g class="annot">
-                <text x="925" y="240" class="t-xs">artefact</text>
-                <text x="878" y="296" class="t-xs">fibre volley</text>
-                <line x1="902" y1="270" x2="940" y2="318" class="slope" /><text x="948" y="322" class="t-xs">slope</text>
+                <text x={tx(STIM_MS) - 5} y={scr.y - 4} text-anchor="end" class="t-xs">stimulus</text>
+                <text x={tx(VOLLEY_MS) + 6} y={vy(0.62)} class="t-xs">fibre volley</text>
+                <path d={`M${tx(VOLLEY_MS) + 8} ${vy(0.52)} L${tx(VOLLEY_MS)} ${vy(-0.12)}`} class="lead" />
+                <line x1={slopeLine.x1} y1={slopeLine.y1} x2={slopeLine.x2} y2={slopeLine.y2} class="slope" />
+                <text x={slopeLine.x2 - 34} y={slopeLine.y2 + 14} class="t-xs">initial slope</text>
+                <text x={tx(ONSET_MS + TAU_MS) + 34} y={vy(-1.5)} class="t-xs">fEPSP</text>
+                <path d={`M${tx(17) - 40} 342 h${(5 / 20) * scr.w} M${tx(17) - 40 + (5 / 20) * scr.w} 342 v${-0.5 / 0.025}`} class="bars" />
+                <text x={tx(17) - 40 + (2.5 / 20) * scr.w} y="338" text-anchor="middle" class="t-xs dim">5 ms</text>
+                <text x={tx(17) - 44 + (5 / 20) * scr.w} y="318" text-anchor="end" class="t-xs dim">0.5 mV</text>
               </g>
               <g class="ltp">
                 {ltpPts.map((p, i) => <circle cx={p.x} cy={p.y} r="2.4" class:list={['pt', { after: i >= 15 }]} />)}
                 <line x1="918" x2="918" y1="372" y2="460" class="tbs" /><text x="922" y="384" class="t-xs">TBS</text>
                 <line x1="842" x2="1150" y1="452" y2="452" class="grid" /><text x="1096" y="446" class="t-xs dim">100 %</text>
+                {[0, 20, 40].map((m) => <text x={842 + (m + 15) * 5.1} y="474" text-anchor="middle" class="t-xs dim">{m}</text>)}
+                <text x="1150" y="488" text-anchor="end" class="t-xs dim">min after TBS</text>
               </g>
               {/* labels per step (font sizes follow the zoom level) */}
               <g class="lbl" data-for="0">
@@ -135,14 +161,26 @@ const vivo = [
                 <text x="995" y="580" text-anchor="middle" class="t-lg">Acquisition</text>
               </g>
               <g class="lbl" data-for="1">
-                <text x="470" y="300" class="t-sm">CA1</text><text x="560" y="440" class="t-sm">CA3</text><text x="395" y="445" class="t-sm">DG</text>
-                <text x="276" y="268" class="t-xs dim">slice anchor ("harp")</text>
+                <text x="400" y="282" text-anchor="middle" class="t-s1">CA1</text>
+                <text x="580" y="404" class="t-s1">CA3</text>
+                <text x="548" y="324" class="t-s1 dim">CA2</text>
+                <text x="404" y="440" text-anchor="middle" class="t-s1">DG</text>
+                <text x="276" y="356" class="t-s2 dim">subiculum</text>
+                <text x="250" y="462" class="t-s2 dim">entorhinal cortex</text>
+                <text x="470" y="381" text-anchor="middle" class="t-s2 mfc">mossy fibres</text>
+                <text x="372" y="345" text-anchor="middle" class="t-s2 scc">Schaffer collaterals</text>
+                <text x="300" y="413" class="t-s2 ppc">perforant path</text>
+                <text x="350" y="262" class="t-s2 dim">alveus</text>
               </g>
               <g class="lbl" data-for="2">
-                <text x="505" y="334" class="t-xxs stimc">stimulation</text>
-                <text x="352" y="333" class="t-xxs recc">recording (CA1 s. radiatum)</text>
-                <text x="430" y="358" class="t-xxs">Schaffer collaterals</text>
-                <text x="330" y="305" class="t-xxs dim">CA1 pyramidal layer</text>
+                <text x="505" y="346" class="t-s3 stimc">stimulation</text>
+                <text x="392" y="346" text-anchor="end" class="t-s3 recc">recording</text>
+                <text x="448" y="361" text-anchor="middle" class="t-s3 scc">Schaffer collaterals</text>
+                <text x="414" y="313" class="t-s3 dim">stratum oriens</text>
+                <text x="414" y="323.5" class="t-s3 onband">stratum pyramidale</text>
+                <text x="414" y="336" class="t-s3 dim">stratum radiatum</text>
+                <text x="414" y="378" class="t-s3 dim">str. lacunosum-moleculare</text>
+                <text x="414" y="389" class="t-s3 dim">hippocampal fissure</text>
               </g>
             </>
           ) : (
@@ -268,22 +306,36 @@ const vivo = [
   svg :global(.flow) { stroke: var(--blue); stroke-width: 3; fill: none; stroke-dasharray: 6 14; animation: ep-flow 1.4s linear infinite; }
   svg :global(.chamber) { fill: #0c1520; stroke: #2a3b4f; stroke-width: 3; }
   svg :global(.slice) { fill: rgba(232, 220, 200, .12); stroke: rgba(232, 220, 200, .35); stroke-width: 1.5; }
-  svg :global(.ca) { fill: none; stroke: var(--green); stroke-width: 7; stroke-linecap: round; opacity: .85; }
-  svg :global(.dg) { fill: none; stroke: var(--blue); stroke-width: 6; stroke-linecap: round; opacity: .85; }
-  svg :global(.sc) { fill: none; stroke: var(--magenta); stroke-width: 1.2; stroke-dasharray: 3 3; opacity: .7; }
+  svg :global(.tissue) { fill: rgba(232, 220, 200, .13); stroke: rgba(232, 220, 200, .4); stroke-width: 2; }
+  svg :global(.alveus) { fill: none; stroke: rgba(240, 236, 226, .28); stroke-width: 7; stroke-linecap: round; }
+  svg :global(.fissure) { fill: none; stroke: rgba(7, 10, 16, .9); stroke-width: 3; stroke-dasharray: 6 4; }
+  svg :global(.ca1) { fill: none; stroke: var(--green); stroke-width: 13; stroke-linecap: round; opacity: .9; }
+  svg :global(.ca3) { fill: none; stroke: var(--green); stroke-width: 19; stroke-linecap: round; opacity: .6; }
+  svg :global(.dg) { fill: none; stroke: var(--blue); stroke-width: 11; stroke-linecap: round; opacity: .9; }
+  svg :global(.sc path) { fill: none; stroke: var(--magenta); stroke-width: 1.6; stroke-dasharray: 5 4; opacity: .75; }
+  svg :global(.mf) { fill: none; stroke: var(--amber); stroke-width: 2.4; stroke-dasharray: 2 4; opacity: .8; stroke-linecap: round; }
+  svg :global(.pp) { fill: none; stroke: #b9a8ff; stroke-width: 2; stroke-dasharray: 1 4; opacity: .8; stroke-linecap: round; }
+  svg :global(.t-s1) { font-size: 12px; font-family: var(--font-sans); font-weight: 600; }
+  svg :global(.t-s2) { font-size: 7px; font-family: var(--font-mono); }
+  svg :global(.t-s3) { font-size: 4.2px; font-family: var(--font-mono); }
+  svg :global(.onband) { fill: #06301c; font-weight: 600; }
+  svg :global(.mfc) { fill: var(--amber); } svg :global(.scc) { fill: var(--magenta); } svg :global(.ppc) { fill: #b9a8ff; }
+  svg :global(.stimmark) { stroke: var(--amber); stroke-width: 1.4; }
+  svg :global(.lead) { stroke: var(--text-2); stroke-width: .8; }
+  svg :global(.bars) { stroke: var(--text-2); stroke-width: 1.2; fill: none; }
   svg :global(.harp path), svg :global(.harp line) { fill: none; stroke: rgba(255,255,255,.18); stroke-width: 1; }
   svg :global(.manip) { fill: #182132; stroke: #34425c; }
   svg :global(.stim) { fill: #c9c9d1; stroke: #e2e2ea; stroke-width: .6; }
   svg :global(.pipette) { stroke: rgba(191,233,255,.6); stroke-width: .6; }
   svg :global(.pipette-wire) { stroke: #d4b45a; stroke-width: .5; }
   svg :global(.cable) { fill: none; stroke: #2a3550; stroke-width: 3; }
-  svg :global(.pulse) { fill: #fff; filter: drop-shadow(0 0 3px var(--magenta)); opacity: 0; transition: opacity .4s; }
+  svg :global(.pulse) { fill: #fff; filter: drop-shadow(0 0 4px var(--magenta)); opacity: 0; transition: opacity .4s; }
   svg :global(.trace) { fill: none; stroke-width: 1.6; stroke-dasharray: 1600; stroke-dashoffset: 1600; transition: stroke-dashoffset 1.8s ease; }
   svg :global(.trace.base) { stroke: var(--text-3); }
   svg :global(.trace.post) { stroke: var(--green); transition-delay: .9s; }
   svg :global(.trace.eeg) { stroke: var(--red); stroke-width: 1; }
   svg :global(.annot), svg :global(.ltp), svg :global(.lbl) { opacity: 0; transition: opacity .6s; }
-  svg :global(.slope) { stroke: var(--amber); stroke-width: 1.2; }
+  svg :global(.slope) { stroke: var(--amber); stroke-width: 1.4; stroke-dasharray: 4 2; }
   svg :global(.annot text), svg :global(.ltp text) { fill: var(--text-2); }
   svg :global(.pt) { fill: var(--text-3); opacity: 0; transition: opacity .3s; }
   svg :global(.pt.after) { fill: var(--green); }

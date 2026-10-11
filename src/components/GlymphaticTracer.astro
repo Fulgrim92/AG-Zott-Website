@@ -1,0 +1,366 @@
+---
+/**
+ * Illustrations of the two classic kinds of glymphatic tracer experiment:
+ *  A) transcranial wide-field (one-photon) imaging of the dorsal brain surface after a fluorescent tracer
+ *     is injected into the cisterna magna: the tracer appears first along the middle cerebral artery
+ *     and its branches, then spreads into the tissue (Iliff et al., 2012; Plog et al., 2018).
+ *  B) a confocal image of a fixed brain section: tracer sits in the space around a penetrating arteriole,
+ *     inside the sheath of AQP4-rich astrocyte endfeet, and enters the tissue from there (Iliff et al., 2012).
+ * ILLUSTRATIVE SCHEMATICS drawn procedurally. Not lab data, not to scale; timings are illustrative.
+ */
+import Label from './Label.astro';
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+---
+<div class:list={['gt', { 'gt--compact': compact }]} data-gt>
+  <figure class="gt__panel">
+    <div class="gt__stage">
+      <canvas data-gt-wide role="img" aria-label="Illustration of a transcranial wide-field fluorescence image of a mouse brain seen from above. A tracer injected into the cisterna magna appears as bright lines along the middle cerebral arteries on both sides and spreads into the surrounding cortex over time."></canvas>
+      {!compact && (
+        <>
+          <span class="gt__tag" style="left:12px;top:10px">Wide-field (one-photon) · dorsal view</span>
+          <span class="gt__time mono" data-gt-clock>t = 0 min</span>
+          <span class="gt__ann" style="left:6%;top:57%">MCA</span>
+          <span class="gt__ann" style="right:6%;top:57%">MCA</span>
+          <span class="gt__ann gt__ann--dim" style="left:50%;top:3%;transform:translateX(-50%)">rostral</span>
+          <span class="gt__ann gt__ann--dim" style="left:50%;bottom:3%;transform:translateX(-50%)">cerebellum</span>
+        </>
+      )}
+    </div>
+    {!compact && (
+      <div class="gt__ctl">
+        <label class="gt__slider"><span class="small">Time after injection</span>
+          <input type="range" min="0" max="30" step="0.1" value="0" data-gt-t aria-label="Minutes after tracer injection (illustrative)" />
+        </label>
+        <button class="btn btn--sm" data-gt-play aria-pressed="true">Pause</button>
+      </div>
+    )}
+    {!compact && <figcaption class="small muted"><b>Influx from the brain surface.</b> After injection into the cisterna magna, CSF tracer travels along the outside of the large surface arteries, first the middle cerebral artery (MCA), and from there into the cortex.</figcaption>}
+  </figure>
+
+  {!compact && (
+    <figure class="gt__panel">
+      <div class="gt__stage">
+        <canvas data-gt-conf role="img" aria-label="Illustration of a confocal image of a brain section in three colours: blue cell nuclei, green AQP4 water channels lining a blood vessel and the surrounding astrocytes, and magenta tracer in a sleeve around a penetrating arteriole and in a ring around a vessel cut in cross-section, fading into the surrounding tissue."></canvas>
+        <span class="gt__tag" style="left:12px;top:10px">Confocal · brain section</span>
+        <span class="gt__scale mono" aria-hidden="true"><i></i>~50 µm</span>
+      </div>
+      <div class="gt__ctl" role="group" aria-label="Channels">
+        <button class="gt__ch" style="--c:#ff4fd8" aria-pressed="true" data-gt-ch="tracer">Tracer</button>
+        <button class="gt__ch" style="--c:#4dff7a" aria-pressed="true" data-gt-ch="aqp4">AQP4</button>
+        <button class="gt__ch" style="--c:#5b8cff" aria-pressed="true" data-gt-ch="dapi">DAPI</button>
+      </div>
+      <figcaption class="small muted"><b>Around the vessels.</b> In a section, tracer outlines the arterioles that dive into the cortex. It sits inside the sheath of astrocyte endfeet rich in the water channel aquaporin-4 (AQP4) and fades into the tissue from there. A vessel cut across appears as a ring.</figcaption>
+    </figure>
+  )}
+  {!compact && <p class="gt__note small"><Label kind="schematic" /> <span class="muted">Drawn to illustrate published tracer studies (Iliff et al., 2012; Plog et al., 2018). Not lab data, not to scale; timings are illustrative.</span></p>}
+</div>
+
+<style>
+  .gt { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s3); }
+  .gt--compact { display: block; position: absolute; inset: 0; }
+  .gt__panel { margin: 0; display: grid; gap: 10px; align-content: start; min-width: 0; }
+  .gt--compact .gt__panel { height: 100%; }
+  .gt__stage { position: relative; aspect-ratio: 5 / 6; border-radius: var(--radius); overflow: hidden; background: #020304; border: 1px solid var(--line); }
+  .gt--compact .gt__stage { position: absolute; inset: 0; aspect-ratio: auto; border: 0; border-radius: 0; }
+  .gt__stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .gt__tag { position: absolute; font: 500 .66rem var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: #c9d3d6; background: rgba(0, 0, 0, .55); padding: 3px 8px; border-radius: 5px; }
+  .gt__time { position: absolute; right: 12px; top: 10px; font-size: .74rem; color: #fff; background: rgba(0, 0, 0, .55); padding: 3px 8px; border-radius: 5px; }
+  .gt__ann { position: absolute; font: 600 .64rem var(--font-mono); letter-spacing: .1em; color: #ffd0f4; text-shadow: 0 0 6px #000; }
+  .gt__ann--dim { color: #8a979b; font-weight: 400; }
+  .gt__scale { position: absolute; right: 14px; bottom: 12px; display: grid; justify-items: end; gap: 3px; font-size: .66rem; color: #e6eef0; }
+  .gt__scale i { display: block; width: 46px; height: 3px; background: #fff; }
+  .gt__ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .gt__slider { flex: 1; display: grid; gap: 2px; min-width: 180px; color: var(--text-2); }
+  .gt__slider input { width: 100%; accent-color: var(--accent, #ff4d9e); }
+  .gt__ch { display: inline-flex; align-items: center; gap: 8px; padding: .4em .9em; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--text-2); font-size: .84rem; cursor: pointer; transition: border-color .2s, color .2s, background .2s; }
+  .gt__ch::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); transition: opacity .2s; }
+  .gt__ch[aria-pressed='true'] { color: var(--text); border-color: color-mix(in srgb, var(--c) 60%, transparent); background: color-mix(in srgb, var(--c) 10%, transparent); }
+  .gt__ch[aria-pressed='false']::before { opacity: .25; box-shadow: none; }
+  .gt figcaption { margin: 0; max-width: 60ch; }
+  .gt figcaption b { color: var(--text); font-weight: 600; }
+  .gt__note { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; margin: 0; }
+  @media (max-width: 800px) { .gt { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  const motionOK = () => document.documentElement.dataset.motion !== 'off';
+  type Seg = { x1: number; y1: number; x2: number; y2: number; w: number; arr: number };
+
+  document.querySelectorAll<HTMLElement>('[data-gt]').forEach((root) => {
+    /* ================= A: wide-field, dorsal brain surface ================= */
+    const wide = root.querySelector<HTMLCanvasElement>('[data-gt-wide]')!;
+    const wctx = wide.getContext('2d')!;
+    const slider = root.querySelector<HTMLInputElement>('[data-gt-t]');
+    const clock = root.querySelector<HTMLElement>('[data-gt-clock]');
+    const playBtn = root.querySelector<HTMLButtonElement>('[data-gt-play]');
+    const compact = root.classList.contains('gt--compact');
+    let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+    // Arterial trees in a 400 × 480 frame (rostral up). Arrival time grows with distance from the root.
+    const segs: Seg[] = [];
+    const grow = (x: number, y: number, ang: number, len: number, w: number, depth: number, t0: number, bend: number) => {
+      if (depth === 0 || len < 8) return;
+      const n = 3;
+      let px = x, py = y, a = ang;
+      for (let k = 0; k < n; k++) {
+        a += bend + (rnd() - 0.5) * 0.35;
+        const nx = px + Math.cos(a) * (len / n), ny = py + Math.sin(a) * (len / n);
+        const t = t0 + ((k + 1) / n) * len * 0.035;
+        segs.push({ x1: px, y1: py, x2: nx, y2: ny, w, arr: t });
+        px = nx; py = ny;
+      }
+      const tEnd = t0 + len * 0.035;
+      grow(px, py, a - 0.5 - rnd() * 0.3, len * 0.68, w * 0.72, depth - 1, tEnd, bend);
+      grow(px, py, a + 0.45 + rnd() * 0.3, len * 0.6, w * 0.7, depth - 1, tEnd, -bend * 0.6);
+    };
+    // middle cerebral arteries: enter at the lateral edges and branch towards the midline
+    for (const s of [-1, 1]) {
+      const cx = 200 + s * 160;
+      const base = s < 0 ? -0.35 : Math.PI + 0.35;
+      grow(cx, 268, base, 74, 5, 4, 1.5, s < 0 ? -0.05 : 0.05);
+      grow(cx + s * -6, 284, s < 0 ? 0.25 : Math.PI - 0.25, 58, 3.8, 3, 2.2, s < 0 ? 0.08 : -0.08);
+      // anterior and posterior cerebral arteries, reached later
+      grow(200 + s * 14, 96, s < 0 ? Math.PI * 0.62 : Math.PI * 0.38, 48, 2.6, 3, 6, 0);
+      grow(200 + s * 60, 372, s < 0 ? -Math.PI * 0.62 : -Math.PI * 0.38, 46, 2.6, 3, 7, 0);
+    }
+    const sig = (v: number) => 1 / (1 + Math.exp(-v));
+
+    // brain outline helpers (dorsal view)
+    const hemi = (c: CanvasRenderingContext2D, s: number) => {
+      c.beginPath();
+      c.moveTo(200 + s * 4, 86);
+      c.bezierCurveTo(200 + s * 58, 70, 200 + s * 140, 112, 200 + s * 158, 236);
+      c.bezierCurveTo(200 + s * 172, 330, 200 + s * 150, 394, 200 + s * 4, 398);
+      c.closePath();
+    };
+    const drawBrain = (c: CanvasRenderingContext2D) => {
+      c.save();
+      // olfactory bulbs, cortex, cerebellum: faint autofluorescence seen through the skull
+      c.fillStyle = '#16181c';
+      for (const s of [-1, 1]) { c.beginPath(); c.ellipse(200 + s * 20, 58, 19, 30, 0, 0, Math.PI * 2); c.fill(); }
+      for (const s of [-1, 1]) { hemi(c, s); c.fillStyle = '#1b1e23'; c.fill(); }
+      c.beginPath(); c.ellipse(200, 432, 98, 36, 0, 0, Math.PI * 2); c.fillStyle = '#17191d'; c.fill();
+      c.beginPath(); c.ellipse(200, 432, 20, 34, 0, 0, Math.PI * 2); c.fillStyle = '#1b1d21'; c.fill();
+      // veins (superior sagittal and transverse sinuses) appear dark
+      c.strokeStyle = '#08090b'; c.lineWidth = 6; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(200, 90); c.lineTo(200, 398); c.stroke();
+      c.beginPath(); c.moveTo(70, 398); c.quadraticCurveTo(200, 412, 330, 398); c.stroke();
+      c.restore();
+    };
+
+    let W = 0, H = 0, t = compact ? 18 : 0, playing = true, raf = 0, last = 0;
+    const sizeCanvas = (cv: HTMLCanvasElement, c: CanvasRenderingContext2D) => {
+      const dpr = Math.min(devicePixelRatio, 2);
+      const w = cv.clientWidth, h = cv.clientHeight;
+      cv.width = Math.max(1, w * dpr); cv.height = Math.max(1, h * dpr);
+      return { w, h, dpr };
+    };
+    const drawWide = () => {
+      const c = wctx;
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.fillStyle = '#020304'; c.fillRect(0, 0, wide.width, wide.height);
+      const k = Math.min(wide.width / 400, wide.height / 480);
+      c.setTransform(k, 0, 0, k, (wide.width - 400 * k) / 2, (wide.height - 480 * k) / 2);
+      drawBrain(c);
+      // parenchymal spread: soft glow around reached vessels, growing with time
+      c.save();
+      for (const s of [-1, 1]) { hemi(c, s); }
+      c.clip();
+      c.globalCompositeOperation = 'lighter';
+      for (const g of segs) {
+        const v = sig((t - g.arr - 3) / 3);
+        if (v < 0.02) continue;
+        const r = 10 + 26 * v;
+        const grd = c.createRadialGradient(g.x2, g.y2, 0, g.x2, g.y2, r);
+        grd.addColorStop(0, `rgba(255, 70, 200, ${0.09 * v})`); grd.addColorStop(1, 'rgba(255, 70, 200, 0)');
+        c.fillStyle = grd; c.beginPath(); c.arc(g.x2, g.y2, r, 0, Math.PI * 2); c.fill();
+      }
+      c.restore();
+      // perivascular tracer along the arteries
+      c.save();
+      c.globalCompositeOperation = 'lighter'; c.lineCap = 'round';
+      for (const g of segs) {
+        const v = sig((t - g.arr) / 0.9);
+        if (v < 0.02) continue;
+        c.strokeStyle = `rgba(255, 92, 214, ${0.95 * v})`;
+        c.shadowColor = 'rgba(255, 60, 200, .9)'; c.shadowBlur = 10 * v;
+        c.lineWidth = g.w; c.beginPath(); c.moveTo(g.x1, g.y1); c.lineTo(g.x2, g.y2); c.stroke();
+        c.shadowBlur = 0; c.strokeStyle = `rgba(255, 230, 250, ${0.6 * v})`; c.lineWidth = g.w * 0.35;
+        c.beginPath(); c.moveTo(g.x1, g.y1); c.lineTo(g.x2, g.y2); c.stroke();
+      }
+      c.restore();
+      // speckle (camera noise)
+      c.save(); c.globalAlpha = 0.05; c.fillStyle = '#fff';
+      for (let i = 0; i < 260; i++) c.fillRect(Math.random() * 400, Math.random() * 480, 1, 1);
+      c.restore();
+      if (clock) clock.textContent = `t ≈ ${Math.round(t)} min`;
+      if (slider && document.activeElement !== slider) slider.value = String(t);
+    };
+
+    /* ================= B: confocal section ================= */
+    const conf = root.querySelector<HTMLCanvasElement>('[data-gt-conf]');
+    const cctx = conf?.getContext('2d');
+    const on = { tracer: true, aqp4: true, dapi: true };
+    let cseed = 3; const cr = () => ((cseed = (cseed * 48271) % 2147483647) / 2147483647);
+    // penetrating arteriole: centreline from the pial surface (top) downwards
+    const art = Array.from({ length: 60 }, (_, i) => { const y = -10 + i * 9; return { x: 160 + Math.sin(i * 0.09) * 18 + i * 0.6, y }; });
+    const cross = { x: 318, y: 372, r: 15 };
+    const caps = [
+      [[art[18].x, art[18].y], [222, 178], [270, 196], [320, 172], [410, 186]],
+      [[art[34].x, art[34].y], [120, 318], [86, 352], [40, 344], [-10, 360]],
+      [[art[44].x, art[44].y], [236, 404], [278, 396], [cross.x - 14, cross.y + 8]],
+    ];
+    const nuclei: { x: number; y: number; rx: number; ry: number; a: number }[] = [];
+    while (nuclei.length < 150) {
+      const x = cr() * 400, y = cr() * 480;
+      const nearArt = art.some((p) => Math.hypot(p.x - x, p.y - y) < 22) || Math.hypot(x - cross.x, y - cross.y) < 26;
+      if (!nearArt) nuclei.push({ x, y, rx: 4 + cr() * 2.5, ry: 3 + cr() * 2, a: cr() * Math.PI });
+    }
+    const astro = Array.from({ length: 26 }, () => ({ x: cr() * 400, y: cr() * 480, n: 5 + Math.floor(cr() * 4), r: 14 + cr() * 14, a: cr() * 6 }));
+    let fill = compact ? 1 : 0.15;
+
+    const pathAlong = (c: CanvasRenderingContext2D, pts: { x: number; y: number }[], off: number) => {
+      c.beginPath();
+      pts.forEach((p, i) => {
+        const q = pts[Math.min(i + 1, pts.length - 1)], o = pts[Math.max(i - 1, 0)];
+        const dx = q.x - o.x, dy = q.y - o.y, l = Math.hypot(dx, dy) || 1;
+        const x = p.x + (-dy / l) * off, y = p.y + (dx / l) * off;
+        i ? c.lineTo(x, y) : c.moveTo(x, y);
+      });
+    };
+    // smooth curve through points (midpoint quadratic), offset vertically for the two walls of a capillary
+    const smooth = (c: CanvasRenderingContext2D, pts: number[][], o: number) => {
+      c.beginPath(); c.moveTo(pts[0][0], pts[0][1] + o);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+        c.quadraticCurveTo(pts[i][0], pts[i][1] + o, mx, my + o);
+      }
+      const l = pts[pts.length - 1]; c.lineTo(l[0], l[1] + o);
+    };
+    const drawConf = () => {
+      if (!conf || !cctx) return;
+      const c = cctx;
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.fillStyle = '#000'; c.fillRect(0, 0, conf.width, conf.height);
+      const k = Math.max(conf.width / 400, conf.height / 480);
+      c.setTransform(k, 0, 0, k, (conf.width - 400 * k) / 2, (conf.height - 480 * k) / 2);
+      c.globalCompositeOperation = 'lighter';
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      // DAPI: nuclei
+      if (on.dapi) {
+        for (const n of nuclei) {
+          c.fillStyle = 'rgba(70, 120, 255, .75)'; c.beginPath(); c.ellipse(n.x, n.y, n.rx, n.ry, n.a, 0, Math.PI * 2); c.fill();
+          c.fillStyle = 'rgba(140, 170, 255, .35)'; c.beginPath(); c.ellipse(n.x - 1, n.y - 1, n.rx * 0.5, n.ry * 0.5, n.a, 0, Math.PI * 2); c.fill();
+        }
+        // elongated endothelial nuclei along the arteriole wall
+        for (let i = 4; i < art.length - 2; i += 7) { const p = art[i]; c.fillStyle = 'rgba(70, 120, 255, .7)'; c.beginPath(); c.ellipse(p.x + (i % 2 ? 7 : -7), p.y, 2.2, 6, 0.1, 0, Math.PI * 2); c.fill(); }
+      }
+      // tracer: perivascular sleeve filling from the surface down, then diffusing into the tissue
+      if (on.tracer) {
+        const front = fill * art.length;
+        c.save();
+        for (const side of [-1, 1]) {
+          for (let i = 0; i < art.length - 1; i++) {
+            const v = Math.max(0, Math.min(1, front - i));
+            if (v <= 0) continue;
+            const p = art[i], q = art[i + 1];
+            c.strokeStyle = `rgba(255, 70, 210, ${0.85 * v})`; c.lineWidth = 6;
+            c.shadowColor = 'rgba(255, 60, 200, .8)'; c.shadowBlur = 8;
+            const ox = side * 13;
+            c.beginPath(); c.moveTo(p.x + ox, p.y); c.lineTo(q.x + ox, q.y); c.stroke();
+          }
+        }
+        c.shadowBlur = 0;
+        // diffuse parenchymal tracer around the reached part of the vessel
+        for (let i = 0; i < art.length; i += 2) {
+          const v = Math.max(0, Math.min(1, (front - i) / 8));
+          if (v <= 0) continue;
+          const p = art[i], r = 30 + 40 * v;
+          const g = c.createRadialGradient(p.x, p.y, 10, p.x, p.y, r);
+          g.addColorStop(0, `rgba(255, 60, 200, ${0.16 * v})`); g.addColorStop(1, 'rgba(255, 60, 200, 0)');
+          c.fillStyle = g; c.beginPath(); c.arc(p.x, p.y, r, 0, Math.PI * 2); c.fill();
+        }
+        // a little tracer also lines the capillaries branching off reached segments
+        caps.forEach((cap, ci) => {
+          const v = Math.max(0, Math.min(1, (front - [18, 34, 44][ci]) / 10));
+          if (v <= 0) return;
+          c.strokeStyle = `rgba(255, 70, 210, ${0.35 * v})`; c.lineWidth = 3; smooth(c, cap, 0); c.stroke();
+        });
+        // ring around the cross-sectioned vessel
+        const vr = Math.max(0, Math.min(1, fill * 1.6 - 0.4));
+        if (vr > 0) {
+          c.strokeStyle = `rgba(255, 70, 210, ${0.9 * vr})`; c.lineWidth = 6; c.shadowColor = 'rgba(255, 60, 200, .8)'; c.shadowBlur = 10;
+          c.beginPath(); c.arc(cross.x, cross.y, cross.r + 4, 0, Math.PI * 2); c.stroke(); c.shadowBlur = 0;
+          const g = c.createRadialGradient(cross.x, cross.y, cross.r + 6, cross.x, cross.y, cross.r + 46);
+          g.addColorStop(0, `rgba(255, 60, 200, ${0.18 * vr})`); g.addColorStop(1, 'rgba(255, 60, 200, 0)');
+          c.fillStyle = g; c.beginPath(); c.arc(cross.x, cross.y, cross.r + 46, 0, Math.PI * 2); c.fill();
+        }
+        c.restore();
+      }
+      // AQP4: astrocyte endfeet sheathing the vessels + finer parenchymal processes
+      if (on.aqp4) {
+        c.save();
+        c.strokeStyle = 'rgba(60, 255, 110, .8)'; c.lineWidth = 2.6; c.shadowColor = 'rgba(60, 255, 110, .7)'; c.shadowBlur = 6;
+        for (const side of [-1, 1]) { pathAlong(c, art, side * 18); c.stroke(); }
+        c.beginPath(); c.arc(cross.x, cross.y, cross.r + 9, 0, Math.PI * 2); c.stroke();
+        c.lineWidth = 1.6;
+        for (const cap of caps) for (const side of [-1, 1]) { smooth(c, cap, side * 4); c.stroke(); }
+        c.shadowBlur = 0; c.strokeStyle = 'rgba(60, 255, 110, .22)'; c.lineWidth = 1;
+        for (const a of astro) {
+          for (let j = 0; j < a.n; j++) {
+            const ang = a.a + (j / a.n) * Math.PI * 2;
+            c.beginPath(); c.moveTo(a.x, a.y);
+            c.quadraticCurveTo(a.x + Math.cos(ang + 0.4) * a.r * 0.6, a.y + Math.sin(ang + 0.4) * a.r * 0.6, a.x + Math.cos(ang) * a.r, a.y + Math.sin(ang) * a.r);
+            c.stroke();
+          }
+        }
+        c.restore();
+      }
+      // unstained vessel lumen stays dark; capillary lumens are left as faint gaps
+      c.globalCompositeOperation = 'source-over';
+      c.strokeStyle = 'rgba(0, 0, 0, .9)'; c.lineWidth = 16; pathAlong(c, art, 0); c.stroke();
+      c.fillStyle = '#000'; c.beginPath(); c.arc(cross.x, cross.y, cross.r - 1, 0, Math.PI * 2); c.fill();
+      // detector noise
+      c.globalAlpha = 0.06; c.fillStyle = '#fff';
+      for (let i = 0; i < 400; i++) c.fillRect(Math.random() * 400, Math.random() * 480, 1, 1);
+      c.globalAlpha = 1;
+    };
+
+    /* ================= loop and controls ================= */
+    const resize = () => {
+      sizeCanvas(wide, wctx);
+      if (conf && cctx) sizeCanvas(conf, cctx);
+      drawWide(); drawConf();
+    };
+    const loop = (now: number) => {
+      const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
+      if (playing) {
+        t += dt * 3.2; if (t > 32) t = 0;               // 30 illustrative minutes in ~10 s
+        fill += dt * 0.09; if (fill > 1.35) fill = 0.05; // the section's tracer front advances slowly
+      }
+      drawWide(); drawConf();
+      raf = requestAnimationFrame(loop);
+    };
+    const run = (go: boolean) => {
+      cancelAnimationFrame(raf); raf = 0; last = 0;
+      if (go && motionOK()) raf = requestAnimationFrame(loop);
+      else {
+        if (!motionOK() && !compact) { t = slider ? +slider.value || 20 : 20; fill = 1; }
+        drawWide(); drawConf();
+      }
+    };
+    slider?.addEventListener('input', () => { t = +slider.value; playing = false; if (playBtn) { playBtn.setAttribute('aria-pressed', 'false'); playBtn.textContent = 'Play'; } drawWide(); });
+    playBtn?.addEventListener('click', () => {
+      playing = playBtn.getAttribute('aria-pressed') !== 'true';
+      playBtn.setAttribute('aria-pressed', String(playing)); playBtn.textContent = playing ? 'Pause' : 'Play';
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-gt-ch]').forEach((b) => b.addEventListener('click', () => {
+      const key = b.dataset.gtCh as keyof typeof on;
+      on[key] = !on[key]; b.setAttribute('aria-pressed', String(on[key])); drawConf();
+    }));
+    new ResizeObserver(resize).observe(wide);
+    new IntersectionObserver(([e]) => run(e.isIntersecting)).observe(root);
+    addEventListener('agz:motion', () => run(true));
+  });
+</script>

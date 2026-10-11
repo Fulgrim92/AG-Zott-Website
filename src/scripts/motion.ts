@@ -20,10 +20,11 @@ export function initMotion() {
   reveals();
   wipes();
   counters();
+  drawIcons();
   parallax();
   accentSections();
-  navPill();
-  if (finePointer) spotlight();
+  scanSweeps();
+  if (finePointer) { spotlight(); magnetic(); }
 }
 
 /* Scroll progress bar — informative, so it runs regardless of motion preference */
@@ -42,8 +43,8 @@ function splitHeadings() {
   document.querySelectorAll<HTMLElement>('main h1[data-reveal], main h2[data-reveal]').forEach((el) => {
     el.removeAttribute('data-reveal'); el.setAttribute('data-split', ''); els.add(el);
   });
-  const run = () => els.forEach((el) => {
-    SplitText.create(el, {
+  const splits = new WeakMap<HTMLElement, SplitText>();
+  const make = (el: HTMLElement) => splits.set(el, SplitText.create(el, {
       type: 'lines', mask: 'lines', linesClass: 'split-line', autoSplit: true, aria: 'auto',
       onSplit(self) {
         gsap.set(el, { visibility: 'visible' });
@@ -52,7 +53,16 @@ function splitHeadings() {
           scrollTrigger: { trigger: el, start: 'top 90%', once: true },
         });
       },
-    });
+    }));
+  const run = () => els.forEach(make);
+  // Text changed in place (preview edit mode): undo the split first, otherwise a later re-split would restore the old words
+  addEventListener('agz:retext', (e) => {
+    const { el, html } = (e as CustomEvent<{ el: HTMLElement; html: string }>).detail;
+    if (!els.has(el)) return;
+    e.preventDefault();
+    splits.get(el)?.revert(); splits.delete(el);
+    el.innerHTML = html;
+    if (!el.isContentEditable) make(el);
   });
   // Wait for webfonts so line breaks are measured correctly (with a safety timeout)
   Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1200))]).then(run);
@@ -118,29 +128,49 @@ function accentSections() {
   });
 }
 
-/* Sidebar: a soft pill glides to the hovered navigation item */
-function navPill() {
-  const list = document.querySelector<HTMLElement>('.nav > ul');
-  if (!list) return;
-  const pill = document.createElement('span');
-  pill.className = 'nav-pill'; pill.setAttribute('aria-hidden', 'true');
-  list.prepend(pill); list.classList.add('has-pill');
-  const links = list.querySelectorAll<HTMLElement>(':scope > li > a, .nav__sub a');
-  let shown = false;
-  links.forEach((a) => a.addEventListener('mouseenter', () => {
-    const r = a.getBoundingClientRect(), lr = list.getBoundingClientRect();
-    gsap.to(pill, { y: r.top - lr.top, x: r.left - lr.left, width: r.width, height: r.height, opacity: 1, duration: shown ? 0.35 : 0, ease: 'power3.out' });
-    shown = true;
-  }));
-  list.addEventListener('mouseleave', () => { gsap.to(pill, { opacity: 0, duration: 0.25 }); shown = false; });
-}
-
 /* Cards: a soft highlight follows the pointer */
 function spotlight() {
   document.querySelectorAll<HTMLElement>('a.card').forEach((card) => {
     card.addEventListener('pointermove', (e) => {
       const r = card.getBoundingClientRect();
       card.style.setProperty('--mx', `${e.clientX - r.left}px`); card.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
+  });
+}
+
+/* Primary buttons lean gently towards the pointer */
+function magnetic() {
+  document.querySelectorAll<HTMLElement>('[data-magnetic]').forEach((el) => {
+    const xTo = gsap.quickTo(el, 'x', { duration: 0.5, ease: 'power3.out' });
+    const yTo = gsap.quickTo(el, 'y', { duration: 0.5, ease: 'power3.out' });
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      xTo((e.clientX - r.left - r.width / 2) * 0.22); yTo((e.clientY - r.top - r.height / 2) * 0.3);
+    });
+    el.addEventListener('pointerleave', () => { xTo(0); yTo(0); });
+  });
+}
+
+/* Line icons draw themselves when they scroll into view */
+function drawIcons() {
+  document.querySelectorAll<SVGElement>('[data-draw]').forEach((svg) => {
+    gsap.to(svg.querySelectorAll('path'), {
+      strokeDashoffset: 0, duration: 1.4, ease: 'power2.inOut', stagger: 0.12,
+      scrollTrigger: { trigger: svg, start: 'top 88%', once: true },
+    });
+  });
+}
+
+/* A laser line sweeps over a section as it scrolls into view, like a raster scan building the image */
+function scanSweeps() {
+  document.querySelectorAll<HTMLElement>('[data-scan]').forEach((sec) => {
+    const line = document.createElement('span');
+    line.className = 'scan-fx';
+    line.setAttribute('aria-hidden', 'true');
+    sec.appendChild(line);
+    ScrollTrigger.create({
+      trigger: sec, start: 'top 75%', once: true,
+      onEnter: () => gsap.fromTo(line, { top: '0%', opacity: 1 }, { top: '100%', opacity: 0.2, duration: 0.9, ease: 'power2.inOut', onComplete: () => line.remove() }),
     });
   });
 }

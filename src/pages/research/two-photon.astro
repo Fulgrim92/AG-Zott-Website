@@ -3,7 +3,10 @@ import Research from '../../layouts/Research.astro';
 import ImagingPlayer from '../../components/ImagingPlayer.astro';
 import CA1Layers from '../../components/CA1Layers.astro';
 import Label from '../../components/Label.astro';
-import RoiFigure from '../../components/RoiFigure.astro';
+import TwoPhotonScope from '../../components/TwoPhotonScope.astro';
+import OcularDive from '../../components/OcularDive.astro';
+import GraphicalAbstract from '../../components/GraphicalAbstract.astro';
+import DataPipeline from '../../components/DataPipeline.astro';
 ---
 <Research theme="two-photon" color="var(--green)" eyebrow="Research · 01" title="Two-photon imaging in hippocampal CA1"
   lead="Watching identified neurons in the living hippocampus — cell by cell, day after day.">
@@ -35,17 +38,26 @@ import RoiFigure from '../../components/RoiFigure.astro';
         <figcaption><Label kind="schematic" /> <span>Excitation volume (green): one- vs two-photon.</span></figcaption>
       </figure>
     </div>
+    <h3 style="margin-top:var(--s6)">How the image is built</h3>
+    <p class="muted" style="max-width:var(--measure)">The microscope never takes a snapshot. Two scan mirrors sweep the focal spot across the field line by line, and a detector counts the green light coming back from each point. The picture is assembled from those counts.</p>
+    <div style="margin-top:var(--s4)"><TwoPhotonScope /></div>
   </Fragment>
 
   <Fragment slot="data">
-    <h2 data-reveal>Watch neurons fire</h2>
+    <div class="bleed">
+      <OcularDive label="Illustration · neurons firing" steps={['Look through the eyepiece.', 'Inside the living brain, neurons are firing.', 'Each flash is one neuron becoming active. Here is what that looks like in real data.']} />
+    </div>
+    <h2 data-reveal style="margin-top:var(--s6)">Watch neurons fire</h2>
     <p class="muted" data-reveal>In vivo recordings of CA1 pyramidal neurons from three mouse lines. Switch between recordings or compare them side by side, step through frames, and change the display colour table. Neurons flash briefly when they are active.</p>
     <div style="margin-top:var(--s4)"><ImagingPlayer /></div>
-    <h3 style="margin-top:var(--s6)">From pixels to activity traces</h3>
-    <p class="muted">To analyse a recording, each neuron is outlined as a region of interest (ROI). Its brightness over time becomes a ΔF/F trace — every peak marks a calcium transient.</p>
-    <RoiFigure />
     <h3 style="margin-top:var(--s6)">Where we image</h3>
     <CA1Layers />
+    <h2 data-reveal style="margin-top:var(--s7)">From pixels to activity traces</h2>
+    <p class="muted" data-reveal style="max-width:var(--measure)">Scroll on to follow one of our recordings through the analysis: each neuron is outlined as a region of interest, its brightness over time becomes a ΔF/F trace, and every peak marks a calcium transient.</p>
+    <div class="bleed"><DataPipeline /></div>
+    <h2 data-reveal style="margin-top:var(--s7)">The story behind the data</h2>
+    <p class="muted" data-reveal style="max-width:var(--measure)">What the hyperactive neurons in these recordings tell us about how Alzheimer’s disease begins, step by step.</p>
+    <div class="bleed"><GraphicalAbstract /></div>
   </Fragment>
 
   <Fragment slot="findings">
@@ -56,4 +68,18 @@ import RoiFigure from '../../components/RoiFigure.astro';
     </ul>
   </Fragment>
 </Research>
-<style>.findings { display: grid; gap: var(--s3); padding-left: 1.1em; } .findings li { max-width: var(--measure); } .findings a { white-space: nowrap; }</style>
+<script>
+  // The scroll stories load when the visitor gets close (same modules as on the homepage)
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  const lazy = (sel: string, load: (el: HTMLElement) => void) => {
+    const el = document.querySelector<HTMLElement>(sel);
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); load(el); } }, { rootMargin: '150% 0px' });
+    io.observe(el);
+  };
+  lazy('[data-dp]', (el) => import('../../scripts/pipeline').then((m) => { m.initPipeline(el); ScrollTrigger.refresh(); }));
+  lazy('[data-ga]', (el) => import('../../scripts/abstract').then((m) => { m.initAbstract(el); ScrollTrigger.refresh(); }));
+</script>
+<style>
+  .bleed { width: 100vw; margin-left: calc(50% - 50vw); margin-top: var(--s5); }
+  .findings { display: grid; gap: var(--s3); padding-left: 1.1em; } .findings li { max-width: var(--measure); } .findings a { white-space: nowrap; }</style>
