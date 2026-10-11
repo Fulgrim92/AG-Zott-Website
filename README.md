@@ -50,6 +50,14 @@ All content lives in `src/data/`:
 the filter), `position` (shown), `focus` (list), optional `photo` (path under `public/`, e.g. `assets/team/jane.jpg`),
 `email`, `orcid`, and `"placeholder": false`. Without a photo a neutral monogram card is shown (never a generated face).
 
+### Editing text in the preview
+
+A build with `PUBLIC_EDIT_MODE=1 npm run build` adds an **Edit text** button (bottom left) to every page. Click it,
+then click any outlined text and type; changes save when you click elsewhere. Inside claude.ai the edits are shared by
+everyone who opens the same preview, elsewhere they stay in that browser. **Copy edits** puts them on the clipboard as
+JSON; save that as `edits.json` and run `npm run apply-edits -- edits.json` to write them into `home.json`, `team.json`
+and `site.json` (only the edited strings change). Normal builds contain none of this.
+
 ### Methods walkthrough data
 
 `python3 scripts/build-pipeline.py` (needs ffmpeg, numpy, scipy, pillow) derives everything in the “data, for real”

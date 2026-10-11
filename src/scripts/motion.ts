@@ -43,8 +43,8 @@ function splitHeadings() {
   document.querySelectorAll<HTMLElement>('main h1[data-reveal], main h2[data-reveal]').forEach((el) => {
     el.removeAttribute('data-reveal'); el.setAttribute('data-split', ''); els.add(el);
   });
-  const run = () => els.forEach((el) => {
-    SplitText.create(el, {
+  const splits = new WeakMap<HTMLElement, SplitText>();
+  const make = (el: HTMLElement) => splits.set(el, SplitText.create(el, {
       type: 'lines', mask: 'lines', linesClass: 'split-line', autoSplit: true, aria: 'auto',
       onSplit(self) {
         gsap.set(el, { visibility: 'visible' });
@@ -53,7 +53,16 @@ function splitHeadings() {
           scrollTrigger: { trigger: el, start: 'top 90%', once: true },
         });
       },
-    });
+    }));
+  const run = () => els.forEach(make);
+  // Text changed in place (preview edit mode): undo the split first, otherwise a later re-split would restore the old words
+  addEventListener('agz:retext', (e) => {
+    const { el, html } = (e as CustomEvent<{ el: HTMLElement; html: string }>).detail;
+    if (!els.has(el)) return;
+    e.preventDefault();
+    splits.get(el)?.revert(); splits.delete(el);
+    el.innerHTML = html;
+    if (!el.isContentEditable) make(el);
   });
   // Wait for webfonts so line breaks are measured correctly (with a safety timeout)
   Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1200))]).then(run);

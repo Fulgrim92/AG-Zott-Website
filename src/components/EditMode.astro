@@ -1,0 +1,254 @@
+---
+/**
+ * Preview-only text editing (built in when PUBLIC_EDIT_MODE=1, never on the live site).
+ * Every piece of text that comes from home.json, team.json or site.json can be clicked and rewritten in place.
+ * Edits are shared with everyone who opens the same preview when the page runs inside claude.ai (artifact db),
+ * otherwise kept in this browser. "Copy edits" gives a JSON list that scripts/apply-edits.mjs writes back
+ * into src/data/*.json.
+ */
+import home from '../data/home.json';
+import team from '../data/team.json';
+import site from '../data/site.json';
+
+// keys that are links, ids, citations or settings rather than visible wording
+const SKIP = /(^|\.)(_[a-z]+|icon|href|cite|references|doi|email|photo|orcid|role|links|social|lastUpdated|phone|aria)(\.|$)/;
+const strings: [string, string][] = [];
+const walk = (file: string, o: unknown, p: string) => {
+  if (typeof o === 'string') { if (!SKIP.test(p) && /\p{L}/u.test(o) && !/^(https?:|\/)/.test(o)) strings.push([`${file}:${p}`, o]); }
+  else if (Array.isArray(o)) o.forEach((v, i) => walk(file, v, p ? `${p}.${i}` : `${i}`));
+  else if (o && typeof o === 'object') Object.entries(o).forEach(([k, v]) => walk(file, v, p ? `${p}.${k}` : k));
+};
+walk('home', home, ''); walk('team', team, ''); walk('site', site, '');
+---
+<script type="application/json" id="agz-edit-strings" set:html={JSON.stringify(strings).replace(/</g, '\\u003c')} />
+
+<div class="em" data-em hidden>
+  <div class="em__panel" data-em-panel hidden>
+    <p class="em__head"><strong>Edit text</strong> <span data-em-where></span></p>
+    <p class="em__hint">Click any outlined text and type. Changes save when you click elsewhere.</p>
+    <ol class="em__list" data-em-list></ol>
+    <div class="em__acts">
+      <button type="button" class="em__btn" data-em-copy disabled>Copy edits</button>
+      <button type="button" class="em__btn em__btn--ghost" data-em-done>Done</button>
+    </div>
+  </div>
+  <button type="button" class="em__toggle" data-em-toggle aria-pressed="false">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+    <span>Edit text</span><b class="em__count" data-em-count hidden></b>
+  </button>
+</div>
+
+<style is:inline>
+  .em { position: fixed; left: clamp(12px, 2.4vw, 28px); bottom: clamp(12px, 2.4vw, 28px); z-index: 70; display: grid; gap: 10px; justify-items: start; max-width: min(380px, calc(100vw - 24px)); font-family: var(--font-sans); }
+  .em[hidden], .em [hidden] { display: none !important; }
+  .em__toggle { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px 10px 14px; border-radius: 999px; cursor: pointer;
+    border: 1px solid rgba(255, 209, 102, .55); background: rgba(22, 16, 4, .86); color: #fff3d6; font: 600 .86rem var(--font-sans);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 12px 30px -14px rgba(0, 0, 0, .7); }
+  .em__toggle[aria-pressed='true'] { background: #ffd166; color: #2a1d00; border-color: #ffd166; }
+  .em__count { min-width: 20px; padding: 1px 6px; border-radius: 999px; background: #ff6b5a; color: #fff; font-size: .74rem; text-align: center; }
+  .em__panel { width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 16px; background: rgba(12, 14, 18, .94); color: #e9eef0;
+    border: 1px solid rgba(255, 209, 102, .35); box-shadow: 0 20px 50px -20px #000; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: .86rem; }
+  .em__head { margin: 0 0 4px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .em__head span { font-size: .74rem; color: #9fb0b6; }
+  .em__hint { margin: 0 0 10px; color: #b8c4c8; font-size: .8rem; }
+  .em__list { margin: 0 0 10px; padding: 0; list-style: none; max-height: 34vh; overflow: auto; display: grid; gap: 6px; }
+  .em__list:empty::before { content: 'No changes yet.'; color: #7f9096; font-size: .8rem; }
+  .em__list li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 6px 8px; border-radius: 8px; background: rgba(255, 255, 255, .05); }
+  .em__list code { font: .7rem var(--font-mono); color: #ffd166; overflow-wrap: anywhere; }
+  .em__list span { grid-column: 1; font-size: .8rem; color: #e9eef0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .em__list button { grid-row: 1 / span 2; grid-column: 2; align-self: center; border: 0; background: none; color: #9fb0b6; cursor: pointer; font-size: .78rem; text-decoration: underline; }
+  .em__acts { display: flex; gap: 8px; }
+  .em__btn { flex: 1; padding: 8px 12px; border-radius: 999px; border: 1px solid #ffd166; background: #ffd166; color: #2a1d00; font: 600 .82rem var(--font-sans); cursor: pointer; }
+  .em__btn:disabled { opacity: .45; cursor: default; }
+  .em__btn--ghost { background: none; color: #ffd166; }
+  /* editable text while edit mode is on */
+  html.is-editing [data-edit] { outline: 1.5px dashed rgba(255, 179, 0, .75); outline-offset: 3px; border-radius: 3px; cursor: text; }
+  html.is-editing [data-edit]:hover { outline-style: solid; background: rgba(255, 209, 102, .10); }
+  html.is-editing [data-edit]:focus { outline: 2px solid #ffb300; background: rgba(255, 209, 102, .16); }
+  html.is-editing [data-edit].is-edited { outline-color: #ff6b5a; }
+  [data-edit] .split-line { overflow: visible !important; }
+  @media (max-width: 640px) { .em__hint { display: none; } .em__list { max-height: 20vh; } .em__toggle span { display: none; } .em__toggle { padding: 10px 12px; } }
+  @media print { .em { display: none; } }
+</style>
+
+<script>
+  type Edit = { key: string; file: string; path: string; original: string; value: string; at: number };
+  const STRINGS: [string, string][] = JSON.parse(document.getElementById('agz-edit-strings')!.textContent || '[]');
+  const ORIGINAL = new Map(STRINGS);
+  const LS = 'agz-text-edits';
+  const norm = (s: string) => s.replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const render = (s: string) => esc(s).replace(/\*(.+?)\*/g, '<span class="hl">$1</span>');
+
+  const ui = document.querySelector<HTMLElement>('[data-em]')!;
+  const panel = ui.querySelector<HTMLElement>('[data-em-panel]')!;
+  const toggle = ui.querySelector<HTMLButtonElement>('[data-em-toggle]')!;
+  const list = ui.querySelector<HTMLOListElement>('[data-em-list]')!;
+  const count = ui.querySelector<HTMLElement>('[data-em-count]')!;
+  const copyBtn = ui.querySelector<HTMLButtonElement>('[data-em-copy]')!;
+  const where = ui.querySelector<HTMLElement>('[data-em-where]')!;
+
+  // ---- find the elements that show each string (deepest element whose whole text equals it) ----
+  const byText = new Map<string, string[]>();
+  STRINGS.forEach(([k, v]) => { const n = norm(v); if (n.length > 1) byText.set(n, [...(byText.get(n) ?? []), k]); });
+  const seen = new Map<string, number>();
+  const nodes = new Map<string, HTMLElement[]>();
+  document.querySelectorAll<HTMLElement>('body *').forEach((el) => {
+    if (el.closest('svg, script, style, noscript, template, [data-em], [data-ps], .sr-only, [aria-hidden="true"]')) return;
+    const t = norm(el.textContent || '');
+    const keys = byText.get(t);
+    // split-heading pieces (lines, masks) are not the text's own element
+    const inner = [...el.children].filter((c) => c.getAttribute('aria-hidden') !== 'true' && !/split|mask|line|word/.test(c.className.toString()));
+    if (!keys || inner.some((c) => norm(c.textContent || '') === t)) return;
+    // repeated wording (e.g. two placeholder cards): the n-th element on the page belongs to the n-th entry
+    const n = seen.get(t) ?? 0; seen.set(t, n + 1);
+    const key = keys[n % keys.length];
+    el.dataset.edit = key;
+    nodes.set(key, [...(nodes.get(key) ?? []), el]);
+  });
+
+  // ---- storage: shared artifact db inside claude.ai, else this browser ----
+  let edits = new Map<string, Edit>();
+  type Store = { save(e: Edit): Promise<void>; remove(key: string): Promise<void> };
+  const docId = (key: string) => key.replace(/[^A-Za-z0-9_\-.~:@+]/g, '_');
+  const local: Store = {
+    async save() { try { localStorage.setItem(LS, JSON.stringify([...edits.values()])); } catch {} },
+    async remove() { try { localStorage.setItem(LS, JSON.stringify([...edits.values()])); } catch {} },
+  };
+  let store: Store = local;
+  try { (JSON.parse(localStorage.getItem(LS) || '[]') as Edit[]).forEach((e) => edits.set(e.key, e)); } catch {}
+
+  const setHTML = (el: HTMLElement, html: string) => {
+    const ev = new CustomEvent('agz:retext', { detail: { el, html }, cancelable: true });
+    if (dispatchEvent(ev)) el.innerHTML = html;
+  };
+  const paint = () => {
+    nodes.forEach((els, key) => {
+      const e = edits.get(key);
+      const value = e ? e.value : ORIGINAL.get(key)!;
+      els.forEach((el) => {
+        if (el === document.activeElement) return;
+        const was = el.classList.contains('is-edited');
+        el.classList.toggle('is-edited', !!e);
+        if (e || was) { if (norm(el.textContent || '') !== norm(value)) setHTML(el, render(value)); }
+      });
+    });
+    list.replaceChildren(...[...edits.values()].sort((a, b) => b.at - a.at).map((e) => {
+      const li = document.createElement('li');
+      const code = document.createElement('code'); code.textContent = e.key;
+      const span = document.createElement('span'); span.textContent = e.value;
+      const undo = document.createElement('button'); undo.type = 'button'; undo.textContent = 'Undo';
+      undo.addEventListener('click', () => { edits.delete(e.key); paint(); store.remove(e.key); });
+      li.append(code, span, undo);
+      return li;
+    }));
+    const n = edits.size;
+    count.hidden = !n; count.textContent = String(n);
+    copyBtn.disabled = !n;
+  };
+
+  // ---- editing ----
+  const editing = () => document.documentElement.classList.contains('is-editing');
+  const setMode = (on: boolean) => {
+    document.documentElement.classList.toggle('is-editing', on);
+    toggle.setAttribute('aria-pressed', String(on));
+    panel.hidden = !on;
+    nodes.forEach((els) => els.forEach((el) => {
+      if (on) { el.setAttribute('contenteditable', 'plaintext-only'); if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true'; el.spellcheck = true; }
+      else { el.removeAttribute('contenteditable'); }
+    }));
+  };
+  toggle.addEventListener('click', () => setMode(!editing()));
+  ui.querySelector('[data-em-done]')!.addEventListener('click', () => setMode(false));
+  // while editing, clicks on text inside links and buttons place the cursor instead of navigating
+  addEventListener('click', (e) => {
+    if (!editing()) return;
+    const el = (e.target as HTMLElement).closest?.('[data-edit]');
+    if (el && el.closest('a, button, summary, label')) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+  // headings are split into animated lines; edit them as one plain run of text. Done before the click lands, so the
+  // cursor goes where the visitor clicked (and on keyboard focus, to the end).
+  const flatten = (el: HTMLElement) => {
+    if (!el.querySelector('*')) return false;
+    el.removeAttribute('aria-label');
+    setHTML(el, esc((edits.get(el.dataset.edit!)?.value ?? ORIGINAL.get(el.dataset.edit!)!).replace(/\*/g, '')));
+    return true;
+  };
+  const caret = (el: HTMLElement, x?: number, y?: number) => {
+    const d = document as Document & { caretPositionFromPoint?(x: number, y: number): { offsetNode: Node; offset: number } | null };
+    let r: Range | null = null;
+    if (x !== undefined && y !== undefined) {
+      const pos = d.caretPositionFromPoint?.(x, y);
+      if (pos) { r = document.createRange(); r.setStart(pos.offsetNode, pos.offset); }
+      else r = document.caretRangeFromPoint?.(x, y) ?? null;
+    }
+    if (!r || !el.contains(r.startContainer)) { r = document.createRange(); r.selectNodeContents(el); }
+    r.collapse(r.startContainer !== el);
+    getSelection()?.removeAllRanges(); getSelection()?.addRange(r);
+  };
+  addEventListener('mousedown', (e) => {
+    const el = (e.target as HTMLElement).closest?.<HTMLElement>('[data-edit]');
+    if (!editing() || !el || el === document.activeElement || !flatten(el)) return;
+    // the clicked piece is gone, so focus and place the cursor by hand
+    e.preventDefault(); el.focus(); caret(el, e.clientX, e.clientY);
+  }, true);
+  addEventListener('focusin', (e) => {
+    const el = e.target as HTMLElement;
+    if (editing() && el.dataset?.edit && flatten(el)) caret(el);
+  });
+  addEventListener('focusout', (e) => {
+    const el = e.target as HTMLElement;
+    const key = el.dataset?.edit;
+    if (!key || !ORIGINAL.has(key)) return;
+    const original = ORIGINAL.get(key)!;
+    let value = (el.innerText || '').replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/ {2,}/g, ' ').trim();
+    // keep the *highlight* if the highlighted words are still there
+    for (const m of original.matchAll(/\*(.+?)\*/g)) if (value.includes(m[1]) && !value.includes(m[0])) value = value.replace(m[1], m[0]);
+    if (!value) value = original;
+    const [file, ...rest] = key.split(':');
+    if (value === original) { if (edits.delete(key)) store.remove(key); }
+    else if (edits.get(key)?.value !== value) {
+      const ed: Edit = { key, file, path: rest.join(':'), original, value, at: Date.now() };
+      edits.set(key, ed); store.save(ed).catch(() => {});
+    }
+    // show it as the site will (highlight, animated heading lines)
+    const shown = edits.get(key)?.value ?? original;
+    nodes.get(key)?.forEach((n) => setHTML(n, render(shown)));
+    setTimeout(paint);
+  });
+  addEventListener('keydown', (e) => {
+    const el = e.target as HTMLElement;
+    if (!el.dataset?.edit || !editing()) return;
+    e.stopPropagation();
+    if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey)) { e.preventDefault(); el.blur(); }
+  }, true);
+
+  copyBtn.addEventListener('click', async () => {
+    const out = JSON.stringify([...edits.values()].map(({ file, path, original, value }) => ({ file, path, original, value })), null, 2);
+    try { await navigator.clipboard.writeText(out); copyBtn.textContent = 'Copied'; }
+    catch { prompt('Copy the edits:', out); }
+    setTimeout(() => (copyBtn.textContent = 'Copy edits'), 1600);
+  });
+
+  ui.hidden = false;
+  where.textContent = 'saved in this browser';
+  paint();
+
+  // ---- inside claude.ai: share edits with everyone who opens this preview ----
+  (async () => {
+    const claude = (window as unknown as { claude?: { use(n: string): Promise<any> } }).claude;
+    const db = await claude?.use('db').catch(() => null);
+    if (!db) return;
+    const col = db.collection('edits');
+    store = {
+      save: (e) => col.doc(docId(e.key)).set(e),
+      remove: (key) => col.doc(docId(key)).delete(),
+    };
+    where.textContent = 'shared with everyone on this preview';
+    col.onSnapshot((snap: { docs: { data(): Edit }[] }) => {
+      const next = new Map<string, Edit>();
+      snap.docs.forEach((d) => { const e = d.data(); if (e && ORIGINAL.has(e.key)) next.set(e.key, { ...e }); });
+      edits = next; paint();
+    }, () => { store = local; where.textContent = 'saved in this browser'; });
+  })();
+</script>
