@@ -1,0 +1,121 @@
+---
+/**
+ * Homepage card for electrophysiology: a hippocampal slice with a stimulating electrode on the Schaffer
+ * collaterals in CA1 stratum radiatum and a recording pipette further along CA1 stratum radiatum. Each stimulus
+ * runs along the fibres from CA3 and evokes a field EPSP on the scope; after a theta burst the response is
+ * larger (LTP). Anatomy traced from the Allen CCFv3 annotation (scripts/build-ephys-slice.py → slice.png/json);
+ * electrodes, fibres and waveform (src/lib/fepsp.ts) are illustrative, not lab data.
+ */
+import { fepspAt } from '../lib/fepsp';
+import slice from '../../public/assets/ephys/slice.json';
+import { url } from '../lib/url';
+const scope = { x: 272, y: 246, w: 112, mvPerPx: 0.06, tMax: 16 };
+const trace = (amp: number) => Array.from({ length: 160 }, (_, i) => (i / 159) * scope.tMax)
+  .map((t, i) => `${i ? 'L' : 'M'}${(scope.x + (t / scope.tMax) * scope.w).toFixed(1)} ${(scope.y - Math.max(-1.6, Math.min(0.4, fepspAt(t, amp))) / scope.mvPerPx).toFixed(1)}`).join(' ');
+// Schaffer collaterals: from CA3 pyramidal cells around the curl into CA1 stratum radiatum (centre line from the atlas)
+const sr = (slice.sr as number[][]).slice(0, 13);
+const smooth = (p: number[][]) => p.reduce((d, [x, y], i, a) => {
+  if (!i) return `M${x.toFixed(1)} ${y.toFixed(1)}`;
+  const [x0, y0] = a[i - 1], [xp, yp] = a[i - 2] ?? a[i - 1], [xn, yn] = a[i + 1] ?? [x, y];
+  return d + ` C${(x0 + (x - xp) / 6).toFixed(1)} ${(y0 + (y - yp) / 6).toFixed(1)} ${(x - (xn - x0) / 6).toFixed(1)} ${(y - (yn - y0) / 6).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`;
+}, '');
+const fibres = [
+  [[150, 192], [118, 186], [100, 168], ...sr.map(([x, y]) => [x, y])],
+  [[128, 204], [104, 192], [92, 168], ...sr.map(([x, y]) => [x - 2, y - 4])],
+  [[176, 182], [128, 178], [108, 162], ...sr.map(([x, y]) => [x + 1, y + 5])],
+].map(smooth);
+const STIM = sr[2], REC = sr[8];
+---
+
+<svg class="es" viewBox="0 0 400 300" role="img" aria-label="Illustration: a hippocampal brain slice with a stimulating electrode on the fibres from CA3 to CA1 and a recording pipette in CA1. Each stimulus evokes a field potential; after strong burst stimulation the response becomes larger, which is long-term potentiation." data-es>
+  <defs>
+    <radialGradient id="es-flash"><stop offset="0" stop-color="#fff6c8" /><stop offset=".4" stop-color="#ffd166" /><stop offset="1" stop-color="#ffd166" stop-opacity="0" /></radialGradient>
+    <linearGradient id="es-glass" x1="0" x2="1"><stop offset="0" stop-color="#bfe6ff" stop-opacity=".25" /><stop offset=".5" stop-color="#e8f6ff" stop-opacity=".7" /><stop offset="1" stop-color="#bfe6ff" stop-opacity=".25" /></linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="#0b0a10" />
+  <image href={url('/assets/ephys/slice.png')} x="0" y="0" width="400" height="300" preserveAspectRatio="none" />
+  <!-- Schaffer collaterals -->
+  {fibres.map((d) => <path d={d} fill="none" stroke="#ffb3a6" stroke-opacity=".28" stroke-width="1.2" />)}
+  {fibres.map((d) => <path d={d} class="es__pulse" pathLength="1" data-es-pulse />)}
+  <!-- labels -->
+  <g class="es__lbl">
+    <text x="198" y="58">CA1</text><text x="20" y="176">CA3</text><text x="232" y="170">DG</text>
+  </g>
+  <!-- stimulating electrode -->
+  <g>
+    <path d={`M${STIM[0] - 3.5} 0 L${STIM[0] - 3.5} ${STIM[1] - 2} M${STIM[0] + 3.5} 0 L${STIM[0] + 3.5} ${STIM[1] - 2}`} stroke="#a9b6bd" stroke-width="2.6" stroke-linecap="round" />
+    <circle cx={STIM[0]} cy={STIM[1]} r="14" fill="url(#es-flash)" class="es__flash" data-es-flash />
+    <text x={STIM[0] - 10} y="16" class="es__lbl2" text-anchor="end">stimulate</text>
+  </g>
+  <!-- recording pipette -->
+  <g>
+    <path d={`M${REC[0] + 6} 0 L${REC[0] + 34} 0 L${REC[0]} ${REC[1]} Z`} fill="url(#es-glass)" stroke="#bfe6ff" stroke-opacity=".6" />
+    <path d={`M${REC[0] + 20} 0 L${REC[0] + 1} ${REC[1] - 2}`} stroke="#e8f6ff" stroke-width=".8" opacity=".7" />
+    <circle cx={REC[0]} cy={REC[1]} r="10" fill="#4dff9a" opacity="0" class="es__rec" data-es-rec />
+    <text x={REC[0] + 40} y="16" class="es__lbl2">record</text>
+  </g>
+  <!-- scope -->
+  <g>
+    <rect x="262" y="206" width="130" height="86" rx="8" fill="#06080b" fill-opacity=".92" stroke="#2c3a40" />
+    <text x="270" y="220" class="es__lbl2">field EPSP</text>
+    <path d={trace(1)} class="es__tr es__tr--base" pathLength="1" data-es-base />
+    <path d={trace(1.55)} class="es__tr es__tr--ltp" pathLength="1" data-es-ltp />
+    <text x="384" y="284" class="es__lbl2 es__tag" text-anchor="end" data-es-tag>baseline</text>
+  </g>
+</svg>
+
+<style>
+  .es { display: block; width: 100%; height: 100%; }
+  .es__lbl text { font: 600 13px var(--font-sans); fill: #e8d8f0; opacity: .7; }
+  .es__lbl2 { font: 9.5px var(--font-mono); fill: #8fa3ab; letter-spacing: .06em; }
+  .es__pulse { fill: none; stroke: #ffd166; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: .12 3; stroke-dashoffset: -1.4; filter: drop-shadow(0 0 3px #ffd166); }
+  .es__flash { opacity: 0; }
+  .es__tr { fill: none; stroke-width: 1.8; stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+  .es__tr--base { stroke: #9aa6b0; }
+  .es__tr--ltp { stroke: #ff6b5a; stroke-width: 2.2; }
+  .es__tag { fill: #ffd166; }
+</style>
+
+<script>
+  // 8 s loop: two baseline stimuli, a theta burst (LTP induction), two stimuli after potentiation
+  document.querySelectorAll<SVGSVGElement>('[data-es]').forEach((svg) => {
+    const pulses = [...svg.querySelectorAll<SVGPathElement>('[data-es-pulse]')];
+    const flash = svg.querySelector<SVGCircleElement>('[data-es-flash]')!;
+    const rec = svg.querySelector<SVGCircleElement>('[data-es-rec]')!;
+    const base = svg.querySelector<SVGPathElement>('[data-es-base]')!;
+    const ltp = svg.querySelector<SVGPathElement>('[data-es-ltp]')!;
+    const tag = svg.querySelector<SVGTextElement>('[data-es-tag]')!;
+    const CYCLE = 8, STIMS = [0.4, 2.0, 5.2, 6.6], BURST = [3.4, 4.3];
+    const off = () => document.documentElement.dataset.motion === 'off';
+    let raf = 0, t0 = 0, vis = false;
+    const finalState = () => {
+      base.style.strokeDashoffset = '0'; ltp.style.strokeDashoffset = '0'; tag.textContent = 'after LTP';
+      pulses.forEach((p) => (p.style.strokeDashoffset = '-1.4')); flash.style.opacity = '0'; rec.style.opacity = '0';
+    };
+    const frame = (now: number) => {
+      const t = ((now - t0) / 1000) % CYCLE;
+      // last stimulus at or before t
+      const ts = [...STIMS].reverse().find((s) => s <= t);
+      const dt = ts === undefined ? 9 : t - ts;
+      // pulse travels along the fibres in 0.45 s
+      const p = Math.min(1, dt / 0.45);
+      // orthodromic: from the stimulation site (about a fifth along the fibres) towards CA1
+      pulses.forEach((el, i) => (el.style.strokeDashoffset = `${-(0.24 + p * 1.1) + i * 0.02}`));
+      let fl = Math.max(0, 1 - dt / 0.25);
+      // theta burst: rapid flashes
+      if (t >= BURST[0] && t < BURST[1]) fl = Math.max(fl, ((t - BURST[0]) * 10) % 1 < 0.45 ? 1 : 0.2);
+      flash.style.opacity = `${fl}`;
+      rec.style.opacity = `${dt > 0.4 && dt < 0.9 ? 0.55 * (1 - (dt - 0.4) / 0.5) : 0}`;
+      // traces: drawn after the first baseline stimulus / first potentiated one, cleared at loop start
+      const draw = (start: number) => `${1 - Math.max(0, Math.min(1, (t - start - 0.4) / 0.6))}`;
+      base.style.strokeDashoffset = draw(STIMS[0]);
+      ltp.style.strokeDashoffset = draw(STIMS[2]);
+      tag.textContent = t < BURST[0] ? 'baseline' : t < STIMS[2] ? 'theta burst' : 'after LTP';
+      if (vis) raf = requestAnimationFrame(frame);
+    };
+    const run = () => { cancelAnimationFrame(raf); if (off()) { finalState(); return; } if (vis) { t0 = performance.now(); raf = requestAnimationFrame(frame); } };
+    new IntersectionObserver(([e]) => { const was = vis; vis = e.isIntersecting; if (vis && !was) run(); }, { threshold: 0.2 }).observe(svg);
+    document.addEventListener('agz:motion', run);
+    finalState();
+  });
+</script>

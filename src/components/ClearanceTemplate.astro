@@ -1,0 +1,259 @@
+---
+/**
+ * FIGURE TEMPLATE for the lab's own tracer experiments, laid out the way published glymphatic studies report
+ * CSF tracer influx and clearance:
+ *  a  experimental design: tracer into the cisterna magna, transcranial imaging, sections; and for clearance,
+ *     an injection into the brain tissue followed by measuring what is left (Iliff et al., 2012);
+ *  b  representative transcranial (dorsal) images at several time points, one row per group (Plog et al., 2018);
+ *  c  influx time course, mean ± SEM per group (Plog et al., 2018; Mestre et al., 2018);
+ *  d  tracer coverage in coronal sections from rostral to caudal (Iliff et al., 2012; Xie et al., 2013);
+ *  e  clearance: tracer remaining in the brain after an intraparenchymal injection (Iliff et al., 2012; Xie et al., 2013).
+ * EVERY VALUE IS A PLACEHOLDER chosen only to show the layout. Replace with the lab's data before using it as a result.
+ */
+const ink = '#1d2328', mute = '#6b7680', ctl = '#2b6cb0', grp = '#d6338a';
+
+// ---- c: influx curves (placeholder shapes) ----
+const C = { w: 300, h: 210, l: 46, r: 12, t: 18, b: 40 };
+const cx = (m: number) => C.l + (m / 30) * (C.w - C.l - C.r);
+const cy = (v: number) => C.h - C.b - v * (C.h - C.t - C.b);
+const sat = (m: number, k: number, top: number) => top * (1 - Math.exp(-m / k));
+const line = (f: (m: number) => number) => Array.from({ length: 61 }, (_, i) => i / 2).map((m, i) => `${i ? 'L' : 'M'}${cx(m).toFixed(1)} ${cy(f(m)).toFixed(1)}`).join(' ');
+const band = (f: (m: number) => number, e: number) => {
+  const xs = Array.from({ length: 61 }, (_, i) => i / 2);
+  return 'M' + xs.map((m) => `${cx(m).toFixed(1)} ${cy(f(m) * (1 + e)).toFixed(1)}`).join(' L') + ' L' + [...xs].reverse().map((m) => `${cx(m).toFixed(1)} ${cy(f(m) * (1 - e)).toFixed(1)}`).join(' L') + ' Z';
+};
+const fCtl = (m: number) => sat(m, 11, 0.95), fGrp = (m: number) => sat(m, 14, 0.58);
+
+// ---- d: coronal coverage (placeholder) ----
+const D = { w: 300, h: 210, l: 46, r: 12, t: 58, b: 40 };
+const levels = ['1', '2', '3', '4'];
+const covCtl = [0.78, 0.66, 0.52, 0.4], covGrp = [0.5, 0.4, 0.3, 0.24];
+const dy = (v: number) => D.h - D.b - v * (D.h - D.t - D.b);
+const slot = (D.w - D.l - D.r) / levels.length;
+
+// ---- e: clearance (placeholder dots, fixed so the page is the same every time) ----
+const E = { w: 200, h: 210, l: 46, r: 10, t: 30, b: 40 };
+const ey = (v: number) => E.h - E.b - (v / 100) * (E.h - E.t - E.b);
+const dotsCtl = [38, 44, 31, 47, 41, 35], dotsGrp = [62, 71, 58, 76, 66, 69];
+const mean = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
+
+// ---- b: dorsal thumbnails (same outline as the wide-field illustration above) ----
+const times = [5, 15, 30];
+const hemi = (s: number) => `M${200 + s * 4} 86 C${200 + s * 58} 70 ${200 + s * 140} 112 ${200 + s * 158} 236 C${200 + s * 172} 330 ${200 + s * 150} 394 ${200 + s * 4} 398 Z`;
+const K = 106 / 460;
+const level = (row: number, col: number) => (row === 0 ? [0.35, 0.72, 1] : [0.2, 0.42, 0.6])[col];
+---
+<figure class="ct" data-ct>
+  <div class="ct__paper">
+    <span class="ct__stamp" aria-hidden="true">Template · placeholder values</span>
+    <div class="ct__grid">
+      <!-- a -->
+      <div class="ct__p ct__p--a">
+        <b class="ct__l">a</b>
+        <div class="ct__flow">
+          <p class="ct__h">Influx</p>
+          <ol class="ct__steps">
+            {[
+              ['Anaesthesia', '[agent, dose]'],
+              ['Tracer into cisterna magna', '[tracer, MW] · [µl at µl/min]'],
+              ['Transcranial imaging', '0–30 min, every [n] min'],
+              ['Perfusion · coronal sections', '[thickness] µm · [n] levels'],
+              ['Quantification', 'mean intensity · % area'],
+            ].map(([t, s], i) => <li class="ct__step" style={`--i:${i}`}><b>{t}</b><span>{s}</span></li>)}
+          </ol>
+          <p class="ct__h">Clearance</p>
+          <ol class="ct__steps">
+            {[
+              ['Tracer into brain tissue', '[region] · [tracer] · [µl]'],
+              ['Wait', '[t] min'],
+              ['Tracer left in brain', '% of injected dose · cleared = 100 % − left'],
+            ].map(([t, s], i) => <li class="ct__step ct__step--clr" style={`--i:${i + 5}`}><b>{t}</b><span>{s}</span></li>)}
+          </ol>
+        </div>
+      </div>
+
+      <!-- b -->
+      <div class="ct__p ct__p--b">
+        <b class="ct__l">b</b>
+        <svg viewBox="0 0 330 262" role="img" aria-label="Panel b, representative transcranial images of the dorsal brain at 5, 15 and 30 minutes after tracer injection, one row for the control group and one for the comparison group. Placeholder images.">
+          <defs>
+            <radialGradient id="ct-glow"><stop offset="0" stop-color="#fff2a8" /><stop offset=".35" stop-color="#ff7a2f" /><stop offset=".7" stop-color="#a1135a" stop-opacity=".7" /><stop offset="1" stop-color="#a1135a" stop-opacity="0" /></radialGradient>
+            <clipPath id="ct-brain"><path d={hemi(-1)} /><path d={hemi(1)} /><ellipse cx="200" cy="432" rx="98" ry="36" /></clipPath>
+            <symbol id="ct-dorsal" viewBox="40 20 320 460">
+              <ellipse cx="180" cy="58" rx="19" ry="30" fill="#2a2d33" /><ellipse cx="220" cy="58" rx="19" ry="30" fill="#2a2d33" />
+              <path d={hemi(-1)} fill="#23262c" /><path d={hemi(1)} fill="#23262c" />
+              <ellipse cx="200" cy="432" rx="98" ry="36" fill="#202328" />
+            </symbol>
+          </defs>
+          {times.map((m, c) => <text x={92 + c * 82} y="14" class="ct__ax" text-anchor="middle">{m} min</text>)}
+          {['Control', '[Group]'].map((g, r) => (
+            <>
+              <text x="12" y={78 + r * 112} class="ct__ax" text-anchor="middle" transform={`rotate(-90 12 ${78 + r * 112})`} fill={r ? grp : ctl}>{g}</text>
+              {times.map((_, c) => {
+                const v = level(r, c);
+                return (
+                  <g transform={`translate(${52 + c * 82} ${22 + r * 112})`}>
+                    <rect width="78" height="106" fill="#050607" />
+                    <g transform={`translate(${(78 - 320 * K) / 2 - 40 * K} ${-20 * K}) scale(${K})`}>
+                      <use href="#ct-dorsal" x="40" y="20" width="320" height="460" />
+                      <g clip-path="url(#ct-brain)" class="ct__img">
+                        <ellipse cx="200" cy="420" rx={60 + 70 * v} ry={50 + 40 * v} fill="url(#ct-glow)" opacity={0.4 + 0.6 * v} />
+                        <ellipse cx="62" cy="300" rx={40 + 80 * v} ry={50 + 90 * v} fill="url(#ct-glow)" opacity={v} />
+                        <ellipse cx="338" cy="300" rx={40 + 80 * v} ry={50 + 90 * v} fill="url(#ct-glow)" opacity={v} />
+                        <ellipse cx="200" cy="240" rx={150 * v} ry={170 * v} fill="url(#ct-glow)" opacity={v * v * 0.8} />
+                      </g>
+                    </g>
+                  </g>
+                );
+              })}
+            </>
+          ))}
+          <defs><linearGradient id="ct-lut" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#050607" /><stop offset=".35" stop-color="#a1135a" /><stop offset=".7" stop-color="#ff7a2f" /><stop offset="1" stop-color="#fff2a8" /></linearGradient></defs>
+          <rect x="304" y="40" width="8" height="160" fill="url(#ct-lut)" />
+          <text x="318" y="46" class="ct__ax">max</text><text x="318" y="200" class="ct__ax">0</text>
+          <text x="196" y="258" class="ct__ss" text-anchor="middle">scale bar [ ] mm · same display range for all images</text>
+        </svg>
+      </div>
+
+      <!-- c -->
+      <div class="ct__p ct__p--c">
+        <b class="ct__l">c</b>
+        <svg viewBox={`0 0 ${C.w} ${C.h}`} role="img" aria-label="Panel c, influx time course: mean tracer fluorescence over 30 minutes, mean and SEM for each group. Placeholder curves.">
+          {[0, 0.25, 0.5, 0.75, 1].map((v) => <><line x1={C.l - 4} x2={C.l} y1={cy(v)} y2={cy(v)} class="ct__tick" /><text x={C.l - 7} y={cy(v) + 3.5} class="ct__ax" text-anchor="end">{v}</text></>)}
+          {[0, 10, 20, 30].map((m) => <><line x1={cx(m)} x2={cx(m)} y1={C.h - C.b} y2={C.h - C.b + 4} class="ct__tick" /><text x={cx(m)} y={C.h - C.b + 16} class="ct__ax" text-anchor="middle">{m}</text></>)}
+          <path d={`M${C.l} ${C.t} V${C.h - C.b} H${C.w - C.r}`} class="ct__axis" />
+          <text x={(C.l + C.w - C.r) / 2} y={C.h - 6} class="ct__ax" text-anchor="middle">Time after injection (min)</text>
+          <text x="11" y={(C.t + C.h - C.b) / 2} class="ct__ax" text-anchor="middle" transform={`rotate(-90 11 ${(C.t + C.h - C.b) / 2})`}>Mean fluorescence (norm.)</text>
+          <path d={band(fCtl, 0.08)} fill={ctl} opacity=".15" class="ct__band" />
+          <path d={band(fGrp, 0.12)} fill={grp} opacity=".15" class="ct__band" />
+          <path d={line(fCtl)} stroke={ctl} class="ct__curve" pathLength="1" />
+          <path d={line(fGrp)} stroke={grp} class="ct__curve" pathLength="1" />
+          <g transform={`translate(${C.l + 12} ${C.t + 4})`} class="ct__ax">
+            <line x2="14" stroke={ctl} stroke-width="2.4" /><text x="19" y="3.5">Control, n = [ ]</text>
+            <line y1="14" y2="14" x2="14" stroke={grp} stroke-width="2.4" /><text x="19" y="17.5">[Group], n = [ ]</text>
+          </g>
+          <text x={cx(30)} y={cy(0.77)} class="ct__stat" text-anchor="end">[test, P]</text>
+        </svg>
+      </div>
+
+      <!-- d -->
+      <div class="ct__p ct__p--d">
+        <b class="ct__l">d</b>
+        <svg viewBox={`0 0 ${D.w} ${D.h}`} role="img" aria-label="Panel d, tracer coverage in four coronal sections from front to back, percent of section area covered by tracer for each group. Placeholder bars and section drawings.">
+          {levels.map((lv, i) => {
+            const x = D.l + slot * (i + 0.5);
+            return (
+              <g transform={`translate(${x} 30)`}>
+                <ellipse rx="22" ry="17" fill="#23262c" />
+                <path d="M0 -17 V17" stroke="#111" stroke-width="1" />
+                <ellipse rx="22" ry="17" fill="none" stroke="#ff7a2f" stroke-width={4 - i * 0.7} opacity=".75" class="ct__rim" />
+              </g>
+            );
+          })}
+          {[0, 25, 50, 75, 100].map((v) => <><line x1={D.l - 4} x2={D.l} y1={dy(v / 100)} y2={dy(v / 100)} class="ct__tick" /><text x={D.l - 7} y={dy(v / 100) + 3.5} class="ct__ax" text-anchor="end">{v}</text></>)}
+          <path d={`M${D.l} ${D.t} V${D.h - D.b} H${D.w - D.r}`} class="ct__axis" />
+          {levels.map((lv, i) => {
+            const x = D.l + slot * i + slot / 2;
+            return (
+              <>
+                <rect x={x - 17} y={dy(covCtl[i])} width="15" height={dy(0) - dy(covCtl[i])} fill={ctl} class="ct__bar" style={`--i:${i}`} />
+                <rect x={x + 2} y={dy(covGrp[i])} width="15" height={dy(0) - dy(covGrp[i])} fill={grp} class="ct__bar" style={`--i:${i}`} />
+                <text x={x} y={D.h - D.b + 16} class="ct__ax" text-anchor="middle">[{lv}]</text>
+              </>
+            );
+          })}
+          <text x={(D.l + D.w - D.r) / 2} y={D.h - 6} class="ct__ax" text-anchor="middle">Section, rostral → caudal (bregma, mm)</text>
+          <text x="11" y={(D.t + D.h - D.b) / 2} class="ct__ax" text-anchor="middle" transform={`rotate(-90 11 ${(D.t + D.h - D.b) / 2})`}>Area with tracer (%)</text>
+        </svg>
+      </div>
+
+      <!-- e -->
+      <div class="ct__p ct__p--e">
+        <b class="ct__l">e</b>
+        <svg viewBox={`0 0 ${E.w} ${E.h}`} role="img" aria-label="Panel e, clearance: percent of the injected tracer still in the brain after a set time, one bar with individual animals for each group. Placeholder values.">
+          {[0, 25, 50, 75, 100].map((v) => <><line x1={E.l - 4} x2={E.l} y1={ey(v)} y2={ey(v)} class="ct__tick" /><text x={E.l - 7} y={ey(v) + 3.5} class="ct__ax" text-anchor="end">{v}</text></>)}
+          <path d={`M${E.l} ${E.t} V${E.h - E.b} H${E.w - E.r}`} class="ct__axis" />
+          {[[dotsCtl, ctl, 'Control'], [dotsGrp, grp, '[Group]']].map(([d, col, name], k) => {
+            const x = E.l + 40 + k * 70, m = mean(d as number[]);
+            return (
+              <>
+                <rect x={x - 20} y={ey(m)} width="40" height={ey(0) - ey(m)} fill="none" stroke={col as string} stroke-width="1.6" class="ct__bar" style={`--i:${k}`} />
+                {(d as number[]).map((v, j) => <circle cx={x - 12 + (j % 3) * 12} cy={ey(v)} r="3.2" fill={col as string} class="ct__dot" style={`--i:${j + k * 6}`} />)}
+                <text x={x} y={E.h - E.b + 16} class="ct__ax" text-anchor="middle" fill={col as string}>{name}</text>
+              </>
+            );
+          })}
+          <path d={`M${E.l + 40} ${E.t - 4} V${E.t - 10} H${E.l + 110} V${E.t - 4}`} class="ct__axis" />
+          <text x={E.l + 75} y={E.t - 14} class="ct__stat" text-anchor="middle">[test, P]</text>
+          <text x="11" y={(E.t + E.h - E.b) / 2} class="ct__ax" text-anchor="middle" transform={`rotate(-90 11 ${(E.t + E.h - E.b) / 2})`}>Tracer left in brain (%)</text>
+          <text x={(E.l + E.w - E.r) / 2} y={E.h - 6} class="ct__ax" text-anchor="middle">at [t] min</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <figcaption>
+    <p><b>Figure template | Measuring tracer influx and clearance.</b> <b>a</b>, Experimental design. <b>b</b>, Transcranial images of the dorsal brain surface after tracer injection into the cisterna magna, one row per group, shown with the same display range. <b>c</b>, Mean fluorescence over the dorsal surface over time (mean ± SEM). <b>d</b>, Percentage of section area covered by tracer at four rostro-caudal levels. <b>e</b>, Tracer remaining in the brain a set time after injection into the tissue; bars show the mean, dots individual animals. Statistics: [test], n = [ ] mice per group.</p>
+    <p class="ct__src">Layout follows published glymphatic tracer studies: Iliff JJ et al. (2012) <i>Sci Transl Med</i> 4:147ra111 · Xie L et al. (2013) <i>Science</i> 342:373–377 · Plog BA et al. (2018) <i>JCI Insight</i> 3:e120922 · Mestre H et al. (2018) <i>eLife</i> 7:e40070. <strong>All values and images are placeholders that only show the layout, not data.</strong></p>
+  </figcaption>
+</figure>
+
+<style define:vars={{ ink, mute }}>
+  .ct { margin: 0; }
+  .ct__paper { position: relative; padding: clamp(14px, 3vw, 28px); border-radius: 16px; background: #fbfaf7; color: var(--ink);
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .6), 0 0 0 1px rgba(0, 0, 0, .06); }
+  .ct__stamp { position: absolute; top: 12px; right: 14px; font: 600 .66rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
+    color: #b4235f; border: 1.5px dashed #d6338a; padding: 3px 8px; border-radius: 6px; background: #fff; transform: rotate(1.5deg); z-index: 1; }
+  .ct__grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr .7fr; grid-template-areas: 'a a a a' 'b b c c' 'd d e e'; gap: 18px 22px; }
+  @media (min-width: 1100px) { .ct__grid { grid-template-columns: 1.3fr 1fr 1fr .7fr; grid-template-areas: 'a a a a' 'b c d e'; } }
+  .ct__p { position: relative; min-width: 0; }
+  .ct__p--a { grid-area: a; } .ct__p--b { grid-area: b; } .ct__p--c { grid-area: c; } .ct__p--d { grid-area: d; } .ct__p--e { grid-area: e; }
+  .ct__p > svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .ct__l { position: absolute; left: -6px; top: -8px; font: 800 1.15rem var(--font-sans); color: var(--ink); }
+  .ct__p > svg { padding-left: 10px; box-sizing: border-box; }
+  .ct svg text { font-family: var(--font-sans); }
+  .ct__h { font-size: 15px; font-weight: 700; fill: var(--ink); }
+  .ct__st { font-size: 12.5px; font-weight: 600; fill: var(--ink); text-anchor: middle; }
+  .ct__ss { font-size: 10.5px; fill: var(--mute); text-anchor: middle; }
+  .ct__ax { font-size: 10px; fill: var(--ink); }
+  .ct__stat { font-size: 10px; fill: var(--mute); font-style: italic; }
+  .ct__tick, .ct__axis { stroke: var(--ink); stroke-width: 1; fill: none; }
+  .ct__flow { display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; align-items: center; padding-left: 14px; }
+  .ct__flow .ct__h { margin: 0; font-size: .92rem; font-weight: 700; color: var(--ink); }
+  .ct__steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
+  .ct__step { position: relative; display: grid; gap: 2px; padding: 8px 12px; min-width: 132px; border-radius: 9px; background: #fff; border: 1px solid #c9cfd4; font-size: .8rem; color: var(--ink); line-height: 1.25; }
+  .ct__step b { font-weight: 600; }
+  .ct__step span { color: var(--mute); font-size: .72rem; }
+  .ct__step:not(:last-child)::after { content: '→'; position: absolute; right: -17px; top: 50%; transform: translateY(-50%); color: var(--mute); }
+  .ct__step--clr { background: #fff5fa; border-color: #efb9d3; }
+  .ct__curve { fill: none; stroke-width: 2.4; stroke-linecap: round; }
+  .ct figcaption { margin-top: var(--s3); color: var(--text-2); font-size: .92rem; line-height: 1.55; max-width: 92ch; }
+  .ct figcaption p { margin: 0 0 .5em; }
+  .ct figcaption b { color: var(--text); }
+  .ct__src { font-size: .82rem; color: var(--text-3, var(--text-2)); }
+  /* build-up when the figure scrolls into view */
+  :global(html.js-motion) .ct:not(.is-in) .ct__step { opacity: 0; transform: translateY(8px); }
+  .ct__step { transition: opacity .6s, transform .6s var(--ease); transition-delay: calc(var(--i) * 90ms); }
+  :global(html.js-motion) .ct:not(.is-in) .ct__curve { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .ct__curve { stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke-dashoffset 1.8s cubic-bezier(.3, .7, .2, 1) .5s; }
+  :global(html.js-motion) .ct:not(.is-in) .ct__band, :global(html.js-motion) .ct:not(.is-in) .ct__img { opacity: 0; }
+  .ct__band { transition: opacity 1s 1.4s; }
+  .ct__img { transition: opacity 1.2s; transition-delay: .4s; }
+  :global(html.js-motion) .ct:not(.is-in) .ct__bar { transform: scaleY(0); }
+  .ct__bar { transform-box: fill-box; transform-origin: bottom; transition: transform .9s cubic-bezier(.3, .7, .2, 1); transition-delay: calc(.6s + var(--i) * 120ms); }
+  :global(html.js-motion) .ct:not(.is-in) .ct__dot { opacity: 0; transform: translateY(-6px); }
+  .ct__dot { transition: opacity .4s, transform .4s; transition-delay: calc(1.2s + var(--i) * 60ms); }
+  @media (max-width: 720px) {
+    .ct__grid { grid-template-columns: 1fr; grid-template-areas: 'a' 'b' 'c' 'd' 'e'; }
+    .ct__p--e svg { max-width: 260px; }
+    .ct__flow { grid-template-columns: 1fr; }
+    .ct__steps { flex-direction: column; gap: 14px; }
+    .ct__step:not(:last-child)::after { content: '↓'; right: auto; left: 50%; top: auto; bottom: -15px; transform: translateX(-50%); }
+    .ct__stamp { position: static; display: inline-block; margin-bottom: 10px; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-ct]').forEach((el) => {
+    new IntersectionObserver(([e], io) => { if (e.isIntersecting) { el.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.25 }).observe(el);
+  });
+</script>

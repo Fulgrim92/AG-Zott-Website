@@ -9,8 +9,10 @@ import { existsSync } from 'node:fs';
 import { url } from '../lib/url';
 interface Props { funder: 'ERC' | 'DFG' | 'EU'; height?: number }
 const { funder, height = 56 } = Astro.props;
-const file = { ERC: 'erc.svg', DFG: 'dfg.svg', EU: 'eu-emblem.svg' }[funder];
-const present = existsSync(new URL(`../../public/assets/logos/${file}`, import.meta.url));
+// first existing file wins (SVG preferred, PNG accepted)
+const base = { ERC: 'erc', DFG: 'dfg', EU: 'eu-emblem' }[funder];
+const file = [`${base}.svg`, `${base}.png`].find((f) => existsSync(`${process.cwd()}/public/assets/logos/${f}`)) ?? `${base}.svg`;
+const present = existsSync(`${process.cwd()}/public/assets/logos/${file}`);
 const names = { ERC: 'European Research Council', DFG: 'Deutsche Forschungsgemeinschaft', EU: 'European Union' };
 ---
 {present

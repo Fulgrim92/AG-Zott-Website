@@ -1,0 +1,76 @@
+---
+/**
+ * Scroll intro to the deep dive: the visitor looks into a microscope eyepiece and dives through it into
+ * brain tissue where neurons fire (calcium flashes). Illustrative, not data. Text: src/data/home.json → ocular.
+ */
+import home from '../data/home.json';
+import Label from './Label.astro';
+interface Props { steps?: string[]; label?: string }
+// Text defaults to the homepage version; other pages can pass their own lines
+const O = { ...home.ocular, ...(Astro.props.steps ? { steps: Astro.props.steps } : {}), ...(Astro.props.label ? { label: Astro.props.label } : {}) };
+const knurl = Array.from({ length: 72 }, (_, i) => i * 5);
+const scale = Array.from({ length: 21 }, (_, i) => -50 + i * 5);
+---
+<section class="oc" data-oc aria-label={O.aria}>
+  <div class="oc__pin" data-oc-pin>
+    <canvas class="oc__field" data-oc-canvas aria-hidden="true"></canvas>
+    <div class="oc__vignette" data-oc-vig aria-hidden="true"></div>
+    <svg class="oc__eye" viewBox="-200 -200 400 400" data-oc-eye aria-hidden="true">
+      <defs>
+        <radialGradient id="oc-metal" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#cfdde2" /><stop offset=".45" stop-color="#6d8590" /><stop offset="1" stop-color="#1c2a31" /></radialGradient>
+        <radialGradient id="oc-glass" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#16323a" stop-opacity=".2" /><stop offset=".7" stop-color="#030a0d" stop-opacity=".1" /><stop offset="1" stop-color="#000" stop-opacity=".5" /></radialGradient>
+        <linearGradient id="oc-shine" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35" /><stop offset=".5" stop-color="#fff" stop-opacity="0" /></linearGradient>
+        <mask id="oc-hole"><rect x="-200" y="-200" width="400" height="400" fill="#fff" /><circle r="92" fill="#000" /></mask>
+      </defs>
+      <g mask="url(#oc-hole)">
+        <circle r="190" fill="#0b1418" />
+        <circle r="186" fill="url(#oc-metal)" />
+        <g class="oc__knurl">{knurl.map((a) => <line x1="0" y1="-186" x2="0" y2="-168" transform={`rotate(${a})`} stroke="#0d171b" stroke-opacity=".55" stroke-width="2.4" />)}</g>
+        <circle r="166" fill="#1a262c" />
+        <circle r="160" fill="url(#oc-metal)" opacity=".75" />
+        <circle r="128" fill="#0e181d" />
+        <circle r="124" fill="none" stroke="#5fd3c6" stroke-opacity=".35" />
+        <text y="-138" text-anchor="middle" class="oc__engr">10× / 22 · WF</text>
+        <text y="150" text-anchor="middle" class="oc__engr">−5 · 0 · +5</text>
+        <circle r="100" fill="#05090b" />
+      </g>
+      <circle r="92" fill="url(#oc-glass)" />
+      <path d="M-70 -50 A86 86 0 0 1 30 -84" fill="none" stroke="url(#oc-shine)" stroke-width="10" stroke-linecap="round" />
+      <g class="oc__reticle" data-oc-ret>
+        <circle r="88" fill="none" stroke="#5fd3c6" stroke-opacity=".25" stroke-dasharray="2 4" />
+        {scale.map((x) => <line x1={x} x2={x} y1={x % 25 === 0 ? -5 : -2.5} y2={x % 25 === 0 ? 5 : 2.5} stroke="#5fd3c6" stroke-opacity=".5" />)}
+      </g>
+    </svg>
+    <div class="oc__text">
+      {O.steps.map((s, i) => <p class:list={['oc__line', { 'is-on': i === 0 }]} data-oc-line={i}>{s}</p>)}
+    </div>
+    <span class="oc__label" data-oc-label><Label kind="schematic" text={O.label} /></span>
+  </div>
+</section>
+
+<style>
+  .oc { position: relative; }
+  .oc__pin { position: relative; height: 100svh; overflow: hidden; display: grid; place-items: center; background: #02080a; }
+  .oc__field { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+  .oc__vignette { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, transparent calc(var(--fov, 0) * 1vmax), #02080a calc(var(--fov, 0) * 1vmax + 2px)); }
+  .oc__eye { position: absolute; width: min(70vmin, 520px); height: auto; overflow: visible; filter: drop-shadow(0 30px 60px rgba(0, 0, 0, .6)); will-change: transform; }
+  .oc__engr { font: 9px var(--font-mono); fill: #0d171b; letter-spacing: .12em; opacity: .7; }
+  .oc__text { position: absolute; left: 0; right: 0; bottom: 11vh; display: grid; justify-items: center; pointer-events: none; padding: 0 var(--s3); }
+  .oc__line { grid-area: 1 / 1; margin: 0; max-width: 34ch; text-align: center; font-family: var(--font-serif); font-size: clamp(1.4rem, 3vw, 2.2rem); line-height: 1.2; color: #e8f4f2;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, .8); opacity: 0; transform: translateY(14px); transition: opacity .5s var(--ease), transform .6s var(--ease); }
+  .oc__line.is-on { opacity: 1; transform: none; }
+  .oc__label { position: absolute; left: 16px; bottom: 14px; opacity: 0; transition: opacity .4s; }
+  .oc__label.is-on { opacity: 1; }
+  :global(:root[data-motion='off']) .oc__pin { height: auto; min-height: 70svh; }
+  :global(:root[data-motion='off']) .oc__field { opacity: 1; }
+  :global(:root[data-motion='off']) .oc__eye, :global(:root[data-motion='off']) .oc__vignette { display: none; }
+  :global(:root[data-motion='off']) .oc__line { opacity: 1; transform: none; position: relative; }
+  :global(:root[data-motion='off']) .oc__line:not(:last-child) { display: none; }
+  :global(:root[data-motion='off']) .oc__label { opacity: 1; }
+</style>
+
+<script>
+  import { initOcular } from '../scripts/ocular';
+  document.querySelectorAll<HTMLElement>('[data-oc]').forEach((el) => initOcular(el));
+</script>

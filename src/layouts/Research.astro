@@ -32,7 +32,7 @@ const steps = ['Question', 'Method', 'Explore the data', 'What we found', 'Paper
     </div>
   </section>
 
-  <section id="s3" class="section section--tight rs rs--data">
+  <section id="s3" class="section section--tight rs rs--data theme-dark" style={`--accent:${color}`}>
     <div class="container">
       <p class="eyebrow">03 — Explore the data</p>
       <slot name="data" />
@@ -87,13 +87,14 @@ const steps = ['Question', 'Method', 'Explore the data', 'What we found', 'Paper
 </Base>
 
 <style>
-  .toc { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: var(--s4); font-size: .9rem; }
-  .toc a { text-decoration: none; color: var(--text-2); } .toc a:hover { color: var(--accent); }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--s4); font-size: .88rem; }
+  .toc a { text-decoration: none; color: var(--text-2); padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); transition: border-color .2s, color .2s; } .toc a:hover { color: var(--accent); border-color: var(--accent); }
   .toc .mono { color: var(--accent); margin-right: 4px; }
-  .rs { border-bottom: 1px solid var(--line); }
+  .rs { border-bottom: 1px solid var(--line); background: var(--surface); }
+  .rs:nth-of-type(even):not(.rs--data) { background: var(--bg); }
   .rs__row { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--s4); align-items: start; }
   @media (max-width: 960px) { .rs__row { grid-template-columns: 1fr; gap: 0; } }
-  .rs--data { background: var(--bg-2); }
+  .rs--data { border-bottom: 0; }
   .plist { list-style: none; padding: 0; margin: 0 0 var(--s3); }
   .plist li { display: grid; gap: 2px; padding: var(--s2) 0; border-bottom: 1px solid var(--line); }
   .plist .mono { font-size: .75rem; }

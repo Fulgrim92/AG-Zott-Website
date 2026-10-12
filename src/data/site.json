@@ -23,16 +23,7 @@
   },
   "lastUpdated": "2026-10-06",
   "department": "[Department / institute — to verify]",
-  "pi": {
-    "name": "Benedikt Zott",
-    "role": "Group leader",
-    "title": "[Academic title — to verify]",
-    "bio": "Benedikt Zott is a neuroscientist and neuroradiologist at the Technical University of Munich. His research asks how β-amyloid disrupts hippocampal circuits in the earliest stages of Alzheimer’s disease — and whether these changes can be prevented or reversed — combining in vivo two-photon imaging, electrophysiology and histology in mouse models.",
-    "bioNote": "Draft biography based on public sources — please review and add career stages and awards.",
-    "photo": "",
-    "email": "",
-    "links": {
-      "X / Twitter": "https://x.com/BZottlab"
-    }
+  "social": {
+    "X / Twitter": "https://x.com/BZottlab"
   }
 }

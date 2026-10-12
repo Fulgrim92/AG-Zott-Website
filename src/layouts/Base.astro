@@ -1,8 +1,9 @@
 ---
 import '../styles/global.css';
-import Sidebar from '../components/Sidebar.astro';
+import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import site from '../data/site.json';
+import EditMode from '../components/EditMode.astro';
 
 interface Props { title?: string; description?: string; accent?: string; noindex?: boolean }
 const { title, description = `${site.name} — ${site.tagline}. Two-photon imaging in hippocampal CA1, immunohistochemistry and electrophysiology.`, accent, noindex } = Astro.props;
@@ -17,7 +18,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <title>{fullTitle}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
-  <meta name="theme-color" content="#07090d" />
+  <meta name="theme-color" content="#ffffff" />
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
   <meta property="og:type" content="website" />
@@ -31,6 +32,32 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       if (s.palette === 'cb') d.dataset.palette = 'cb';
       var reduce = s.motion === 'off' || (s.motion !== 'on' && matchMedia('(prefers-reduced-motion: reduce)').matches);
       if (reduce) d.dataset.motion = 'off'; else d.classList.add('js-motion');
+      // Page transitions: remember where a link was clicked so the next page opens from there
+      addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('a[href]');
+        if (!a || a.origin !== location.origin) return;
+        try { sessionStorage.setItem('agz-vt', JSON.stringify([e.clientX / innerWidth * 100, e.clientY / innerHeight * 100])); } catch (err) {}
+      }, true);
+      // Every link opens the next page at its top (or exactly at the #section it points to), not at a remembered
+      // or half-restored position; back/forward keeps the browser's own restoration
+      var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+      if (nav.type !== 'back_forward') {
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+        var touched = false;
+        ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(function (ev) { addEventListener(ev, function () { touched = true; }, { passive: true, once: true }); });
+        var land = function () {
+          if (touched) return;
+          var t = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+          if (t) t.scrollIntoView(); else scrollTo(0, 0);
+        };
+        addEventListener('DOMContentLoaded', land);
+        addEventListener('load', function () { land(); setTimeout(land, 700); setTimeout(land, 1600); });
+      }
+      addEventListener('pagereveal', function (e) {
+        if (!e.viewTransition) return;
+        if (d.dataset.motion === 'off') { e.viewTransition.skipTransition(); return; }
+        try { var p = JSON.parse(sessionStorage.getItem('agz-vt') || 'null'); if (p) { d.style.setProperty('--vt-x', p[0] + '%'); d.style.setProperty('--vt-y', p[1] + '%'); } sessionStorage.removeItem('agz-vt'); } catch (err) {}
+      });
     })();
   </script>
   <script type="application/ld+json" set:html={JSON.stringify({
@@ -41,13 +68,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 <body style={accent ? `--accent:${accent}` : undefined}>
   <a class="skip-link" href="#content">Skip to content</a>
   <div class="progress" data-progress aria-hidden="true"></div>
-  <div class="shell">
-    <Sidebar />
-    <main id="content" class="main" tabindex="-1">
-      <slot />
-      <Footer />
-    </main>
-  </div>
+  <Header />
+  <main id="content" class="main" tabindex="-1">
+    <slot />
+  </main>
+  <Footer />
+  {import.meta.env.PUBLIC_EDIT_MODE === '1' && <EditMode />}
   <script>
     import '../scripts/site';
   </script>

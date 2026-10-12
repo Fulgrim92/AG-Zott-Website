@@ -1,0 +1,118 @@
+---
+/**
+ * Ambient background: a sparse network of nodes that drift slowly, connect when near each other,
+ * and now and then pass a pulse along a connection. Decorative only (aria-hidden), pauses off-screen,
+ * static with reduced motion. Colour follows --accent of the surrounding section.
+ * Elements in the same section marked [data-nb-anchor] become fixed hubs of the network
+ * (used for the funder badges in the hero): nearby nodes link to them and pulses flow out.
+ */
+interface Props { density?: number; opacity?: number; class?: string }
+const { density = 1, opacity = 1, class: cls } = Astro.props;
+---
+<canvas class:list={['nb', cls]} data-nb data-density={density} style={`--nb-o:${opacity}`} aria-hidden="true"></canvas>
+<style>
+  .nb { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: var(--nb-o); }
+</style>
+<script>
+  document.querySelectorAll<HTMLCanvasElement>('[data-nb]').forEach((canvas) => {
+    const ctx = canvas.getContext('2d')!;
+    const host = canvas.parentElement!;
+    const density = parseFloat(canvas.dataset.density || '1');
+    const motionOK = () => document.documentElement.dataset.motion !== 'off';
+    let W = 0, H = 0, raf = 0, visible = true, color = '#5fd3c6';
+    type N = { x: number; y: number; vx: number; vy: number; r: number };
+    type P = { a: number; b: number; t: number; v: number };
+    let nodes: N[] = [], pulses: P[] = [];
+    const anchorEls = [...host.querySelectorAll<HTMLElement>('[data-nb-anchor]')];
+    type AP = { a: number; n: number; t: number; v: number };
+    let apulses: AP[] = [];
+    const ALINK = 230;
+    const pointer = { x: -1e4, y: -1e4 };
+    let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const LINK = 150;
+
+    const resize = () => {
+      const dpr = Math.min(devicePixelRatio, 2);
+      W = canvas.clientWidth; H = canvas.clientHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      color = getComputedStyle(canvas).getPropertyValue('--accent').trim() || color;
+      const n = Math.round(((W * H) / 17000) * density);
+      nodes = Array.from({ length: n }, () => ({ x: rnd() * W, y: rnd() * H, vx: (rnd() - 0.5) * 0.12, vy: (rnd() - 0.5) * 0.12, r: 0.8 + rnd() * 1.6 }));
+      pulses = [];
+      draw(false);
+    };
+
+    const draw = (advance = true) => {
+      ctx.clearRect(0, 0, W, H);
+      if (advance) for (const n of nodes) {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < -20) n.x = W + 20; else if (n.x > W + 20) n.x = -20;
+        if (n.y < -20) n.y = H + 20; else if (n.y > H + 20) n.y = -20;
+      }
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 0.6;
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        for (let j = i + 1; j < nodes.length; j++) {
+          const b = nodes[j], dx = a.x - b.x, dy = a.y - b.y, d = Math.hypot(dx, dy);
+          if (d > LINK) continue;
+          const near = Math.max(0, 1 - Math.hypot((a.x + b.x) / 2 - pointer.x, (a.y + b.y) / 2 - pointer.y) / 220);
+          ctx.globalAlpha = (1 - d / LINK) * (0.16 + near * 0.4);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          if (advance && pulses.length < 6 && rnd() < 0.00025) pulses.push({ a: i, b: j, t: 0, v: 0.008 + rnd() * 0.01 });
+        }
+      }
+      for (const n of nodes) {
+        const near = Math.max(0, 1 - Math.hypot(n.x - pointer.x, n.y - pointer.y) / 200);
+        ctx.globalAlpha = 0.35 + near * 0.6;
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r + near * 1.2, 0, Math.PI * 2); ctx.fill();
+      }
+      // anchors (funder badges): links to nearby nodes, pulses flowing out into the network
+      if (anchorEls.length) {
+        const cb = canvas.getBoundingClientRect();
+        const anchors = anchorEls.map((el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - cb.left, y: r.top + r.height / 2 - cb.top, w: r.width / 2 }; });
+        ctx.lineWidth = 0.7;
+        anchors.forEach((A, ai) => {
+          nodes.forEach((n, ni) => {
+            const d = Math.hypot(n.x - A.x, n.y - A.y) - A.w * 0.6;
+            if (d > ALINK || d < 0) return;
+            ctx.globalAlpha = (1 - d / ALINK) * 0.32;
+            ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(n.x, n.y); ctx.stroke();
+            if (advance && apulses.length < 5 && rnd() < 0.0009) apulses.push({ a: ai, n: ni, t: 0, v: 0.006 + rnd() * 0.008 });
+          });
+        });
+        apulses = apulses.filter((p) => {
+          const A = anchors[p.a], b = nodes[p.n];
+          if (!A || !b) return false;
+          if (advance) p.t += p.v;
+          const x = A.x + (b.x - A.x) * p.t, y = A.y + (b.y - A.y) * p.t;
+          const g = ctx.createRadialGradient(x, y, 0, x, y, 8);
+          g.addColorStop(0, color); g.addColorStop(1, 'transparent');
+          ctx.globalAlpha = Math.sin(Math.PI * p.t) * 0.85; ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = color;
+          return p.t < 1;
+        });
+      }
+      // pulses travel along links like spikes along an axon
+      pulses = pulses.filter((p) => {
+        const a = nodes[p.a], b = nodes[p.b];
+        if (!a || !b || Math.hypot(a.x - b.x, a.y - b.y) > LINK) return false;
+        if (advance) p.t += p.v;
+        const x = a.x + (b.x - a.x) * p.t, y = a.y + (b.y - a.y) * p.t;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, 9);
+        g.addColorStop(0, color); g.addColorStop(1, 'transparent');
+        ctx.globalAlpha = Math.sin(Math.PI * p.t) * 0.9; ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = color;
+        return p.t < 1;
+      });
+      ctx.globalAlpha = 1;
+    };
+    const loop = () => { draw(); raf = requestAnimationFrame(loop); };
+    const run = () => { cancelAnimationFrame(raf); raf = 0; if (visible && motionOK()) raf = requestAnimationFrame(loop); else draw(false); };
+
+    host.addEventListener('pointermove', (e) => { const b = canvas.getBoundingClientRect(); pointer.x = e.clientX - b.left; pointer.y = e.clientY - b.top; });
+    host.addEventListener('pointerleave', () => { pointer.x = pointer.y = -1e4; });
+    new ResizeObserver(resize).observe(canvas);
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); }).observe(canvas);
+    addEventListener('agz:motion', run);
+  });
+</script>

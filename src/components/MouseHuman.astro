@@ -1,0 +1,171 @@
+---
+/**
+ * "From mouse to human": the same tracer measurement on one shared clock. A logarithmic time axis (1 minute to 3 days)
+ * puts the mouse experiment (minutes; transcranial fluorescence after cisterna magna injection, Plog et al., 2018) and
+ * the human one (hours to days; MRI enhancement after intrathecal gadobutrol, Ringstad et al., 2018) side by side.
+ * Curves are schematic shapes in relative units, not data. A playhead sweeps the clock; both lanes report what the
+ * tracer is doing at that moment.
+ */
+const W = 900, H = 330, L = 118, R = 24;
+const T0 = 1, T1 = 72 * 60; // minutes
+const X = (m: number) => L + (Math.log10(Math.max(T0, m) / T0) / Math.log10(T1 / T0)) * (W - L - R);
+const lane = { mouse: [34, 136], human: [186, 288] } as const;
+const Y = (v: number, [top, bot]: readonly [number, number]) => bot - v * (bot - top - 8);
+const curve = (f: (m: number) => number, ln: readonly [number, number], from: number, to: number) =>
+  Array.from({ length: 140 }, (_, i) => from * Math.pow(to / from, i / 139)).map((m, i) => `${i ? 'L' : 'M'}${X(m).toFixed(1)} ${Y(f(m), ln).toFixed(1)}`).join(' ');
+// mouse: dorsal-surface fluorescence over the 30-min imaging window
+const mouse = (m: number) => 1 - Math.exp(-m / 10);
+// human: same schematic shapes as before (Ringstad et al., 2018): CSF peak ~6–9 h, tissue peak ~24 h, both lower by 48 h
+const csf = (m: number) => { const h = m / 60; return h <= 0 ? 0 : h < 7.5 ? Math.sin((h / 7.5) * Math.PI / 2) : h < 24 ? 1 - ((h - 7.5) / 16.5) * 0.5 : Math.max(0.05, 0.5 - ((h - 24) / 24) * 0.42); };
+const tissue = (m: number) => { const h = m / 60; return h <= 0 ? 0 : h < 24 ? 0.62 * Math.pow(h / 24, 0.9) : Math.max(0.12, 0.62 - ((h - 24) / 24) * 0.45); };
+const ticks: [number, string][] = [[1, '1 min'], [10, '10 min'], [30, '30 min'], [60, '1 h'], [360, '6 h'], [1440, '24 h'], [2880, '48 h']];
+// events shown on the lanes and in the read-out (minute, label)
+const mEv: [number, string][] = [[1, 'injection into the cisterna magna'], [5, 'along the large surface arteries'], [30, 'across the dorsal cortex; imaging ends, then sections']];
+const hEv: [number, string][] = [[1, 'injection into the lower spinal canal'], [450, 'CSF around the brain peaks (≈ 6–9 h)'], [1440, 'brain tissue peaks (≈ 24 h)'], [2880, 'largely cleared (48 h)']];
+---
+<figure class="mh" data-mh data-t0={T0} data-t1={T1} data-l={L} data-r={R} data-w={W}>
+  <div class="mh__chart">
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-labelledby="mh-t">
+      <title id="mh-t">Schematic on one logarithmic time axis from 1 minute to 3 days. Mouse: after injection into the cisterna magna the tracer runs along the surface arteries within minutes and covers the dorsal cortex by about 30 minutes, when imaging ends. Human: after injection into the lower spinal canal the tracer in the fluid around the brain peaks after about 6 to 9 hours, in brain tissue after about 24 hours, and is largely cleared by 48 hours.</title>
+      <defs>
+        <linearGradient id="mh-fm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4fd8" stop-opacity=".35" /><stop offset="1" stop-color="#ff4fd8" stop-opacity="0" /></linearGradient>
+        <linearGradient id="mh-fh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd0ff" stop-opacity=".3" /><stop offset="1" stop-color="#8fd0ff" stop-opacity="0" /></linearGradient>
+      </defs>
+      <!-- grid + axis -->
+      {ticks.map(([m, t]) => <g class="mh__tick"><line x1={X(m)} x2={X(m)} y1="22" y2={H - 34} /><text x={X(m)} y={H - 16} text-anchor="middle">{t}</text></g>)}
+      <!-- lanes -->
+      <g class="mh__lane">
+        <rect x={L} y={lane.mouse[0]} width={W - L - R} height={lane.mouse[1] - lane.mouse[0]} rx="10" />
+        <rect x={L} y={lane.human[0]} width={W - L - R} height={lane.human[1] - lane.human[0]} rx="10" />
+      </g>
+      <g class="mh__name">
+        <text x="14" y={lane.mouse[0] + 30}>Mouse</text>
+        <text x="14" y={lane.mouse[0] + 48} class="mh__sub">fluorescent tracer</text>
+        <text x="14" y={lane.mouse[0] + 62} class="mh__sub">optical imaging</text>
+        <text x="14" y={lane.human[0] + 30}>Human</text>
+        <text x="14" y={lane.human[0] + 48} class="mh__sub">MRI contrast agent</text>
+        <text x="14" y={lane.human[0] + 62} class="mh__sub">MRI scans</text>
+      </g>
+      <!-- mouse curve: imaged window solid, then sections only -->
+      <path d={`${curve(mouse, lane.mouse, 1, 30)} L${X(30)} ${lane.mouse[1]} L${X(1)} ${lane.mouse[1]} Z`} fill="url(#mh-fm)" class="mh__area" />
+      <path d={curve(mouse, lane.mouse, 1, 30)} class="mh__c mh__c--m" pathLength="1" />
+      <path d={`M${X(30)} ${Y(mouse(30), lane.mouse)} H${X(120)}`} class="mh__c mh__c--m mh__c--dash" />
+      <text x={X(120) + 6} y={Y(mouse(30), lane.mouse) + 4} class="mh__note">fixed sections</text>
+      <!-- human curves -->
+      <path d={`${curve(csf, lane.human, 20, T1)} L${X(T1)} ${lane.human[1]} L${X(20)} ${lane.human[1]} Z`} fill="url(#mh-fh)" class="mh__area" />
+      <path d={curve(csf, lane.human, 20, T1)} class="mh__c mh__c--csf" pathLength="1" />
+      <path d={curve(tissue, lane.human, 20, T1)} class="mh__c mh__c--tis" pathLength="1" />
+      <g class="mh__key" transform={`translate(${X(30) - 40} ${lane.human[0] + 16})`}>
+        <line x2="16" class="mh__c--csf" /><text x="22" y="4">fluid around the brain</text>
+        <line y1="16" y2="16" x2="16" class="mh__c--tis" /><text x="22" y="20">brain tissue</text>
+      </g>
+      <text x={X(1) + 8} y={lane.mouse[0] + 18} class="mh__note">dorsal-surface fluorescence</text>
+      <!-- events -->
+      {mEv.map(([m]) => <circle cx={X(m)} cy={Y(mouse(Math.min(m, 30)), lane.mouse)} r="4.5" class="mh__ev mh__ev--m" data-mh-ev={m} />)}
+      {hEv.map(([m], i) => <circle cx={X(m)} cy={Y(i === 2 ? tissue(m) : i === 0 ? 0 : csf(m), lane.human)} r="4.5" class="mh__ev mh__ev--h" data-mh-ev={m} />)}
+      <!-- the gap between the two -->
+      <path d={`M${X(30)} ${lane.mouse[1] + 6} C${X(30)} 164 ${X(1440)} 158 ${X(1440)} ${lane.human[0] - 4}`} class="mh__bridge" />
+      <text x={(X(30) + X(1440)) / 2} y="158" class="mh__note mh__note--b" text-anchor="middle">same route: minutes in mice, hours to days in humans</text>
+      <!-- playhead -->
+      <g class="mh__head" data-mh-head>
+        <line y1="22" y2={H - 34} />
+        <rect x="-30" y="4" width="60" height="18" rx="9" />
+        <text y="17" text-anchor="middle" data-mh-clock>1 min</text>
+      </g>
+    </svg>
+  </div>
+  <div class="mh__ctl">
+    <button type="button" class="mh__play" data-mh-play aria-pressed="true" aria-label="Pause"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path class="mh__i-pause" d="M7 5h4v14H7zM13 5h4v14h-4z" /><path class="mh__i-play" d="M8 5v14l11-7z" /></svg></button>
+    <input type="range" min="0" max="1000" value="0" data-mh-t aria-label="Time after injection, logarithmic from 1 minute to 3 days" />
+  </div>
+  <div class="mh__now" aria-live="polite">
+    <p><span class="mh__dot mh__dot--m"></span><b>Mouse</b> <span data-mh-mouse>{mEv[0][1]}</span></p>
+    <p><span class="mh__dot mh__dot--h"></span><b>Human</b> <span data-mh-human>not yet injected</span></p>
+  </div>
+  <script type="application/json" data-mh-events set:html={JSON.stringify({ m: mEv, h: hEv })} />
+</figure>
+
+<style>
+  .mh { margin: 0; display: grid; gap: 12px; }
+  .mh__chart { border-radius: 18px; overflow: hidden; background: radial-gradient(90% 120% at 20% 0%, #1d1030, #07070c); border: 1px solid rgba(255, 255, 255, .08); }
+  .mh svg { display: block; width: 100%; height: auto; }
+  .mh__tick line { stroke: #ffffff12; }
+  .mh__tick text, .mh__key text, .mh__note { font: 10.5px var(--font-mono); fill: #b9a9c9; }
+  .mh__note--b { fill: #e7d9f3; font-size: 11px; }
+  .mh__lane rect { fill: #ffffff06; stroke: #ffffff10; }
+  .mh__name text { font: 600 15px var(--font-sans); fill: #f2ecf7; }
+  .mh__name .mh__sub { font: 10.5px var(--font-mono); fill: #9d8fb0; }
+  .mh__c { fill: none; stroke-width: 2.6; stroke-linecap: round; }
+  .mh__c--m { stroke: #ff4fd8; } .mh__c--csf { stroke: #ff8fd8; stroke-opacity: .85; } .mh__c--tis { stroke: #8fd0ff; }
+  .mh__c--dash { stroke-dasharray: 3 5; stroke-width: 1.6; opacity: .7; }
+  .mh__key line { stroke-width: 2.6; }
+  .mh__ev { fill: #07070c; stroke-width: 2; transition: fill .3s, r .3s; }
+  .mh__ev--m { stroke: #ff4fd8; } .mh__ev--h { stroke: #8fd0ff; }
+  .mh__ev.is-on.mh__ev--m { fill: #ff4fd8; } .mh__ev.is-on.mh__ev--h { fill: #8fd0ff; }
+  .mh__bridge { fill: none; stroke: #e7d9f3; stroke-opacity: .45; stroke-dasharray: 2 5; stroke-width: 1.4; }
+  .mh__head line { stroke: #fff; stroke-opacity: .7; stroke-width: 1.2; }
+  .mh__head rect { fill: #fff; }
+  .mh__head text { font: 600 10.5px var(--font-mono); fill: #1a1024; }
+  .mh__ctl { display: flex; gap: 10px; align-items: center; }
+  .mh__ctl input { flex: 1; accent-color: #ff4fd8; }
+  .mh__play { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--surface); color: var(--text); cursor: pointer; }
+  .mh__play svg { fill: currentColor; }
+  .mh__play .mh__i-play { display: none; }
+  .mh__play[aria-pressed='false'] .mh__i-play { display: inline; } .mh__play[aria-pressed='false'] .mh__i-pause { display: none; }
+  .mh__now { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mh__now p { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); font-size: .92rem; color: var(--text-2); min-height: 3.2em; }
+  .mh__now b { color: var(--text); margin-right: 4px; }
+  .mh__dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .mh__dot--m { background: #ff4fd8; } .mh__dot--h { background: #8fd0ff; }
+  @media (max-width: 640px) {
+    .mh__chart { overflow-x: auto; }
+    .mh__chart svg { width: 640px; max-width: none; }
+    .mh__now { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-mh]').forEach((root) => {
+    const svg = root.querySelector('svg')!;
+    const chart = root.querySelector<HTMLElement>('.mh__chart')!;
+    const head = root.querySelector<SVGGElement>('[data-mh-head]')!;
+    const clock = root.querySelector<SVGTextElement>('[data-mh-clock]')!;
+    const range = root.querySelector<HTMLInputElement>('[data-mh-t]')!;
+    const play = root.querySelector<HTMLButtonElement>('[data-mh-play]')!;
+    const outM = root.querySelector<HTMLElement>('[data-mh-mouse]')!;
+    const outH = root.querySelector<HTMLElement>('[data-mh-human]')!;
+    const ev = JSON.parse(root.querySelector('[data-mh-events]')!.textContent!) as { m: [number, string][]; h: [number, string][] };
+    const dots = [...svg.querySelectorAll<SVGCircleElement>('[data-mh-ev]')];
+    const t0 = +root.dataset.t0!, t1 = +root.dataset.t1!, L = +root.dataset.l!, R = +root.dataset.r!, W = +root.dataset.w!;
+    const minutes = (u: number) => t0 * Math.pow(t1 / t0, u);
+    const fmt = (m: number) => (m < 60 ? `${Math.round(m)} min` : m < 600 ? `${(m / 60).toFixed(1)} h` : `${Math.round(m / 60)} h`);
+    const last = (list: [number, string][], m: number) => [...list].reverse().find(([t]) => t <= m + 1e-6)?.[1];
+    let u = 0, playing = true, visible = false, raf = 0, prev = 0;
+    const DUR = 12; // seconds per sweep
+    const draw = () => {
+      const m = minutes(u);
+      head.setAttribute('transform', `translate(${L + u * (W - L - R)} 0)`);
+      // on narrow screens the chart scrolls sideways; keep the playhead in view while it plays
+      if (playing && chart.scrollWidth > chart.clientWidth + 2) chart.scrollLeft = ((L + u * (W - L - R)) / W) * chart.scrollWidth - chart.clientWidth / 2;
+      clock.textContent = fmt(m);
+      range.value = String(Math.round(u * 1000));
+      outM.textContent = m > 120 ? 'experiment over; tracer measured in fixed sections' : last(ev.m, m) ?? '';
+      outH.textContent = last(ev.h, m) ?? 'not yet injected';
+      dots.forEach((d) => d.classList.toggle('is-on', +d.dataset.mhEv! <= m + 1e-6));
+    };
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+      u += dt / DUR; if (u > 1) u = 0;
+      draw();
+      if (playing && visible) raf = requestAnimationFrame(tick);
+    };
+    const run = () => { cancelAnimationFrame(raf); if (playing && visible && document.documentElement.dataset.motion !== 'off') { prev = performance.now(); raf = requestAnimationFrame(tick); } };
+    const setPlay = (p: boolean) => { playing = p; play.setAttribute('aria-pressed', String(p)); play.setAttribute('aria-label', p ? 'Pause' : 'Play'); run(); };
+    play.addEventListener('click', () => setPlay(!playing));
+    range.addEventListener('input', () => { setPlay(false); u = +range.value / 1000; draw(); });
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); }, { threshold: 0.2 }).observe(root);
+    document.addEventListener('agz:motion', () => { if (document.documentElement.dataset.motion === 'off') { setPlay(false); u = 1; draw(); } else run(); });
+    if (document.documentElement.dataset.motion === 'off') { playing = false; play.setAttribute('aria-pressed', 'false'); u = 1; }
+    draw();
+  });
+</script>

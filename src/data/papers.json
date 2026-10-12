@@ -1,37 +1,7 @@
 [
-  {
-    "title": "Amyloid β–dependent neuronal silencing through synaptic decoupling",
-    "authors": "Zhang Y, Chen-Engerer HJ, Zhang K, Zott B, Varga Z, Chen Y, Chen X, Jia H, Sakmann B, Nelken I, Konnerth A",
-    "journal": "Proceedings of the National Academy of Sciences (PNAS)",
-    "year": 2025, "type": "article", "doi": "10.1073/pnas.2515113122",
-    "themes": ["two-photon"], "grants": [], "placeholder": false
-  },
-  {
-    "title": "β-amyloid monomer scavenging by an anticalin protein prevents neuronal hyperactivity in mouse models of Alzheimer's Disease",
-    "authors": "Zott B, Nästle L, Grienberger C, Unger F, Knauer MM, Wolf C, Keskin-Dargin A, Feuerbach A, Busche MA, Skerra A, Konnerth A",
-    "journal": "Nature Communications 15:5819",
-    "year": 2024, "type": "article", "doi": "10.1038/s41467-024-50153-y",
-    "themes": ["two-photon", "immunohistochemistry"], "grants": [], "placeholder": false
-  },
-  {
-    "title": "Impairments of glutamatergic synaptic transmission in Alzheimer's disease",
-    "authors": "Zott B, Konnerth A",
-    "journal": "Seminars in Cell & Developmental Biology 139:24–34",
-    "year": 2023, "type": "review", "doi": "",
-    "themes": ["electrophysiology"], "grants": [], "placeholder": false
-  },
-  {
-    "title": "A vicious cycle of β amyloid-dependent neuronal hyperactivation",
-    "authors": "Zott B, Simon MM, Hong W, Unger F, Chen-Engerer HJ, Frosch MP, Sakmann B, Walsh DM, Konnerth A",
-    "journal": "Science 365(6453):559–565",
-    "year": 2019, "type": "article", "doi": "10.1126/science.aay0198",
-    "themes": ["two-photon", "electrophysiology"], "grants": [], "placeholder": false
-  },
-  {
-    "title": "What happens with the circuit in Alzheimer's disease in mice and humans?",
-    "authors": "Zott B, Busche MA, Sperling RA, Konnerth A",
-    "journal": "Annual Review of Neuroscience 41:277–297",
-    "year": 2018, "type": "review", "doi": "",
-    "themes": ["two-photon", "electrophysiology"], "grants": [], "placeholder": false
-  }
+  {"title": "Amyloid β–dependent neuronal silencing through synaptic decoupling", "authors": "Zhang Y, Chen-Engerer HJ, Zhang K, Zott B, Varga Z, Chen Y, Chen X, Jia H, Sakmann B, Nelken I, Konnerth A", "journal": "Proceedings of the National Academy of Sciences (PNAS)", "year": 2025, "type": "article", "doi": "10.1073/pnas.2515113122", "themes": ["two-photon"], "grants": [], "placeholder": false, "summary": "In mouse models of β-amyloidosis, silent neurons lose much of their presynaptic input and many dendritic spines — synaptic decoupling as a mechanism behind the decline of neuronal activity.", "journalShort": "PNAS"},
+  {"title": "β-amyloid monomer scavenging by an anticalin protein prevents neuronal hyperactivity in mouse models of Alzheimer's Disease", "authors": "Zott B, Nästle L, Grienberger C, Unger F, Knauer MM, Wolf C, Keskin-Dargin A, Feuerbach A, Busche MA, Skerra A, Konnerth A", "journal": "Nature Communications 15:5819", "year": 2024, "type": "article", "doi": "10.1038/s41467-024-50153-y", "themes": ["two-photon", "immunohistochemistry"], "grants": [], "placeholder": false, "summary": "An anticalin protein that scavenges β-amyloid monomers suppresses early neuronal hyperactivity and synaptic glutamate accumulation in APP23xPS45 mice — but only before plaques form.", "journalShort": "Nature Communications"},
+  {"title": "Impairments of glutamatergic synaptic transmission in Alzheimer's disease", "authors": "Zott B, Konnerth A", "journal": "Seminars in Cell & Developmental Biology 139:24–34", "year": 2023, "type": "review", "doi": "", "themes": ["electrophysiology"], "grants": [], "placeholder": false},
+  {"title": "A vicious cycle of β amyloid-dependent neuronal hyperactivation", "authors": "Zott B, Simon MM, Hong W, Unger F, Chen-Engerer HJ, Frosch MP, Sakmann B, Walsh DM, Konnerth A", "journal": "Science 365(6453):559–565", "year": 2019, "type": "article", "doi": "10.1126/science.aay0198", "themes": ["two-photon", "electrophysiology"], "grants": [], "placeholder": false, "summary": "β-amyloid causes neuronal hyperactivation by blocking glutamate reuptake, preferentially in neurons that are already active — a mechanism that can operate before plaques appear.", "journalShort": "Science"},
+  {"title": "What happens with the circuit in Alzheimer's disease in mice and humans?", "authors": "Zott B, Busche MA, Sperling RA, Konnerth A", "journal": "Annual Review of Neuroscience 41:277–297", "year": 2018, "type": "review", "doi": "", "themes": ["two-photon", "electrophysiology"], "grants": [], "placeholder": false}
 ]

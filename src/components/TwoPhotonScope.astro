@@ -1,0 +1,134 @@
+---
+/**
+ * How a two-photon microscope builds an image: a pulsed infrared beam is steered by two scan mirrors
+ * through the objective; the focal spot sweeps line by line through CA1 and the emitted green light is
+ * counted by a detector, pixel by pixel. The light path is an illustrative schematic; the image that
+ * builds up on the right is the real mean projection of the lab's recording (pipeline.json → images.mean).
+ */
+import Label from './Label.astro';
+import pipeline from '../data/pipeline.json';
+import { url } from '../lib/url';
+const mean = url(`/${pipeline.images.mean}`);
+---
+<figure class="tps" data-tps>
+  <div class="tps__stage">
+    <svg class="tps__path" viewBox="0 0 520 420" role="img" aria-labelledby="tps-t">
+      <title id="tps-t">Schematic of a two-photon microscope: a pulsed infrared laser beam is reflected by two scan mirrors into the objective and focused into the hippocampus; green fluorescence from the focal spot returns through the objective and is reflected by a dichroic mirror onto a detector.</title>
+      <defs>
+        <linearGradient id="tps-obj" x1="0" x2="1"><stop offset="0" stop-color="#43555c" /><stop offset=".5" stop-color="#a9bcc2" /><stop offset="1" stop-color="#3a4a50" /></linearGradient>
+        <radialGradient id="tps-spot"><stop offset="0" stop-color="#eafff4" /><stop offset=".35" stop-color="#4dff9a" /><stop offset="1" stop-color="#4dff9a" stop-opacity="0" /></radialGradient>
+        <linearGradient id="tps-tissue" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2f35" /><stop offset="1" stop-color="#0a161a" /></linearGradient>
+      </defs>
+
+      <!-- laser -->
+      <rect x="14" y="40" width="116" height="46" rx="8" class="tps__box" />
+      <text x="72" y="60" class="tps__t">Pulsed laser</text>
+      <text x="72" y="76" class="tps__s">infrared</text>
+      <!-- beam to the scan mirrors -->
+      <path d="M130 63 H232" class="tps__beam" />
+      <path d="M130 63 H232" class="tps__pulses" />
+      <!-- scan mirrors (x and y) -->
+      <g class="tps__galvo tps__galvo--x"><rect x="224" y="52" width="16" height="22" rx="2" transform="rotate(45 232 63)" class="tps__mirror" /></g>
+      <path d="M232 63 V128" class="tps__beam" /><path d="M232 63 V128" class="tps__pulses" />
+      <g class="tps__galvo tps__galvo--y"><rect x="224" y="117" width="16" height="22" rx="2" transform="rotate(-45 232 128)" class="tps__mirror" /></g>
+      <text x="218" y="100" class="tps__s" text-anchor="end">scan mirrors</text>
+      <path d="M232 128 H330" class="tps__beam" /><path d="M232 128 H330" class="tps__pulses" />
+      <!-- dichroic: passes infrared down, reflects green to the detector -->
+      <rect x="322" y="117" width="16" height="24" rx="2" transform="rotate(45 330 128)" class="tps__dichroic" />
+      <text x="346" y="160" class="tps__s" text-anchor="start">dichroic</text>
+      <path d="M330 128 V218" class="tps__beam" /><path d="M330 128 V218" class="tps__pulses" />
+      <!-- detector -->
+      <rect x="398" y="20" width="102" height="44" rx="8" class="tps__box tps__box--det" />
+      <text x="449" y="40" class="tps__t">Detector</text>
+      <text x="449" y="55" class="tps__s">counts photons</text>
+      <path d="M332 200 V128 L449 128 V64" class="tps__em" />
+      <!-- objective -->
+      <path d="M296 218 H364 V250 L352 286 H308 L296 250 Z" fill="url(#tps-obj)" stroke="#1c2a31" />
+      <rect x="296" y="232" width="68" height="5" fill="#ff6b5a" opacity=".7" />
+      <text x="378" y="252" class="tps__s" text-anchor="start">objective</text>
+      <!-- converging cone and scanning focus -->
+      <path d="M312 286 L330 352 L348 286 Z" fill="#ff6b5a" opacity=".16" data-tps-cone />
+      <!-- tissue: cranial window over CA1 -->
+      <rect x="150" y="300" width="360" height="110" rx="6" fill="url(#tps-tissue)" />
+      <rect x="250" y="296" width="160" height="6" rx="2" fill="#9fd9e6" opacity=".45" />
+      <path d="M150 352 C230 340 300 360 510 346" stroke="#3ddc84" stroke-opacity=".35" stroke-width="14" fill="none" />
+      <text x="160" y="398" class="tps__s" text-anchor="start">CA1 pyramidal layer</text>
+      <text x="400" y="292" class="tps__s" text-anchor="start">window</text>
+      <circle r="11" cx="330" cy="352" fill="url(#tps-spot)" data-tps-spot class="tps__spot" />
+    </svg>
+    <div class="tps__img">
+      <div class="tps__frame">
+        <img src={mean} alt="" width="502" height="458" loading="lazy" data-tps-img />
+        <span class="tps__scan" data-tps-scan aria-hidden="true"></span>
+      </div>
+      <p class="tps__cap"><Label kind="data" /> <span>The image builds up point by point: mean of the lab’s CA1 recording.</span></p>
+    </div>
+  </div>
+  <figcaption><Label kind="schematic" /> <span>Light path simplified. Only at the focal spot do two infrared photons arrive together often enough to excite the green indicator, so every detected photon comes from that one point.</span></figcaption>
+</figure>
+
+<style>
+  .tps { margin: 0; }
+  .tps__stage { display: grid; grid-template-columns: 1.25fr 1fr; gap: var(--s4); align-items: center; padding: var(--s4); border-radius: var(--r-lg, 18px);
+    background: radial-gradient(120% 90% at 20% 0%, #0d2a31, #04090c); border: 1px solid rgba(95, 211, 198, .18); color: #e8f4f2; }
+  .tps__path { width: 100%; height: auto; overflow: visible; }
+  .tps__box { fill: #0b1c22; stroke: rgba(255, 107, 90, .6); }
+  .tps__box--det { stroke: rgba(77, 255, 154, .6); }
+  .tps__t { font: 600 13px var(--font-sans); fill: #e8f4f2; text-anchor: middle; }
+  .tps__s { font: 10.5px var(--font-mono); fill: #8fb3bb; text-anchor: middle; letter-spacing: .04em; }
+  .tps__beam { stroke: #ff6b5a; stroke-width: 3; opacity: .35; fill: none; }
+  .tps__pulses { stroke: #ff8c7a; stroke-width: 3; fill: none; stroke-dasharray: 3 11; animation: tps-pulse .5s linear infinite; }
+  @keyframes tps-pulse { to { stroke-dashoffset: -14; } }
+  .tps__em { stroke: #4dff9a; stroke-width: 2.4; fill: none; stroke-dasharray: 2 8; opacity: .85; animation: tps-pulse .6s linear infinite; }
+  .tps__mirror { fill: #c9d9de; stroke: #1c2a31; }
+  .tps__dichroic { fill: #4dff9a; fill-opacity: .35; stroke: #4dff9a; stroke-opacity: .7; }
+  .tps__galvo { transform-box: fill-box; transform-origin: center; }
+  .tps__galvo--x { animation: tps-wob .25s ease-in-out infinite alternate; }
+  .tps__galvo--y { animation: tps-wob 4s linear infinite alternate; }
+  @keyframes tps-wob { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+  .tps__spot { mix-blend-mode: screen; }
+  .tps__img { display: grid; gap: var(--s2); }
+  .tps__frame { position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 502 / 458; box-shadow: 0 0 0 1px rgba(77, 255, 154, .25), 0 20px 50px -20px #000; }
+  .tps__frame img { width: 100%; height: 100%; display: block; filter: contrast(1.2) brightness(1.15); clip-path: inset(0 0 var(--rest, 0%) 0); }
+  .tps__scan { position: absolute; left: 0; right: 0; height: 2px; top: var(--y, 100%); background: #4dff9a; box-shadow: 0 0 12px #4dff9a; opacity: var(--scan-o, 0); }
+  .tps__scan::after { content: ''; position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; left: var(--x, 0%); transform: translateX(-50%); background: #eafff4; box-shadow: 0 0 14px #4dff9a; }
+  .tps__cap { margin: 0; font-size: var(--fs-small, .85rem); color: #8fb3bb; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .tps figcaption { margin-top: var(--s2); }
+  @media (max-width: 760px) {
+    .tps__stage { grid-template-columns: 1fr; padding: var(--s3); }
+    .tps__img { max-width: 360px; justify-self: center; width: 100%; }
+  }
+  :global(:root[data-motion='off']) .tps__pulses, :global(:root[data-motion='off']) .tps__em, :global(:root[data-motion='off']) .tps__galvo { animation: none; }
+</style>
+
+<script>
+  // Raster scan: the focal spot sweeps lines left to right; the real image is revealed behind the scan line.
+  document.querySelectorAll<HTMLElement>('[data-tps]').forEach((root) => {
+    const spot = root.querySelector<SVGCircleElement>('[data-tps-spot]')!;
+    const cone = root.querySelector<SVGPathElement>('[data-tps-cone]')!;
+    const frame = root.querySelector<HTMLElement>('.tps__frame')!;
+    const LINES = 48, LINE_S = 0.11, HOLD_S = 1.6;
+    const cycle = LINES * LINE_S + HOLD_S;
+    let raf = 0, t0 = 0, visible = false;
+    const off = () => document.documentElement.dataset.motion === 'off';
+    const draw = (now: number) => {
+      const t = ((now - t0) / 1000) % cycle;
+      const line = Math.min(LINES, t / LINE_S);
+      const done = line >= LINES;
+      const x = done ? 0.5 : line % 1, y = done ? 1 : Math.floor(line) / LINES;
+      frame.style.setProperty('--rest', `${(1 - (done ? 1 : (Math.floor(line) + x) / LINES)) * 100}%`);
+      frame.style.setProperty('--y', `${y * 100}%`);
+      frame.style.setProperty('--x', `${x * 100}%`);
+      frame.style.setProperty('--scan-o', done ? '0' : '1');
+      // focal spot in the tissue moves with the fast (x) axis, slow axis shifts it slightly in depth for parallax
+      const sx = 330 + (x - 0.5) * 64, sy = 352 + (y - 0.5) * 6;
+      spot.setAttribute('cx', `${sx}`); spot.setAttribute('cy', `${sy}`);
+      cone.setAttribute('d', `M312 286 L${sx} ${sy} L348 286 Z`);
+      if (visible) raf = requestAnimationFrame(draw);
+    };
+    const start = () => { if (off()) { stop(); return; } cancelAnimationFrame(raf); t0 = performance.now(); raf = requestAnimationFrame(draw); };
+    const stop = () => { cancelAnimationFrame(raf); frame.style.setProperty('--rest', '0%'); frame.style.setProperty('--scan-o', '0'); };
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? start() : cancelAnimationFrame(raf); }, { threshold: 0.2 }).observe(root);
+    document.addEventListener('agz:motion', () => (visible ? start() : stop()));
+  });
+</script>

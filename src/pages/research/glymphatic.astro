@@ -1,10 +1,17 @@
 ---
 import Research from '../../layouts/Research.astro';
 import GlymphaticFlow from '../../components/GlymphaticFlow.astro';
+import GlymphaticTracer from '../../components/GlymphaticTracer.astro';
+import ClearanceTemplate from '../../components/ClearanceTemplate.astro';
+import MouseHuman from '../../components/MouseHuman.astro';
+import Label from '../../components/Label.astro';
 import site from '../../data/site.json';
+import papers from '../../data/papers.json';
+// The lab's MRI studies: tag them in papers.json with "themes": ["glymphatic"] and "methods": ["MRI"]
+const mriPapers = (papers as any[]).filter((p) => p.themes.includes('glymphatic') && p.methods?.includes('MRI')).sort((a, b) => b.year - a.year);
 ---
-<Research theme="glymphatic" color="var(--magenta)" eyebrow="Research · 04" title="The glymphatic system"
-  lead="How the brain rinses itself: cerebrospinal fluid flow and the clearance of waste.">
+<Research theme="glymphatic" color="var(--magenta)" eyebrow="Research · 02" title="The glymphatic system"
+  lead="How the brain rinses itself: cerebrospinal fluid flow and the clearance of waste, studied in mice and in humans.">
   <Fragment slot="question">
     {!site.features.glymphaticVerified && (
       <p class="banner" style="margin-bottom:var(--s3)"><strong class="ph">To verify:</strong> this section is shown only if the glymphatic system is part of the lab’s actual work. Confirm and link publications, then set <code>features.glymphaticVerified</code> to <code>true</code> (or disable the section with <code>features.glymphatic</code>).</p>
@@ -22,9 +29,41 @@ import site from '../../data/site.json';
     <h2 data-reveal>Follow the flow</h2>
     <p class="muted" data-reveal>Switch between awake and asleep to compare how fluid and solutes move. Pause at any time.</p>
     <div style="margin-top:var(--s4)"><GlymphaticFlow /></div>
+
+    <h2 data-reveal style="margin-top:var(--s7)">How tracer studies see it</h2>
+    <p class="muted" data-reveal>Glymphatic flow is measured by injecting a fluorescent tracer into the cerebrospinal fluid and watching where it goes: live, through the skull, with a wide-field camera, and afterwards, in thin brain sections under a confocal microscope.</p>
+    <div style="margin-top:var(--s4)"><GlymphaticTracer /></div>
     <p class="small muted" style="margin-top:var(--s3)">
-      References: Iliff JJ et al. (2012) <i>Sci Transl Med</i> 4:147ra111 · Xie L et al. (2013) <i>Science</i> 342:373–377.
+      References: Iliff JJ et al. (2012) <i>Sci Transl Med</i> 4:147ra111 · Xie L et al. (2013) <i>Science</i> 342:373–377 · Plog BA et al. (2018) <i>JCI Insight</i> 3:e120922.
     </p>
+
+    <h2 data-reveal style="margin-top:var(--s7)">How clearance is measured</h2>
+    <p class="muted" data-reveal>Published tracer studies report influx and clearance in a recognisable set of panels. The template below lays out the lab’s own experiments the same way, ready to be filled with real images and numbers.</p>
+    <div style="margin-top:var(--s4)"><ClearanceTemplate /></div>
+
+    <section class="tr" aria-labelledby="tr-h">
+      <p class="tr__eyebrow">Translational</p>
+      <h2 id="tr-h" data-reveal>From mouse to human</h2>
+      <p class="tr__lead" data-reveal>The same experiment works in both species: put a tracer into the cerebrospinal fluid and watch where it goes. In mice that takes minutes and is seen down to single vessels; in people it takes hours to days and is seen across the whole brain on MRI. Press play or drag the slider to follow both on one clock.</p>
+      <MouseHuman />
+      <dl class="tr__cmp" data-reveal>
+        <div class="tr__row tr__row--head"><dt></dt><dd><span class="tr__tag">Mouse</span></dd><dd><span class="tr__tag tr__tag--h">Human</span></dd></div>
+        <div class="tr__row"><dt>Tracer</dt><dd>Fluorescent dextrans or labelled albumin</dd><dd>Gadobutrol, an MRI contrast agent (off-label when given into the spinal fluid)</dd></div>
+        <div class="tr__row"><dt>Given into</dt><dd>Cisterna magna, the fluid space between cerebellum and brainstem</dd><dd>Lower spinal canal (intrathecal, by lumbar puncture)</dd></div>
+        <div class="tr__row"><dt>Seen with</dt><dd>Camera through the skull; confocal or two-photon microscopy in sections</dd><dd>T1-weighted MRI, repeated over two days</dd></div>
+        <div class="tr__row"><dt>Detail</dt><dd>Single vessels and cells (micrometres)</dd><dd>Whole brain at about a millimetre</dd></div>
+        <div class="tr__row"><dt>Best for</dt><dd>Mechanisms: genes, sleep, drugs, disease models</dd><dd>Whether the route works the same way in people, and how disease changes it</dd></div>
+      </dl>
+      <p class="small tr__src"><Label kind="schematic" /> <span class="muted">Curves are schematic shapes, not data. Mouse after Plog BA et al. (2018) <i>JCI Insight</i> 3:e120922; human after Ringstad G et al. (2018) <i>JCI Insight</i> 3:e121537.</span></p>
+      <h3 class="tr__ph">Our MRI studies</h3>
+      {mriPapers.length ? (
+        <ul class="tr__papers" role="list">
+          {mriPapers.map((p) => <li><a href={p.doi ? `https://doi.org/${p.doi}` : '#'} rel="noopener"><b>{p.title}</b><span class="small muted">{p.journalShort ?? p.journal} · {p.year}</span></a></li>)}
+        </ul>
+      ) : (
+        <p class="banner"><strong class="ph">To add:</strong> the lab’s MRI publications. Add them to <code>src/data/papers.json</code> with <code>"themes": ["glymphatic"]</code> and <code>"methods": ["MRI"]</code>; they appear here and in the publication list automatically.</p>
+      )}
+    </section>
   </Fragment>
 
   <Fragment slot="findings">
@@ -32,3 +71,30 @@ import site from '../../data/site.json';
     <ul class="muted"><li>[Finding — link to paper]</li></ul>
   </Fragment>
 </Research>
+
+<style>
+  .tr { margin-top: var(--s7); padding: var(--s5) clamp(var(--s3), 4vw, var(--s5)); border-radius: 24px; position: relative; overflow: hidden;
+    background: radial-gradient(80% 60% at 0% 0%, color-mix(in srgb, var(--magenta) 12%, transparent), transparent 70%),
+                radial-gradient(70% 60% at 100% 100%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 70%), var(--surface);
+    border: 1px solid color-mix(in srgb, var(--magenta) 25%, var(--line)); }
+  .tr__eyebrow { margin: 0 0 6px; font-size: .78rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--magenta); }
+  .tr h2 { margin: 0 0 var(--s2); }
+  .tr__lead { max-width: 64ch; color: var(--text-2); font-size: 1.08rem; }
+  .tr__tag { display: inline-block; font: 600 .72rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px;
+    color: var(--magenta); background: color-mix(in srgb, var(--magenta) 12%, transparent); }
+  .tr__tag--h { color: #2b8fd6; background: rgba(143, 208, 255, .14); }
+  .tr__cmp { margin: var(--s4) 0 0; display: grid; border-top: 1px solid var(--line); }
+  .tr__row { display: grid; grid-template-columns: 9rem 1fr 1fr; gap: var(--s3); padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .tr__row--head { padding: 10px 0 8px; }
+  .tr__row dt { font: 600 .74rem var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); padding-top: 3px; }
+  .tr__row dd { margin: 0; color: var(--text); font-size: .95rem; }
+  .tr__src { margin-top: var(--s2); display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+  .tr__ph { margin-top: var(--s5); }
+  .tr__papers { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .tr__papers a { display: grid; gap: 2px; padding: var(--s2) var(--s3); border-radius: 12px; border: 1px solid var(--line); text-decoration: none; color: var(--text); background: var(--surface); }
+  @media (max-width: 640px) {
+    .tr__row { grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+    .tr__row dt { grid-column: 1 / -1; }
+    .tr__row--head dt { display: none; }
+  }
+</style>
